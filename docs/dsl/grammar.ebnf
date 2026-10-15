@@ -1,0 +1,23 @@
+(* DSL 1.0.0 compiler grammar. Types/signatures come from the registry. *)
+expression = or-expression ;
+or-expression = and-expression, { "OR", and-expression } ;
+and-expression = not-expression, { "AND", not-expression } ;
+not-expression = { "NOT" }, relation ;
+relation = additive, [ relation-operator, [ ":" ], additive ]
+         | contextual-operator, ":", contextual-values ;
+additive = multiplicative, { ("+" | "-"), multiplicative } ;
+multiplicative = unary, { ("*" | "/" | "%"), unary } ;
+unary = [ "+" | "-" ], primary ;
+primary = literal | field-reference | named-reference | function-call
+        | list | "(", expression, ")" ;
+field-reference = "@", identifier, [ ".", identifier ] ;
+named-reference = "$", identifier, [ arguments ] ;
+function-call = identifier, arguments ;
+arguments = "(", [ expression, [ "AS", identifier ], { ",", expression } ], ")" ;
+list = "[", [ expression, { ",", expression } ], "]" ;
+contextual-values = literal, { ",", literal } | list ;
+literal = string | number | "TRUE" | "FALSE" ;
+identifier = letter, { letter | digit | "_" } ;
+number = digit, { digit }, [ ".", digit, { digit } ] ;
+(* DATE("YYYY-MM-DD") is a typed function form, not a localized literal. *)
+(* String escapes: backslash, double quote, n, r, t. Unicode content is preserved. *)

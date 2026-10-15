@@ -1,0 +1,13 @@
+name: Static validation
+on: [push, pull_request]
+jobs:
+  static:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate VBA component names
+        shell: powershell
+        run: ./tools/StaticValidate.ps1
+      - name: Exercise validator on malformed fixtures
+        shell: powershell
+        run: ./tests/tooling/StaticValidate.Tests.ps1

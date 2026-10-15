@@ -1,7 +1,6 @@
 # Stage 1 acceptance — compiler profile 1.0.0
 
-Status: compiler-stage acceptance is ready, subject to the clean-checkout and CI
-results recorded in docs/progress.md. This is the Schema/DSL/Parser/Validator stage,
+Status: compiler-stage acceptance verified locally, including a clean checkout. This is the Schema/DSL/Parser/Validator stage,
 not completion of the whole AccessTools-v2 product.
 
 ## Delivered and checked
@@ -20,9 +19,7 @@ not completion of the whole AccessTools-v2 product.
 - Registry-generated language catalog; every operator/function example compiles.
   Missing/outdated snapshots fail the Excel gate instead of silently drifting.
 
-Development-tree evidence: Compile VBAProject PASS; 953 VBA assertions expected
-after the final fixture run; static tooling and Excel gate integration are run
-again before publication. Exact observed totals are recorded in progress.md.
+Development and clean-checkout evidence: Compile VBAProject PASS; 953 VBA assertions PASS / 0 FAIL; static tooling fixtures 7/7; Excel gate integration cases 9/9.
 No readiness claim for production Runtime is inferred from compiler-only tests.
 
 Appendix-N examples compile with appropriate typed metadata. DISTINCT_COUNT on a

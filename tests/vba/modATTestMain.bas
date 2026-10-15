@@ -13,6 +13,7 @@ Public Function AT_RunTests() As String
     AT_Assert AT_DSL_VERSION = "1.0.0", "DSL version"
     AT_TestRegistry
     AT_TestLexer
+    AT_TestParser
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _
         ",""failures"":""" & mFailures & """}"
 End Function

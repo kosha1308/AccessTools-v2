@@ -49,6 +49,8 @@ Public Function AT_CreateRegistry() As ATRegistry
         registry.Register primitive
     Next item
     registry.Register AT_MakePrimitive("LOWER", "FUNCTION", "TEXT", "TEXT", "LOWER(@NAME)")
+    registry.Register AT_MakePrimitive("INTERSECTS", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP INTERSECTS @OTHER")
+    registry.Register AT_MakePrimitive("CONTAINED_BY", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP CONTAINED_BY @ALLOWED")
     Set AT_CreateRegistry = registry
 End Function
 

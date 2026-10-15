@@ -11,6 +11,7 @@ Public Function AT_RunTests() As String
     mFailures = ""
     AT_Assert AT_SCHEMA_VERSION = "1.0.0", "schema version"
     AT_Assert AT_DSL_VERSION = "1.0.0", "DSL version"
+    AT_TestRegistry
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _
         ",""failures"":""" & mFailures & """}"
 End Function

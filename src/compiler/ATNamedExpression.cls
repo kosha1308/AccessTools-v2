@@ -11,6 +11,7 @@ Public Expression As String
 Public Version As String
 Public Status As String
 Public ReplacedBy As String
+Public Scope As String
 Public Parameters As Collection
 
 Public Sub Initialize(ByVal idValue As String, ByVal typeValue As String, ByVal expressionValue As String)
@@ -19,6 +20,7 @@ Public Sub Initialize(ByVal idValue As String, ByVal typeValue As String, ByVal 
     Expression = expressionValue
     Version = "1.0.0"
     Status = "ACTIVE"
+    Scope = "DOCUMENT"
     Set Parameters = New Collection
 End Sub
 

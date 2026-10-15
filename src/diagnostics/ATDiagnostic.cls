@@ -15,6 +15,7 @@ Public Severity As String
 Public Start As Long
 Public Length As Long
 Public Message As String
+Public SourceId As String
 
 Public Sub Initialize(ByVal codeValue As String, ByVal categoryValue As String, ByVal severityValue As String, ByVal startValue As Long, ByVal lengthValue As Long, ByVal messageValue As String)
     If startValue < 1 Or lengthValue < 0 Then Err.Raise vbObjectError + 2100, "ATDiagnostic", "DIAG_INVALID_SPAN"
@@ -29,5 +30,6 @@ Public Sub Initialize(ByVal codeValue As String, ByVal categoryValue As String, 
     Start = startValue
     Length = lengthValue
     Message = messageValue
+    SourceId = "RULE"
 End Sub
 

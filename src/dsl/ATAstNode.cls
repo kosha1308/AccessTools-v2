@@ -14,8 +14,14 @@ Public Children As Collection
 Public Expansion As ATAstNode
 Public Depth As Long
 Public ContextualScalar As Boolean
+Public SourceId As String
+Public ParameterBindings As Collection
+Public PrimitiveId As String
+Public Signature As ATSignature
+Public ConversionNormalizerId As String
 
 Private Sub Class_Initialize()
     Set Children = New Collection
+    Set ParameterBindings = New Collection
 End Sub
 

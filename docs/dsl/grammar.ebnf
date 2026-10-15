@@ -1,13 +1,18 @@
-(* DSL 1.0.0 compiler grammar. Types/signatures come from the registry. *)
+(* AccessTools DSL 1.0.0; registry signatures define permitted types. *)
 expression = or-expression ;
 or-expression = and-expression, { "OR", and-expression } ;
 and-expression = not-expression, { "AND", not-expression } ;
 not-expression = { "NOT" }, relation ;
-relation = additive, [ relation-operator, [ ":" ], additive ]
-         | contextual-operator, ":", contextual-values ;
+relation = additive, [ postfix-operator
+                    | binary-operator, (additive | ":", relation-value)
+                    | between-operator, additive, "AND", additive ]
+         | contextual-postfix-operator
+         | contextual-binary-operator, ":", relation-value
+         | contextual-between-operator, ":", additive, "AND", additive ;
+relation-value = additive, { ",", contextual-literal } ;
 additive = multiplicative, { ("+" | "-"), multiplicative } ;
 multiplicative = unary, { ("*" | "/" | "%"), unary } ;
-unary = [ "+" | "-" ], primary ;
+unary = ("+" | "-"), unary | primary ;
 primary = literal | field-reference | named-reference | function-call
         | list | "(", expression, ")" ;
 field-reference = "@", identifier, [ ".", identifier ] ;
@@ -15,9 +20,16 @@ named-reference = "$", identifier, [ arguments ] ;
 function-call = identifier, arguments ;
 arguments = "(", [ expression, [ "AS", identifier ], { ",", expression } ], ")" ;
 list = "[", [ expression, { ",", expression } ], "]" ;
-contextual-values = literal, { ",", literal } | list ;
 literal = string | number | "TRUE" | "FALSE" ;
+contextual-literal = string | number | ("+" | "-"), number | "TRUE" | "FALSE" ;
 identifier = letter, { letter | digit | "_" } ;
 number = digit, { digit }, [ ".", digit, { digit } ] ;
-(* DATE("YYYY-MM-DD") is a typed function form, not a localized literal. *)
-(* String escapes: backslash, double quote, n, r, t. Unicode content is preserved. *)
+(* Only colon syntax consumes unbracketed comma-separated contextual literals.
+   One contextual value is scalar or a singleton list according to the selected
+   typed signature. NOT IN is an alias lowered to NOT applied to IN.
+   BETWEEN consumes its own AND before the surrounding Boolean AND.
+   Operator syntax may contain several registered keyword tokens.
+   DATE("YYYY-MM-DD") is a typed function form; localized dates are not guessed.
+   Strings support backslash, double-quote, n, r and t escapes.
+   Function/named parameter lists use brackets for a single list argument.
+   BIND/AS is type-valid only as a registered collection primitive's row argument. *)

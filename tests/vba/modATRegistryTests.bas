@@ -76,4 +76,7 @@ Public Sub AT_TestRegistry()
     primitive.SetSyntax "EXCLUDED_FROM"
     primitive.SetAliasOf registry.GetPrimitive("NOT_IN")
     AT_Assert primitive.NegatedAlias, "alias chaining preserves negation"
+    AT_Assert registry.GetPrimitive("TODAY").Determinism = "CONTEXT", "TODAY uses run context"
+    AT_Assert registry.GetPrimitive("NUMBER").NormalizerId = "DECIMAL_TEXT_V1", "number normalizer contract registered"
+    AT_Assert registry.GetPrimitive("DATE").LiteralPolicy = "DATE_CALL", "date literal contract registered"
 End Sub

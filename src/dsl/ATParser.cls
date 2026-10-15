@@ -320,6 +320,7 @@ Private Function ParsePrimary() As ATAstNode
     ElseIf Current.Kind = "NUMBER" Or Current.Kind = "STRING" Then
         kind = Current.Kind
         value = Current.Value
+        If kind = "NUMBER" Then value = AT_CanonicalDecimal(value)
         mIndex = mIndex + 1
         Set result = Node(kind, value, start)
     ElseIf At("TRUE") Or At("FALSE") Then

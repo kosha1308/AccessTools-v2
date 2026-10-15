@@ -9,4 +9,5 @@ Public Id As String
 Public TypeName As String
 Public TableId As String
 Public DefaultExpression As String
+Public LookupKeyType As String
 

@@ -28,6 +28,12 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestAppendix
     AT_TestTrace tracePath, "catalog"
     AT_TestCatalog
+    AT_TestTrace tracePath, "source-schema"
+    AT_TestSourceSchema
+    AT_TestTrace tracePath, "diagnostics"
+    AT_TestDiagnostics
+    AT_TestTrace tracePath, "registry-examples"
+    AT_TestRegistryExamples
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

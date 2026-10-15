@@ -1,36 +1,56 @@
-# Stage 1 — compiler foundation milestone
+# Stage 1 acceptance — compiler profile 1.0.0
 
-Implemented in the independent AccessTools-v2 repository:
+Status: compiler-stage acceptance is ready, subject to the clean-checkout and CI
+results recorded in docs/progress.md. This is the Schema/DSL/Parser/Validator stage,
+not completion of the whole AccessTools-v2 product.
 
-- Windows developer runner with explicit VBAProject compilation, bounded worker,
-  test result validation and cleanup of its own Excel process.
-- Static validation and malformed component fixtures; hosted static CI.
-- Schema/DSL version contracts, diagnostic spans, immutable primitive registry.
-- Lexer, shared AST/parser, canonical textual serializer and round-trip checks.
-- Field/scope resolution, signature checking, named/default expansion and cycles,
-  source dependency metadata and UsedBy edges.
-- Input/token/AST/depth/collection/named/work budgets; seeded malformed-input checks.
-- Appendix-N compiler examples with explicit diagnostics for unavailable capabilities.
+## Delivered and checked
 
-Last development-tree verification: Compile VBAProject PASS; VBA 787 assertions
-PASS / 0 FAIL; static validator fixtures 7 PASS; Excel gate fixtures 6 PASS. These
-are compiler/tooling checks, not a claim of production Runtime readiness.
+- Independent VBA source, static checks, explicit Compile VBAProject and developer
+  runner; no checkout/artifacts of AccessTools 0.2.x are needed.
+- Versioned type/primitive/normalizer contracts; immutable registered signatures.
+- Shared lexer/AST/parser/serializer, scalar/contextual/list/set/Boolean/arithmetic
+  syntax, multiword operators, BETWEEN and registered functions.
+- Type/scope checking, typed source-schema LOOKUP/SOURCE_VALUE, dependencies/UsedBy,
+  hygienic named definitions/defaults, parsed parameter bindings and cycles.
+- Exact canonical decimals, ISO Gregorian date and known port-literal validation.
+- Stable diagnostic codes, original spans and named/default source provenance.
+- Bounded input/tokens/nodes/depth/collections/named expansion/work; seeded negative
+  inputs, round-trip and golden diagnostic/compiler fixtures.
+- Registry-generated language catalog; every operator/function example compiles.
+  Missing/outdated snapshots fail the Excel gate instead of silently drifting.
 
-An independent review found five important issues: recursion through defaults,
-unknown metadata types, malformed JSON counters, syntax-vs-ID parser lookup and
-ambiguous registered syntax. Each has been addressed with regression coverage.
-Deprecated named expressions now retain compatibility with a warning; duplicate
-parameter IDs fail. A test initially indexing an absent warning crashed its Excel
-worker; the test guard was corrected and the subsequent complete run is green.
+Development-tree evidence: Compile VBAProject PASS; 953 VBA assertions expected
+after the final fixture run; static tooling and Excel gate integration are run
+again before publication. Exact observed totals are recorded in progress.md.
+No readiness claim for production Runtime is inferred from compiler-only tests.
 
-## Acceptance remains open
+Appendix-N examples compile with appropriate typed metadata. DISTINCT_COUNT on a
+scalar IP produces TYPE_SIGNATURE_MISMATCH; with an explicit LIST<IP_EXPRESSION>
+binding it compiles. Legacy ALLROWS colon input is deliberately rejected with
+PARSE_BARE_IDENTIFIER until a separate migration importer exists.
 
-Do not begin a real-request evaluator cutover from this status alone. The complete
-stage-one DoD still requires review/finalization of the supported grammar and
-catalog against all intended capabilities, domain literal/normalizer contracts,
-and broader canonical/property/golden coverage (including explicit assertions
-on diagnostic codes for every intentionally unsupported appendix example).
-The full evaluator registry, actual IP/port algorithms, source adapters and UI are
-not present. No AccessTools 0.2.x production check or file has changed.
+## Next stage boundary
 
-This is a working, tested compiler foundation, not completion of the whole v0.13 TZ.
+Next work is an isolated Runtime Evaluator implementing EvalResult/ValueState,
+the registered normalization/evaluation contracts, and explain traces. Begin with
+synthetic contexts; real-request shadow mode follows those tests. No production
+0.2.x check has been replaced. No Admin editor, production publisher, release ZIP,
+real source adapter or runtime IP/port interval evaluator is included here.
+
+NoPolicyAction for missing email/domain-to-IP policy remains a mandatory explicit
+business setting before that policy is published; this compiler does not choose it.
+
+## Review follow-ups
+
+The final independent static review found no important readiness blocker.
+A non-compiling NOT_EMPTY documentation example prompted tests for every registry
+operator/function example; all placeholder arithmetic/logic examples were corrected.
+
+Two smaller explain-stage follow-ups are retained:
+- Nested deprecation-warning SourceId currently defaults to RULE.
+- Directly typed source/lookup literals, BIND and synthetic contextual LIST nodes
+  can omit AST SourceId. Compilation diagnostics/errors retain their own provenance.
+
+These concern future explain output, not typed rule acceptance or data access.
+They must be addressed when implementing the evaluator/explain stage.

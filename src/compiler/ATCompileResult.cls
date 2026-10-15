@@ -13,3 +13,21 @@ Private Sub Class_Initialize()
     Set Dependencies = New ATDependencyGraph
 End Sub
 
+Public Property Get HasErrors() As Boolean
+    Dim diagnostic As ATDiagnostic
+    For Each diagnostic In Diagnostics
+        If diagnostic.Severity = "ERROR" Then
+            HasErrors = True
+            Exit Property
+        End If
+    Next diagnostic
+End Property
+
+Public Property Get DSLVersion() As String
+    DSLVersion = AT_DSL_VERSION
+End Property
+
+Public Property Get SchemaVersion() As String
+    SchemaVersion = AT_SCHEMA_VERSION
+End Property
+

@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Root, [Parameter(Mandatory=$true)][string]$RunDirectory)
+param([Parameter(Mandatory=$true)][string]$Root, [Parameter(Mandatory=$true)][string]$RunDirectory, [switch]$UpdateCatalog)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $excel = $null
@@ -71,6 +71,20 @@ public static class ATExcelProcess {
     [IO.File]::WriteAllText((Join-Path $RunDirectory 'vba-tests.json'), $json)
     Write-Output "VBA tests: $($result.passed) PASS / $($result.failed) FAIL"
     if ($result.failed -ne 0) { throw "EXCEL_TEST_FAILURE: $($result.failures)" }
+    if (Test-Path -LiteralPath (Join-Path $Root 'src/admin/modATLanguageDocs.bas')) {
+        $catalog = [string]$excel.Run("'$($book.Name)'!AT_ExportLanguageCatalog")
+        if ([string]::IsNullOrWhiteSpace($catalog)) { throw 'CATALOG_EMPTY: registry documentation was empty' }
+        [IO.File]::WriteAllText((Join-Path $RunDirectory 'language-catalog.md'), $catalog)
+        $snapshot = Join-Path $Root 'docs/dsl/catalog.md'
+        if ($UpdateCatalog) {
+            [IO.File]::WriteAllText($snapshot, $catalog)
+        } elseif (Test-Path -LiteralPath $snapshot) {
+            $existingCatalog = [IO.File]::ReadAllText($snapshot).Replace("`r`n", "`n")
+            if ($existingCatalog -cne $catalog.Replace("`r`n", "`n")) { throw 'CATALOG_DRIFT: regenerate docs/dsl/catalog.md from the emitted language-catalog.md artifact' }
+        } else {
+            throw 'CATALOG_MISSING: run tools/Test.ps1 -UpdateCatalog'
+        }
+    }
     $exitCode = 0
 } catch {
     Write-Output ('EXCEL_GATE_FAILED: ' + $_.Exception.Message)

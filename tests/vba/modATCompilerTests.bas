@@ -68,4 +68,44 @@ Public Sub AT_TestCompiler()
     Err.Clear
     On Error GoTo 0
     AT_Assert rejected, "duplicate parameter canonical ID rejected"
+    Set result = compiler.Compile("$OVER_LIMIT()", context)
+    If Not result.Root Is Nothing Then
+        AT_Assert result.Root.ParameterBindings.Count = 1, "compiled named call retains default binding"
+        If result.Root.ParameterBindings.Count = 1 Then
+            AT_Assert result.Root.ParameterBindings(1).Expression.Text = "10", "compiled default retains parsed AST"
+            AT_Assert result.Root.ParameterBindings(1).DataType = "NUMBER", "compiled default binding keeps declared type"
+        End If
+    End If
+    context.AddField "ROWS", "COLLECTION<ROW<ROW_TABLE>>"
+    context.AddField "FLAG", "BOOL", "ROW_TABLE"
+    Set expression = New ATNamedExpression
+    expression.Initialize "DOC_CONDITION", "BOOL", "@FLAG"
+    context.AddNamed expression
+    Set result = compiler.Compile("ANYROW(@ROWS AS t, $DOC_CONDITION)", context)
+    AT_Assert result.Root Is Nothing, "document named expression does not capture caller row"
+    Set expression = New ATNamedExpression
+    expression.Initialize "ROW_CONDITION", "BOOL", "@FLAG"
+    expression.Scope = "ROW"
+    context.AddNamed expression
+    Set result = compiler.Compile("ANYROW(@ROWS AS t, $ROW_CONDITION)", context)
+    AT_Assert Not result.Root Is Nothing, "row named expression explicitly inherits row context"
+    Set expression = New ATNamedExpression
+    expression.Initialize "DOC_DEFAULT", "BOOL", "$P"
+    expression.AddParameter "P", "BOOL", "@FLAG"
+    context.AddNamed expression
+    Set result = compiler.Compile("ANYROW(@ROWS AS t, $DOC_DEFAULT)", context)
+    AT_Assert result.Root Is Nothing, "document default does not capture caller row"
+    Set expression = New ATNamedExpression
+    expression.Initialize "ORDERED_DEFAULTS", "BOOL", "$SECOND"
+    expression.AddParameter "FIRST", "BOOL", "TRUE"
+    expression.AddParameter "SECOND", "BOOL", "$FIRST"
+    context.AddNamed expression
+    Set result = compiler.Compile("$ORDERED_DEFAULTS", context)
+    AT_Assert Not result.Root Is Nothing, "default references an earlier declared parameter"
+    Set result = compiler.Compile("@A + @B > 3", context)
+    If Not result.Root Is Nothing Then
+        AT_Assert result.Root.PrimitiveId = "GREATER", "compiled AST retains selected primitive ID"
+        AT_Assert result.Root.Children(1).Signature.ArgumentTypes.Count = 2, "compiled AST retains selected signature"
+        AT_Assert result.DSLVersion = "1.0.0", "compiled result retains language version"
+    End If
 End Sub

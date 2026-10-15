@@ -5,9 +5,11 @@ Specification: AccessTools technical specification v0.13, appendices N-P.
 
 ## Status
 
-Stage 1: tested compiler foundation implemented; full acceptance remains open.
-Lexer/parser/serializer, type/scope checking, named expressions and limits run in
-real Excel. See docs/stage1-status.md for verified scope and remaining gates.
+Stage 1: compiler profile 1.0.0 implemented and verified in desktop Excel.
+Lexer/parser/serializer, catalog/signatures, type/scope checking, source-schema
+lookups, compiled named/default bindings and limits are present. The generated
+language reference is [catalog.md](docs/dsl/catalog.md). See docs/stage1-status.md
+for acceptance evidence, scope and the boundary before Runtime evaluation.
 No production checks are replaced.
 AccessTools 0.2.x is a reference line, not a build/runtime dependency.
 
@@ -21,6 +23,10 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/tooling/StaticVali
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tools/Test.ps1
 powershell.exe -NoProfile -ExecutionPolicy Bypass -File tests/tooling/ExcelGate.Tests.ps1
 ```
+
+The Excel runner also compares the generated registry documentation with the
+committed snapshot. After intentional registry metadata edits, regenerate it with
+tools/Test.ps1 -UpdateCatalog, then run tools/Test.ps1 normally to verify no drift.
 
 ExecutionPolicy applies only to each developer process; these scripts do not change
 machine/user execution policy, Excel Trust Center, registry, or security settings.

@@ -1,4 +1,4 @@
-param([string]$Root = (Split-Path $PSScriptRoot -Parent), [ValidateRange(5,300)][int]$TimeoutSeconds = 60)
+param([string]$Root = (Split-Path $PSScriptRoot -Parent), [ValidateRange(5,300)][int]$TimeoutSeconds = 60, [switch]$UpdateCatalog)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $worker = $null
@@ -11,6 +11,7 @@ try {
     New-Item -ItemType Directory -Path $runDirectory -Force | Out-Null
     $workerScript = Join-Path $PSScriptRoot 'ExcelWorker.ps1'
     $arguments = '-NoProfile -ExecutionPolicy Bypass -File "{0}" -Root "{1}" -RunDirectory "{2}"' -f $workerScript, $Root, $runDirectory
+    if ($UpdateCatalog) { $arguments += ' -UpdateCatalog' }
     $worker = Start-Process powershell.exe -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $runDirectory 'stdout.log') -RedirectStandardError (Join-Path $runDirectory 'stderr.log')
     $processHandle = $worker.Handle
     $finished = $worker.WaitForExit($TimeoutSeconds * 1000)

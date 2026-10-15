@@ -13,6 +13,11 @@ Public Sub AT_TestCatalog()
     context.AddField "VALUES", "LIST<NUMBER>"
     context.AddField "WORDS", "LIST<TEXT>"
     context.AddField "FLAGS", "LIST<BOOL>"
+    context.AddField "SET_WORDS", "SET<TEXT>"
+    For Each item In Array("@SET_WORDS ANY [""a""]", "@SET_WORDS ANY: ""a""")
+        Set result = compiler.Compile(CStr(item), context)
+        AT_Assert Not result.Root Is Nothing, "set operator accepts canonical list literal"
+    Next item
     For Each item In Array("@NAME CONTAINS ""abc""", "@NAME STARTS_WITH ""a""", "@NAME ENDS_WITH ""z""", "@NAME LIKE ""a*""", "@NAME MATCHES ""^[a-z]+$""", "@NAME EMPTY", "@NAME NOT_EMPTY", "@NAME IS NULL", "@NAME IS NOT NULL", "@NAME VALID", "@NAME INVALID", "@N BETWEEN 1 AND 10", "@N IN [1,2]", "@N NOT IN [3,4]", "@WORDS ANY [""a"",""b""]", "@WORDS COVER [""a""]", "@WORDS CONTAINS [""a""]", "UPPER(TRIM(@NAME)) = ""ABC""", "LEN(@NAME) > 3", "ABS(@N) > 0", "ROUND(@N,2) >= 0", "MIN(@N,2) <= MAX(@N,2)", "SUM(@VALUES) > AVG(@VALUES)", "MIN(@VALUES) <= MAX(@VALUES)", "COALESCE(@NAME,""fallback"") = ""abc""", "TODAY() >= DATE(""2026-01-01"")", "DATE_DIFF(DATE(""2026-01-01""),TODAY()) > 0")
         Set result = compiler.Compile(CStr(item), context)
         AT_Assert Not result.Root Is Nothing, "catalog accepts: " & CStr(item)

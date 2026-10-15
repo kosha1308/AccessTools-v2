@@ -5,6 +5,7 @@ Public Sub AT_TestAppendix()
     Dim context As New ATCompileContext, compiler As New ATCompiler
     Dim expression As ATNamedExpression, result As ATCompileResult
     Dim item As Variant
+    Dim aggregateContext As New ATCompileContext
     context.AddField "TECH_DEST_PORT", "PORT_SET"
     context.AddField "SOURCE_PORT", "PORT_SET"
     context.AddField "TECH_DEST_IP", "IP_EXPRESSION"
@@ -23,6 +24,8 @@ Public Sub AT_TestAppendix()
     context.AddField "ADDRESS_IP", "IP_EXPRESSION", "ADDRESS"
     context.AddSource "ALLOWED_NETWORKS", "IP_EXPRESSION"
     context.AddSource "INTERNAL_NETWORKS", "IP_EXPRESSION"
+    context.AddSource "EMPLOYEE_DIRECTORY", "COLLECTION<ROW<EMPLOYEE>>", "EMAIL"
+    context.AddSourceColumn "EMPLOYEE_DIRECTORY", "DEPARTMENT", "TEXT"
     Set expression = New ATNamedExpression
     expression.Initialize "PORT_ALLOWED", "BOOL", "@TECH_DEST_PORT COVER $PORTS"
     expression.AddParameter "PORTS", "PORT_SET"
@@ -42,9 +45,14 @@ Public Sub AT_TestAppendix()
         AT_Assert Not result.Root Is Nothing, "appendix N collection/correlated sample"
     Next item
     Set result = compiler.Compile("DISTINCT_COUNT(@TECH_DEST_IP) > 5", context)
-    AT_Assert result.Root Is Nothing And result.Diagnostics.Count > 0, "appendix aggregate requires registered collection binding"
+    AT_Assert result.Root Is Nothing And result.Diagnostics.Count = 1, "appendix aggregate requires registered collection binding"
+    If result.Diagnostics.Count = 1 Then AT_Assert result.Diagnostics(1).Code = "TYPE_SIGNATURE_MISMATCH", "appendix scalar aggregate diagnostic code"
+    aggregateContext.AddField "TECH_DEST_IP", "LIST<IP_EXPRESSION>"
+    Set result = compiler.Compile("DISTINCT_COUNT(@TECH_DEST_IP) > 5", aggregateContext)
+    AT_Assert Not result.Root Is Nothing, "appendix aggregate compiles with explicit typed collection binding"
     Set result = compiler.Compile("LOOKUP(""EMPLOYEE_DIRECTORY"", @INITIATOR_EMAIL, ""Department"") = @REQUESTED_DEPARTMENT", context)
-    AT_Assert result.Root Is Nothing And result.Diagnostics.Count > 0, "appendix unregistered lookup adapter fails closed"
+    AT_Assert Not result.Root Is Nothing, "appendix source-schema lookup compiles"
     Set result = compiler.Compile("ALLROWS: 10.1.1.1,10.1.1.2", context)
-    AT_Assert result.Root Is Nothing And result.Diagnostics.Count > 0, "legacy ALLROWS requires explicit migration importer"
+    AT_Assert result.Root Is Nothing And result.Diagnostics.Count = 1, "legacy ALLROWS requires explicit migration importer"
+    If result.Diagnostics.Count = 1 Then AT_Assert result.Diagnostics(1).Code = "PARSE_BARE_IDENTIFIER", "legacy import diagnostic code is explicit"
 End Sub

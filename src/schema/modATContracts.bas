@@ -13,6 +13,7 @@ Public Enum ATValueState
     atValueEmpty = 1
     atValueMissing = 2
     atValueInvalid = 3
+    atValueNull = 4
 End Enum
 
 Public Function AT_CanonicalId(ByVal value As String) As String
@@ -29,9 +30,22 @@ Public Function AT_CanonicalId(ByVal value As String) As String
     Next i
 End Function
 
+Public Function AT_StableErrorCode(ByVal description As String, ByVal fallback As String) As String
+    Dim code As String, i As Long, ch As String
+    code = Split(description, ":")(0)
+    AT_StableErrorCode = fallback
+    If Len(code) = 0 Then Exit Function
+    For i = 1 To Len(code)
+        ch = Mid$(code, i, 1)
+        If Not ((ch >= "A" And ch <= "Z") Or (i > 1 And ((ch >= "0" And ch <= "9") Or ch = "_"))) Then Exit Function
+    Next i
+    AT_StableErrorCode = code
+End Function
+
 Public Function AT_MakePrimitive(ByVal idValue As String, ByVal categoryValue As String, ByVal argumentTypes As String, ByVal resultType As String, ByVal example As String) As ATPrimitive
     Dim item As New ATPrimitive
     item.Initialize idValue, categoryValue, idValue, idValue, "1.0.0", "ACTIVE", "PURE", example, "positive; negative; empty; boundary; malformed"
+    item.SetPresentation idValue, AT_PrimitiveDescription(idValue)
     If categoryValue = "DATATYPE" Then item.SetTypeContract idValue & "_V1", "FIELD_ONLY", "INVALID_IS_ERROR"
     item.AddSignature argumentTypes, resultType
     Set AT_MakePrimitive = item
@@ -57,6 +71,7 @@ Public Function AT_CreateRegistry() As ATRegistry
         primitive.AddSignature "IP_EXPRESSION,IP_EXPRESSION", "BOOL"
         primitive.AddSignature "LIST<T>,LIST<T>", "BOOL"
         primitive.AddSignature "SET<T>,SET<T>", "BOOL"
+        primitive.AddSignature "SET<T>,LIST<T>", "BOOL"
         If CStr(item) = "CONTAINS" Then primitive.AddSignature "TEXT,TEXT", "BOOL"
         registry.Register primitive
     Next item
@@ -104,7 +119,15 @@ End Function
 
 Private Sub AT_AddSyntax(ByVal registry As ATRegistry, ByVal idValue As String, ByVal syntaxValue As String, ByVal argumentTypes As String, ByVal returnType As String)
     Dim primitive As ATPrimitive
-    Set primitive = AT_MakePrimitive(idValue, "OPERATOR", argumentTypes, returnType, "expression " & syntaxValue & " expression")
+    Dim example As String
+    Select Case syntaxValue
+        Case "AND", "OR": example = "TRUE " & syntaxValue & " FALSE"
+        Case "NOT": example = "NOT TRUE"
+        Case "UNARY_PLUS": example = "+1"
+        Case "UNARY_MINUS": example = "-1"
+        Case Else: example = "1 " & syntaxValue & " 2"
+    End Select
+    Set primitive = AT_MakePrimitive(idValue, "OPERATOR", argumentTypes, returnType, example)
     primitive.SetSyntax syntaxValue
     registry.Register primitive
 End Sub

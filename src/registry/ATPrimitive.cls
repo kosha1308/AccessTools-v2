@@ -21,11 +21,21 @@ Private mDeterminism As String
 Private mExamples As String
 Private mTestContract As String
 Private mSyntax As String
+Private mNormalizerId As String
+Private mLiteralPolicy As String
+Private mValidationPolicy As String
+Private mCanonicalId As String
+Private mCanonicalSyntax As String
+Private mNegatedAlias As Boolean
+Private mDisplayName As String
 
 Public Sub Initialize(ByVal idValue As String, ByVal categoryValue As String, ByVal descriptionValue As String, ByVal evaluatorValue As String, ByVal versionValue As String, ByVal statusValue As String, ByVal determinismValue As String, ByVal examplesValue As String, ByVal testContractValue As String)
     If mFrozen Then Err.Raise vbObjectError + 2120, "ATPrimitive", "REG_FROZEN"
     mId = AT_CanonicalId(idValue)
     mSyntax = mId
+    mCanonicalId = mId
+    mCanonicalSyntax = mSyntax
+    mDisplayName = mId
     mCategory = UCase$(categoryValue)
     Select Case mCategory
         Case "DATATYPE", "OPERATOR", "FUNCTION", "QUANTIFIER"
@@ -47,14 +57,64 @@ End Sub
 Public Sub SetSyntax(ByVal syntaxValue As String)
     If mFrozen Then Err.Raise vbObjectError + 2120, "ATPrimitive", "REG_FROZEN"
     mSyntax = syntaxValue
+    mCanonicalSyntax = syntaxValue
 End Sub
+
+Public Sub SetAliasOf(ByVal target As ATPrimitive, Optional ByVal negated As Boolean = False)
+    If mFrozen Then Err.Raise vbObjectError + 2120, "ATPrimitive", "REG_FROZEN"
+    If target.Category <> mCategory Then Err.Raise vbObjectError + 2127, "ATPrimitive", "REG_ALIAS_CATEGORY"
+    mCanonicalId = target.CanonicalId
+    mCanonicalSyntax = target.CanonicalSyntax
+    mNegatedAlias = target.NegatedAlias Xor negated
+End Sub
+
+Public Sub SetPresentation(ByVal nameValue As String, ByVal descriptionValue As String)
+    If mFrozen Then Err.Raise vbObjectError + 2120, "ATPrimitive", "REG_FROZEN"
+    If Len(nameValue) = 0 Or Len(descriptionValue) = 0 Then Err.Raise vbObjectError + 2122, "ATPrimitive", "REG_REQUIRED_METADATA"
+    mDisplayName = nameValue
+    mDescription = descriptionValue
+End Sub
+
+Public Sub SetDeterminism(ByVal value As String)
+    If mFrozen Then Err.Raise vbObjectError + 2120, "ATPrimitive", "REG_FROZEN"
+    If value <> "PURE" And value <> "CONTEXT" Then Err.Raise vbObjectError + 2124, "ATPrimitive", "REG_INVALID_DETERMINISM"
+    mDeterminism = value
+End Sub
+
+Public Sub SetTypeContract(ByVal normalizerValue As String, ByVal literalValue As String, ByVal validationValue As String)
+    If mFrozen Then Err.Raise vbObjectError + 2120, "ATPrimitive", "REG_FROZEN"
+    If mCategory <> "DATATYPE" Then Err.Raise vbObjectError + 2128, "ATPrimitive", "REG_NOT_A_DATATYPE"
+    mNormalizerId = AT_CanonicalId(normalizerValue)
+    If Len(literalValue) = 0 Or Len(validationValue) = 0 Then Err.Raise vbObjectError + 2122, "ATPrimitive", "REG_REQUIRED_METADATA"
+    mLiteralPolicy = literalValue
+    mValidationPolicy = validationValue
+End Sub
+
+Public Property Get NormalizerId() As String
+    NormalizerId = mNormalizerId
+End Property
+Public Property Get LiteralPolicy() As String
+    LiteralPolicy = mLiteralPolicy
+End Property
+Public Property Get ValidationPolicy() As String
+    ValidationPolicy = mValidationPolicy
+End Property
+Public Property Get CanonicalId() As String
+    CanonicalId = mCanonicalId
+End Property
+Public Property Get CanonicalSyntax() As String
+    CanonicalSyntax = mCanonicalSyntax
+End Property
+Public Property Get NegatedAlias() As Boolean
+    NegatedAlias = mNegatedAlias
+End Property
 
 Public Property Get Syntax() As String
     Syntax = mSyntax
 End Property
 
 Public Property Get DisplayName() As String
-    DisplayName = mId
+    DisplayName = mDisplayName
 End Property
 
 Public Property Get CachePolicy() As String
@@ -96,6 +156,7 @@ Public Sub Freeze()
     Dim signature As ATSignature
     If mSignatures Is Nothing Then Err.Raise vbObjectError + 2125, "ATPrimitive", "REG_UNINITIALIZED"
     If mSignatures.Count = 0 Then Err.Raise vbObjectError + 2126, "ATPrimitive", "REG_MISSING_SIGNATURE"
+    If mCategory = "DATATYPE" And Len(mNormalizerId) = 0 Then Err.Raise vbObjectError + 2129, "ATPrimitive", "REG_MISSING_NORMALIZER_CONTRACT"
     For Each signature In mSignatures
         signature.Freeze
     Next signature

@@ -15,7 +15,7 @@ try {
     $processHandle = $worker.Handle
     $finished = $worker.WaitForExit($TimeoutSeconds * 1000)
     if (-not $finished) { $worker.Kill(); $worker.WaitForExit() }
-    foreach ($name in @('stdout.log', 'stderr.log')) {
+    foreach ($name in @('stdout.log', 'stderr.log', 'test-stages.log')) {
         $log = Join-Path $runDirectory $name
         if (Test-Path -LiteralPath $log) { Get-Content -LiteralPath $log }
     }

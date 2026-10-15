@@ -62,7 +62,7 @@ End Function
 Private Function CheckNode(ByVal node As ATAstNode, ByVal aliases As Collection, ByVal parameters As Collection) As String
     Dim types As New Collection, child As ATAstNode
     Dim definition As ATFieldDefinition, primitive As ATPrimitive
-    Dim typeName As String, item As Variant
+    Dim typeName As String, item As Variant, contextualIndex As Long
     Set mCurrent = node
     mSteps = mSteps + 1
     mCheckDepth = mCheckDepth + 1
@@ -107,6 +107,7 @@ Private Function CheckNode(ByVal node As ATAstNode, ByVal aliases As Collection,
                     types.Add CheckNode(child, aliases, parameters)
                 Next child
                 typeName = mTypes.ResolveSignature(primitive, types, mContext.Registry)
+                ValidateConversions node, mTypes.LastSignature
                 If node.Text = "DATE" Then ValidateDate node
             End If
         Case "UNARY", "BINARY", "RELATION"
@@ -118,7 +119,12 @@ Private Function CheckNode(ByVal node As ATAstNode, ByVal aliases As Collection,
             Else
                 Set primitive = mContext.Registry.FindSyntax(node.Text, "OPERATOR")
             End If
-            typeName = mTypes.ResolveSignature(primitive, types, mContext.Registry)
+            If node.Children.Count = 2 Then
+                If node.Children(2).ContextualScalar Then contextualIndex = 2
+            End If
+            typeName = mTypes.ResolveSignature(primitive, types, mContext.Registry, contextualIndex)
+            If mTypes.LastContextWrap > 0 Then WrapContextValue node, mTypes.LastContextWrap
+            ValidateConversions node, mTypes.LastSignature
         Case Else
             Err.Raise vbObjectError + 2335, "ATCompiler", "TYPE_INVALID_AST_NODE: " & node.Kind
     End Select
@@ -134,6 +140,29 @@ Private Function Owner() As String
         Owner = "NAMED:" & mNamedStack(mNamedStack.Count)
     End If
 End Function
+
+Private Sub ValidateConversions(ByVal node As ATAstNode, ByVal signature As ATSignature)
+    Dim index As Long, child As ATAstNode, target As String
+    For index = 1 To node.Children.Count
+        Set child = node.Children(index)
+        target = signature.ArgumentTypes(index)
+        If target = "PORT_SET" And child.DataType <> target Then AT_ValidatePortLiteral child
+    Next index
+End Sub
+
+Private Sub WrapContextValue(ByVal parent As ATAstNode, ByVal index As Long)
+    Dim child As ATAstNode, wrapper As New ATAstNode
+    Set child = parent.Children(index)
+    wrapper.Kind = "LIST"
+    wrapper.Start = child.Start
+    wrapper.Length = child.Length
+    wrapper.Children.Add child
+    wrapper.DataType = "LIST<" & child.DataType & ">"
+    wrapper.Depth = child.Depth + 1
+    If wrapper.Depth > mLimits.MaxNesting Then Err.Raise vbObjectError + 2402, "ATCompiler", "LIMIT_EXPANSION_DEPTH"
+    parent.Children.Remove index
+    If index <= parent.Children.Count Then parent.Children.Add wrapper, Before:=index Else parent.Children.Add wrapper
+End Sub
 
 Private Function CheckCollection(ByVal node As ATAstNode, ByVal aliases As Collection, ByVal parameters As Collection) As String
     Dim binding As ATAstNode, collectionType As String, predicateType As String
@@ -207,6 +236,13 @@ Private Function CheckNamed(ByVal node As ATAstNode, ByVal aliases As Collection
             actualType = CheckNode(parsed.Root, aliases, parameters)
         End If
         If actualType <> parameter.TypeName And Not mContext.Registry.CanConvert(actualType, parameter.TypeName) Then Err.Raise vbObjectError + 2355, "ATCompiler", "TYPE_NAMED_ARGUMENT"
+        If parameter.TypeName = "PORT_SET" And actualType <> parameter.TypeName Then
+            If index <= node.Children.Count Then
+                AT_ValidatePortLiteral node.Children(index)
+            Else
+                AT_ValidatePortLiteral parsed.Root
+            End If
+        End If
         nested.Add parameter
     Next index
     Set parsed = parser.Parse(definition.Expression, "", mContext.Registry, mLimits)

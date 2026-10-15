@@ -72,4 +72,8 @@ Public Sub AT_TestRegistry()
     Set registry = AT_CreateRegistry()
     AT_Assert registry.Contains("BOOL") And registry.Contains("COVER"), "bootstrap types and operators"
     AT_Assert Not registry.Contains("EVAL"), "arbitrary evaluation absent"
+    Set primitive = AT_MakePrimitive("NEGATED_ALIAS", "OPERATOR", "T,LIST<T>", "BOOL", "@A EXCLUDED_FROM [1]")
+    primitive.SetSyntax "EXCLUDED_FROM"
+    primitive.SetAliasOf registry.GetPrimitive("NOT_IN")
+    AT_Assert primitive.NegatedAlias, "alias chaining preserves negation"
 End Sub

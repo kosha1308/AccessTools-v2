@@ -60,7 +60,11 @@ public static class ATExcelProcess {
     if ($compile.Enabled) { throw 'EXCEL_COMPILE_FAILED: command remains enabled' }
     Write-Output '[COMPILE] PASS'
     Write-Output '[RUN] AT_RunTests'
-    $json = [string]$excel.Run("'$($book.Name)'!AT_RunTests")
+    if (Test-Path -LiteralPath (Join-Path $Root 'tests/vba/modATTestMain.bas')) {
+        $json = [string]$excel.Run("'$($book.Name)'!AT_RunTests", (Join-Path $RunDirectory 'test-stages.log'))
+    } else {
+        $json = [string]$excel.Run("'$($book.Name)'!AT_RunTests")
+    }
     $result = $json | ConvertFrom-Json
     if (($result.passed -isnot [int] -and $result.passed -isnot [long]) -or ($result.failed -isnot [int] -and $result.failed -isnot [long])) { throw 'EXCEL_TEST_RESULT: counters must be JSON integers' }
     if ($result.passed -lt 1 -or $result.failed -lt 0 -or $result.failures -isnot [string]) { throw 'EXCEL_TEST_RESULT: invalid or empty test result' }

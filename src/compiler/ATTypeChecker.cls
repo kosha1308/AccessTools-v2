@@ -4,19 +4,28 @@ BEGIN
 END
 Attribute VB_Name = "ATTypeChecker"
 Option Explicit
+Public LastSignature As ATSignature
+Public LastContextWrap As Long
 
-Public Function ResolveSignature(ByVal primitive As ATPrimitive, ByVal types As Collection, ByVal registry As ATRegistry) As String
+Public Function ResolveSignature(ByVal primitive As ATPrimitive, ByVal types As Collection, ByVal registry As ATRegistry, Optional ByVal contextualIndex As Long = 0) As String
     Dim signature As ATSignature, parameters As Collection
-    Dim index As Long, binding As String, valid As Boolean
+    Dim index As Long, binding As String, valid As Boolean, wrapped As Boolean, wrapIndex As Long
+    Set LastSignature = Nothing
+    LastContextWrap = 0
     For Each signature In primitive.Signatures
         Set parameters = signature.ArgumentTypes
         If parameters.Count = types.Count Then
             valid = True
             binding = ""
+            wrapIndex = 0
             For index = 1 To types.Count
-                If Not MatchType(CStr(parameters(index)), CStr(types(index)), binding, registry) Then valid = False
+                wrapped = False
+                If Not MatchType(CStr(parameters(index)), CStr(types(index)), binding, registry, index = contextualIndex, wrapped) Then valid = False
+                If wrapped Then wrapIndex = index
             Next index
             If valid Then
+                Set LastSignature = signature
+                LastContextWrap = wrapIndex
                 If signature.ReturnType = "T" Then
                     ResolveSignature = binding
                 Else
@@ -29,9 +38,13 @@ Public Function ResolveSignature(ByVal primitive As ATPrimitive, ByVal types As 
     Err.Raise vbObjectError + 2320, "ATTypeChecker", "TYPE_SIGNATURE_MISMATCH: " & primitive.Id
 End Function
 
-Private Function MatchType(ByVal expected As String, ByVal actual As String, ByRef binding As String, ByVal registry As ATRegistry) As Boolean
+Private Function MatchType(ByVal expected As String, ByVal actual As String, ByRef binding As String, ByVal registry As ATRegistry, ByVal allowSingleton As Boolean, ByRef wrapped As Boolean) As Boolean
     Dim marker As Long, prefix As String, suffix As String, extracted As String
-    If expected = actual Then
+    Dim ignored As Boolean
+    If allowSingleton And Left$(expected, 5) = "LIST<" And Left$(actual, 5) <> "LIST<" Then
+        MatchType = MatchType(Mid$(expected, 6, Len(expected) - 6), actual, binding, registry, False, ignored)
+        wrapped = MatchType
+    ElseIf expected = actual Then
         MatchType = True
     ElseIf expected = "T" Then
         If Len(binding) = 0 Then binding = actual

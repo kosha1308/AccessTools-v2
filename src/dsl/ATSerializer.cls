@@ -10,7 +10,9 @@ Public Function Serialize(ByVal node As ATAstNode) As String
     Dim child As ATAstNode
     If node Is Nothing Then Err.Raise vbObjectError + 2210, "ATSerializer", "SERIALIZE_MISSING_ROOT"
     Select Case node.Kind
-        Case "NUMBER", "BOOL"
+        Case "NUMBER"
+            result = AT_CanonicalDecimal(node.Text)
+        Case "BOOL"
             result = node.Text
         Case "STRING"
             result = Replace(node.Text, "\", "\\")
@@ -28,7 +30,9 @@ Public Function Serialize(ByVal node As ATAstNode) As String
                 result = "(" & Serialize(node.Children(1)) & " " & node.Text & ")"
             End If
         Case "BINARY", "RELATION"
-            result = "(" & Serialize(node.Children(1)) & " " & node.Text & " " & Serialize(node.Children(2)) & ")"
+            result = "(" & Serialize(node.Children(1)) & " " & node.Text & " " & Serialize(node.Children(2))
+            If node.Children.Count = 3 Then result = result & " AND " & Serialize(node.Children(3))
+            result = result & ")"
         Case "BIND"
             result = Serialize(node.Children(1)) & " AS " & node.Text
         Case "LIST", "CALL", "NAMED"

@@ -13,6 +13,7 @@ Public Length As Long
 Public Children As Collection
 Public Expansion As ATAstNode
 Public Depth As Long
+Public ContextualScalar As Boolean
 
 Private Sub Class_Initialize()
     Set Children = New Collection

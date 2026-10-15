@@ -39,10 +39,15 @@ Public Sub Register(ByVal primitive As ATPrimitive)
     mEntries.Add primitive, key
 End Sub
 
-Private Sub ValidateType(ByVal typeName As String)
+Private Sub ValidateType(ByVal typeName As String, Optional ByVal depth As Long = 0)
+    If depth > 16 Then Err.Raise vbObjectError + 2137, "ATRegistry", "TYPE_METADATA_DEPTH"
     If typeName = "T" Then Exit Sub
     If Left$(typeName, 5) = "LIST<" And Right$(typeName, 1) = ">" Then
-        ValidateType Mid$(typeName, 6, Len(typeName) - 6)
+        ValidateType Mid$(typeName, 6, Len(typeName) - 6), depth + 1
+        Exit Sub
+    End If
+    If Left$(typeName, 4) = "SET<" And Right$(typeName, 1) = ">" Then
+        ValidateType Mid$(typeName, 5, Len(typeName) - 5), depth + 1
         Exit Sub
     End If
     If typeName = "COLLECTION<ROW<T>>" Then Exit Sub

@@ -32,6 +32,7 @@ End Function
 Public Function AT_MakePrimitive(ByVal idValue As String, ByVal categoryValue As String, ByVal argumentTypes As String, ByVal resultType As String, ByVal example As String) As ATPrimitive
     Dim item As New ATPrimitive
     item.Initialize idValue, categoryValue, idValue, idValue, "1.0.0", "ACTIVE", "PURE", example, "positive; negative; empty; boundary; malformed"
+    If categoryValue = "DATATYPE" Then item.SetTypeContract idValue & "_V1", "FIELD_ONLY", "INVALID_IS_ERROR"
     item.AddSignature argumentTypes, resultType
     Set AT_MakePrimitive = item
 End Function
@@ -40,18 +41,32 @@ Public Function AT_CreateRegistry() As ATRegistry
     Dim registry As New ATRegistry
     Dim item As Variant
     Dim primitive As ATPrimitive
-    For Each item In Array("TEXT", "NUMBER", "BOOL", "DATE", "DATETIME", "EMAIL", "PROTOCOL", "HOSTNAME", "PORT", "PORT_SET", "IP", "IP_EXPRESSION")
-        registry.Register AT_MakePrimitive(CStr(item), "DATATYPE", "", CStr(item), CStr(item))
+    For Each item In Array("TEXT", "NUMBER", "BOOL", "DATE", "DATETIME", "EMAIL", "PROTOCOL", "HOSTNAME", "PORT", "PORT_SET", "IP", "IP_EXPRESSION", "ENUM", "FIELD_REF", "SOURCE_REF")
+        Set primitive = AT_MakePrimitive(CStr(item), "DATATYPE", "", CStr(item), CStr(item))
+        Select Case CStr(item)
+            Case "TEXT": primitive.SetTypeContract "TEXT_V1", "STRING", "PRESERVE_FREE_TEXT"
+            Case "NUMBER": primitive.SetTypeContract "DECIMAL_TEXT_V1", "DECIMAL", "INVARIANT_DECIMAL"
+            Case "BOOL": primitive.SetTypeContract "BOOL_V1", "TRUE_FALSE", "EXPLICIT_MAPPING_ONLY"
+            Case "DATE": primitive.SetTypeContract "ISO_DATE_V1", "DATE_CALL", "ISO_GREGORIAN_0100_9999"
+            Case "PORT", "PORT_SET": primitive.SetTypeContract "PORT_SET_V1", "REGISTERED_NUMERIC_CONVERSION", "UNSIGNED_16_BIT_INTEGER"
+        End Select
+        registry.Register primitive
     Next item
     For Each item In Array("ANY", "NONE", "COVER", "CONTAINS", "EXACT", "OVERLAPS")
         Set primitive = AT_MakePrimitive(CStr(item), "OPERATOR", "PORT_SET,PORT_SET", "BOOL", "@PORTS " & CStr(item) & ": 443")
         primitive.AddSignature "IP_EXPRESSION,IP_EXPRESSION", "BOOL"
+        primitive.AddSignature "LIST<T>,LIST<T>", "BOOL"
+        primitive.AddSignature "SET<T>,SET<T>", "BOOL"
+        If CStr(item) = "CONTAINS" Then primitive.AddSignature "TEXT,TEXT", "BOOL"
         registry.Register primitive
     Next item
     registry.Register AT_MakePrimitive("LOWER", "FUNCTION", "TEXT", "TEXT", "LOWER(@NAME)")
     registry.Register AT_MakePrimitive("INTERSECTS", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP INTERSECTS @OTHER")
     registry.Register AT_MakePrimitive("CONTAINED_BY", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP CONTAINED_BY @ALLOWED")
-    registry.Register AT_MakePrimitive("IN", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP IN SOURCE(""ALLOWED_NETWORKS"")")
+    Set primitive = AT_MakePrimitive("IN", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP IN SOURCE(""ALLOWED_NETWORKS"")")
+    primitive.AddSignature "T,LIST<T>", "BOOL"
+    primitive.AddSignature "T,SET<T>", "BOOL"
+    registry.Register primitive
     AT_AddSyntax registry, "OP_EQUALS", "=", "T,T", "BOOL"
     AT_AddSyntax registry, "OP_NOT_EQUALS", "!=", "T,T", "BOOL"
     For Each item In Array("AND", "OR")
@@ -83,6 +98,7 @@ Public Function AT_CreateRegistry() As ATRegistry
     registry.Register AT_MakePrimitive("SOURCE", "FUNCTION", "TEXT", "T", "SOURCE(""SOURCE_ID"")")
     registry.AllowConversion "LIST<NUMBER>", "PORT_SET"
     registry.AllowConversion "NUMBER", "PORT_SET"
+    AT_AddCatalog registry
     Set AT_CreateRegistry = registry
 End Function
 

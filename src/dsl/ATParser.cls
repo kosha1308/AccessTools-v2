@@ -97,6 +97,7 @@ Private Function Binary(ByVal kind As String, ByVal op As String, ByVal left As 
     Set result = Node(kind, op, left.Start)
     result.Children.Add left
     result.Children.Add right
+    result.Length = right.Start + right.Length - left.Start
     FinishNode result
     Set Binary = result
 End Function
@@ -166,39 +167,53 @@ End Function
 
 Private Function ParseRelation() As ATAstNode
     Dim left As ATAstNode, right As ATAstNode
-    Dim op As String, colon As Boolean, start As Long
+    Dim op As String, start As Long, contextual As Boolean
     Dim operatorValue As ATPrimitive
     start = Current.Start
     If IsRelation() Then
         Set operatorValue = mRelation
-        op = operatorValue.Syntax
-        mIndex = mIndex + UBound(Split(op, " ")) + 1
-        Expect ":"
         If Len(mContext) = 0 Then Fail "PARSE_CONTEXT_REQUIRED", "Contextual operator requires a FieldId"
         Set left = Node("FIELD", mContext, start)
-        Set right = ParseContextValues()
-        Set ParseRelation = Binary("RELATION", op, left, right)
-        Exit Function
+        contextual = True
+    Else
+        Set left = ParseAdditive()
+        If IsRelation() Then Set operatorValue = mRelation
     End If
-    Set left = ParseAdditive()
-    If IsRelation() Then
-        Set operatorValue = mRelation
-        op = operatorValue.Syntax
-        mIndex = mIndex + UBound(Split(op, " ")) + 1
+    If Not operatorValue Is Nothing Then
+        op = operatorValue.CanonicalSyntax
+        mIndex = mIndex + UBound(Split(operatorValue.Syntax, " ")) + 1
         If operatorValue.Signatures(1).ArgumentTypes.Count = 1 Then
             Set right = Node("UNARY", op, left.Start)
             right.Children.Add left
+            right.Length = mTokens(mIndex - 1).Start + mTokens(mIndex - 1).Length - left.Start
             FinishNode right
-            Set ParseRelation = right
-            Exit Function
-        End If
-        colon = Take(":")
-        If colon Then
-            Set right = ParseContextValues()
+            Set left = right
+        ElseIf operatorValue.Signatures(1).ArgumentTypes.Count = 3 Then
+            If contextual Then Expect ":"
+            Set right = Node("RELATION", op, left.Start)
+            right.Children.Add left
+            right.Children.Add ParseAdditive()
+            Expect "AND"
+            right.Children.Add ParseAdditive()
+            right.Length = right.Children(3).Start + right.Children(3).Length - right.Start
+            FinishNode right
+            Set left = right
         Else
-            Set right = ParseAdditive()
+            If Take(":") Then
+                Set right = ParseContextValues()
+            Else
+                If contextual Then Fail "PARSE_EXPECTED_TOKEN", "Expected :"
+                Set right = ParseAdditive()
+            End If
+            Set left = Binary("RELATION", op, left, right)
         End If
-        Set left = Binary("RELATION", op, left, right)
+        If operatorValue.NegatedAlias Then
+            Set right = Node("UNARY", "NOT", left.Start)
+            right.Children.Add left
+            right.Length = left.Length
+            FinishNode right
+            Set left = right
+        End If
     End If
     Set ParseRelation = left
 End Function
@@ -214,13 +229,29 @@ Private Function ParseContextValues() As ATAstNode
     list.Children.Add item
     Do While At(",")
         If mIndex + 1 > mTokens.Count Then Exit Do
-        If mTokens(mIndex + 1).Kind <> "NUMBER" And mTokens(mIndex + 1).Kind <> "STRING" Then Exit Do
+        If Not IsContextLiteral(mIndex + 1) Then Exit Do
         mIndex = mIndex + 1
         Set item = ParseAdditive()
         list.Children.Add item
     Loop
     FinishNode list
-    Set ParseContextValues = list
+    If list.Children.Count = 1 Then
+        list.Children(1).ContextualScalar = True
+        Set ParseContextValues = list.Children(1)
+    Else
+        list.Length = list.Children(list.Children.Count).Start + list.Children(list.Children.Count).Length - list.Start
+        Set ParseContextValues = list
+    End If
+End Function
+
+Private Function IsContextLiteral(ByVal index As Long) As Boolean
+    Dim token As ATToken
+    Set token = mTokens(index)
+    IsContextLiteral = token.Kind = "NUMBER" Or token.Kind = "STRING"
+    If token.Kind = "IDENT" Then IsContextLiteral = token.Value = "TRUE" Or token.Value = "FALSE"
+    If token.Kind = "SYMBOL" And (token.Value = "+" Or token.Value = "-") Then
+        If index < mTokens.Count Then IsContextLiteral = mTokens(index + 1).Kind = "NUMBER"
+    End If
 End Function
 
 Private Function ParseAdditive() As ATAstNode
@@ -272,6 +303,7 @@ Private Function ParsePrimary() As ATAstNode
     If Take("(") Then
         Set result = ParseOr()
         Expect ")"
+        result.Start = start
     ElseIf Take("[") Then
         Set result = Node("LIST", "", start)
         If Not Take("]") Then
@@ -310,6 +342,8 @@ Private Function ParsePrimary() As ATAstNode
                     If Take("AS") Then
                         Set binding = Node("BIND", ReadIdentifier(), child.Start)
                         binding.Children.Add child
+                        binding.Length = mTokens(mIndex - 1).Start + mTokens(mIndex - 1).Length - binding.Start
+                        FinishNode binding
                         Set child = binding
                     End If
                     result.Children.Add child

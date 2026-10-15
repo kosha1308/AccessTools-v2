@@ -1,15 +1,29 @@
 Attribute VB_Name = "modATLexer"
 Option Explicit
 
-Public Function AT_Tokenize(ByVal text As String) As ATLexResult
+Public Function AT_Tokenize(ByVal text As String, Optional ByVal limits As ATLimits = Nothing) As ATLexResult
     Dim result As New ATLexResult
     Dim i As Long, first As Long, count As Long
     Dim ch As String, pair As String, value As String, raw As String
     Dim closed As Boolean, badEscape As Boolean
     Dim kind As String
+    Dim diagnostic As ATDiagnostic
+    On Error GoTo Failed
+    If limits Is Nothing Then Set limits = New ATLimits
+    limits.Validate
+    If Len(text) > limits.MaxInputLength Then
+        AT_LexError result, "LIMIT_INPUT_LENGTH", 1, Len(text), "Input length budget exceeded"
+        Set AT_Tokenize = result
+        Exit Function
+    End If
     i = 1
     count = Len(text)
     Do While i <= count
+        If result.Tokens.Count >= limits.MaxTokens Then
+            AT_LexError result, "LIMIT_TOKENS", i, 0, "Token budget exceeded"
+            Set AT_Tokenize = result
+            Exit Function
+        End If
         ch = Mid$(text, i, 1)
         first = i
         Select Case ch
@@ -89,7 +103,17 @@ Public Function AT_Tokenize(ByVal text As String) As ATLexResult
                 End If
         End Select
     Loop
-    AT_AddToken result, "EOF", "", "", count + 1
+    If result.Tokens.Count >= limits.MaxTokens Then
+        AT_LexError result, "LIMIT_TOKENS", count + 1, 0, "Token budget exceeded"
+    Else
+        AT_AddToken result, "EOF", "", "", count + 1
+    End If
+    Set AT_Tokenize = result
+    Exit Function
+Failed:
+    Set diagnostic = New ATDiagnostic
+    diagnostic.Initialize "LEX_CONFIGURATION", "LEXICAL", "ERROR", 1, 0, Err.Description
+    result.Diagnostics.Add diagnostic
     Set AT_Tokenize = result
 End Function
 

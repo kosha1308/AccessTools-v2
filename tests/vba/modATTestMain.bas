@@ -14,6 +14,10 @@ Public Function AT_RunTests() As String
     AT_TestRegistry
     AT_TestLexer
     AT_TestParser
+    AT_TestCompiler
+    AT_TestLimits
+    AT_TestProperties
+    AT_TestAppendix
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _
         ",""failures"":""" & mFailures & """}"
 End Function

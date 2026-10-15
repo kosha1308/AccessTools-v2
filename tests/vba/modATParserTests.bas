@@ -7,6 +7,25 @@ Public Sub AT_TestParser()
     Dim result As ATParseResult, other As ATParseResult
     Dim node As ATAstNode
     Dim text As String, item As Variant
+    Dim registry As ATRegistry, primitive As ATPrimitive
+    Set registry = AT_CreateRegistry()
+    Set primitive = AT_MakePrimitive("CUSTOM_MATCH", "OPERATOR", "TEXT,TEXT", "BOOL", "@A MATCHES @B")
+    primitive.SetSyntax "MATCHES"
+    registry.Register primitive
+    Set result = parser.Parse("@A MATCHES @B", "", registry)
+    AT_Assert result.Diagnostics.Count = 0, "registered operator syntax parsed"
+    Set primitive = AT_MakePrimitive("CUSTOM_MULTI", "OPERATOR", "TEXT,TEXT", "BOOL", "@A SAME AS @B")
+    primitive.SetSyntax "SAME AS"
+    registry.Register primitive
+    Set result = parser.Parse("@A SAME AS @B", "", registry)
+    AT_Assert result.Diagnostics.Count = 0, "registered multiword syntax parsed"
+    Set primitive = AT_MakePrimitive("CUSTOM_NULL", "OPERATOR", "TEXT", "BOOL", "@A IS NULL")
+    primitive.SetSyntax "IS NULL"
+    registry.Register primitive
+    Set result = parser.Parse("@A IS NULL", "", registry)
+    text = serializer.Serialize(result.Root)
+    Set other = parser.Parse(text, "", registry)
+    AT_Assert other.Diagnostics.Count = 0, "registered postfix unary round trip"
     Set result = parser.Parse("1 + 2 * 3 > 4 AND NOT FALSE OR TRUE")
     AT_Assert result.Diagnostics.Count = 0, "parse precedence"
     Set node = result.Root

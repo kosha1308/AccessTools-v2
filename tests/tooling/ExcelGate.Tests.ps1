@@ -7,6 +7,8 @@ $cases = @(
     @{ Name='assertion-failure'; Body='AT_RunTests = "{""passed"":1,""failed"":1,""failures"":""intentional""}"'; Tail=''; Accept=$false },
     @{ Name='unexecuted-syntax-error'; Body='AT_RunTests = "{""passed"":1,""failed"":0,""failures"":""""}"'; Tail="Private Sub NeverCalled()`r`n    Dim broken As`r`nEnd Sub"; Accept=$false },
     @{ Name='empty-tests'; Body='AT_RunTests = "{""passed"":0,""failed"":0,""failures"":""""}"'; Tail=''; Accept=$false }
+    @{ Name='string-count'; Body='AT_RunTests = "{""passed"":""garbage"",""failed"":0,""failures"":""""}"'; Tail=''; Accept=$false },
+    @{ Name='fraction-count'; Body='AT_RunTests = "{""passed"":1.5,""failed"":0,""failures"":""""}"'; Tail=''; Accept=$false }
 )
 $passed = 0
 foreach ($case in $cases) {

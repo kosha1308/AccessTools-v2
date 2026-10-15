@@ -11,17 +11,23 @@ Private mResult As ATParseResult
 Private mContext As String
 Private mRegistry As ATRegistry
 Private mDepth As Long
+Private mNodes As Long
+Private mLimits As ATLimits
+Private mRelation As ATPrimitive
 
-Public Function Parse(ByVal text As String, Optional ByVal contextualFieldId As String = "", Optional ByVal registry As ATRegistry = Nothing) As ATParseResult
+Public Function Parse(ByVal text As String, Optional ByVal contextualFieldId As String = "", Optional ByVal registry As ATRegistry = Nothing, Optional ByVal limits As ATLimits = Nothing) As ATParseResult
     Dim lexed As ATLexResult
     Dim root As ATAstNode
     Dim diagnostic As ATDiagnostic
     Set mResult = New ATParseResult
     mContext = contextualFieldId
     mDepth = 0
+    mNodes = 0
+    If limits Is Nothing Then Set limits = New ATLimits
+    Set mLimits = limits
     If registry Is Nothing Then Set registry = AT_CreateRegistry()
     Set mRegistry = registry
-    Set lexed = AT_Tokenize(text)
+    Set lexed = AT_Tokenize(text, mLimits)
     For Each diagnostic In lexed.Diagnostics
         mResult.Diagnostics.Add diagnostic
     Next diagnostic
@@ -80,6 +86,9 @@ Private Function Node(ByVal kind As String, ByVal text As String, ByVal start As
     result.Text = text
     result.Start = start
     result.Length = Current.Start - start
+    mNodes = mNodes + 1
+    If mNodes > mLimits.MaxAstNodes Then Fail "LIMIT_AST_NODES", "AST node budget exceeded"
+    result.Depth = 1
     Set Node = result
 End Function
 
@@ -88,8 +97,18 @@ Private Function Binary(ByVal kind As String, ByVal op As String, ByVal left As 
     Set result = Node(kind, op, left.Start)
     result.Children.Add left
     result.Children.Add right
+    FinishNode result
     Set Binary = result
 End Function
+
+Private Sub FinishNode(ByVal value As ATAstNode)
+    Dim child As ATAstNode
+    value.Depth = 1
+    For Each child In value.Children
+        If child.Depth + 1 > value.Depth Then value.Depth = child.Depth + 1
+    Next child
+    If value.Depth > mLimits.MaxNesting Then Fail "LIMIT_AST_DEPTH", "AST depth exceeded"
+End Sub
 
 Private Function ParseOr() As ATAstNode
     Dim left As ATAstNode
@@ -115,10 +134,11 @@ Private Function ParseNot() As ATAstNode
     start = Current.Start
     If Take("NOT") Then
         mDepth = mDepth + 1
-        If mDepth > 64 Then Fail "LIMIT_DEPTH", "Expression nesting exceeded"
+        If mDepth > mLimits.MaxNesting Then Fail "LIMIT_DEPTH", "Expression nesting exceeded"
         Set child = ParseNot()
         Set ParseNot = Node("UNARY", "NOT", start)
         ParseNot.Children.Add child
+        FinishNode ParseNot
         mDepth = mDepth - 1
     Else
         Set ParseNot = ParseRelation()
@@ -128,21 +148,31 @@ End Function
 Private Function IsRelation() As Boolean
     Dim value As String
     value = Current.Value
+    Set mRelation = Nothing
     If Current.Kind = "SYMBOL" Then
-        IsRelation = value = "=" Or value = "!=" Or value = "<>" Or value = "<" Or value = ">" Or value = "<=" Or value = ">="
+        If value = "<>" Then
+            Set mRelation = mRegistry.FindSyntax("!=", "OPERATOR")
+        ElseIf value = "=" Or value = "!=" Or value = "<" Or value = ">" Or value = "<=" Or value = ">=" Then
+            Set mRelation = mRegistry.MatchSyntax(mTokens, mIndex, "OPERATOR")
+        End If
     ElseIf Current.Kind = "IDENT" Then
-        If value = "AND" Or value = "OR" Or value = "NOT" Then Exit Function
-        If mRegistry.Contains(value) Then IsRelation = mRegistry.GetPrimitive(value).Category = "OPERATOR"
+        Set mRelation = mRegistry.MatchSyntax(mTokens, mIndex, "OPERATOR")
+        If Not mRelation Is Nothing Then
+            If mRelation.Syntax = "AND" Or mRelation.Syntax = "OR" Or mRelation.Syntax = "NOT" Then Set mRelation = Nothing
+        End If
     End If
+    IsRelation = Not mRelation Is Nothing
 End Function
 
 Private Function ParseRelation() As ATAstNode
     Dim left As ATAstNode, right As ATAstNode
     Dim op As String, colon As Boolean, start As Long
+    Dim operatorValue As ATPrimitive
     start = Current.Start
     If IsRelation() Then
-        op = Current.Value
-        mIndex = mIndex + 1
+        Set operatorValue = mRelation
+        op = operatorValue.Syntax
+        mIndex = mIndex + UBound(Split(op, " ")) + 1
         Expect ":"
         If Len(mContext) = 0 Then Fail "PARSE_CONTEXT_REQUIRED", "Contextual operator requires a FieldId"
         Set left = Node("FIELD", mContext, start)
@@ -152,9 +182,16 @@ Private Function ParseRelation() As ATAstNode
     End If
     Set left = ParseAdditive()
     If IsRelation() Then
-        op = Current.Value
-        If op = "<>" Then op = "!="
-        mIndex = mIndex + 1
+        Set operatorValue = mRelation
+        op = operatorValue.Syntax
+        mIndex = mIndex + UBound(Split(op, " ")) + 1
+        If operatorValue.Signatures(1).ArgumentTypes.Count = 1 Then
+            Set right = Node("UNARY", op, left.Start)
+            right.Children.Add left
+            FinishNode right
+            Set ParseRelation = right
+            Exit Function
+        End If
         colon = Take(":")
         If colon Then
             Set right = ParseContextValues()
@@ -182,6 +219,7 @@ Private Function ParseContextValues() As ATAstNode
         Set item = ParseAdditive()
         list.Children.Add item
     Loop
+    FinishNode list
     Set ParseContextValues = list
 End Function
 
@@ -215,8 +253,9 @@ Private Function ParseUnary() As ATAstNode
         mIndex = mIndex + 1
         Set result = Node("UNARY", op, start)
         mDepth = mDepth + 1
-        If mDepth > 64 Then Fail "LIMIT_DEPTH", "Expression nesting exceeded"
+        If mDepth > mLimits.MaxNesting Then Fail "LIMIT_DEPTH", "Expression nesting exceeded"
         result.Children.Add ParseUnary()
+        FinishNode result
         mDepth = mDepth - 1
         Set ParseUnary = result
     Else
@@ -229,7 +268,7 @@ Private Function ParsePrimary() As ATAstNode
     Dim kind As String, value As String, start As Long, named As Boolean
     start = Current.Start
     mDepth = mDepth + 1
-    If mDepth > 64 Then Fail "LIMIT_DEPTH", "Expression nesting exceeded"
+    If mDepth > mLimits.MaxNesting Then Fail "LIMIT_DEPTH", "Expression nesting exceeded"
     If Take("(") Then
         Set result = ParseOr()
         Expect ")"
@@ -284,6 +323,7 @@ Private Function ParsePrimary() As ATAstNode
     End If
     mDepth = mDepth - 1
     result.Length = mTokens(mIndex - 1).Start + mTokens(mIndex - 1).Length - result.Start
+    FinishNode result
     Set ParsePrimary = result
 End Function
 

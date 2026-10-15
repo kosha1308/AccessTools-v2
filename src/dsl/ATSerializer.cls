@@ -22,7 +22,11 @@ Public Function Serialize(ByVal node As ATAstNode) As String
         Case "FIELD"
             result = "@" & node.Text
         Case "UNARY"
-            result = "(" & node.Text & " " & Serialize(node.Children(1)) & ")"
+            If node.Text = "NOT" Or node.Text = "+" Or node.Text = "-" Then
+                result = "(" & node.Text & " " & Serialize(node.Children(1)) & ")"
+            Else
+                result = "(" & Serialize(node.Children(1)) & " " & node.Text & ")"
+            End If
         Case "BINARY", "RELATION"
             result = "(" & Serialize(node.Children(1)) & " " & node.Text & " " & Serialize(node.Children(2)) & ")"
         Case "BIND"

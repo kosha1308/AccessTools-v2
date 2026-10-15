@@ -27,6 +27,14 @@ Public Sub AT_TestRegistry()
     Err.Clear
     On Error GoTo 0
     AT_Assert rejected, "unregistered signature type rejected"
+    Set primitive = AT_MakePrimitive("LOWER_ALIAS", "FUNCTION", "TEXT", "TEXT", "LOWER(@NAME)")
+    primitive.SetSyntax "LOWER"
+    On Error Resume Next
+    registry.Register primitive
+    rejected = Err.Number <> 0
+    Err.Clear
+    On Error GoTo 0
+    AT_Assert rejected, "ambiguous registered syntax rejected"
     On Error Resume Next
     registry.Register primitive
     rejected = Err.Number <> 0

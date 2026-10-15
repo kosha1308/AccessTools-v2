@@ -5,7 +5,10 @@ Specification: AccessTools technical specification v0.13, appendices N-P.
 
 ## Status
 
-Stage 1: compiler foundation in development. No production checks are replaced.
+Stage 1: tested compiler foundation implemented; full acceptance remains open.
+Lexer/parser/serializer, type/scope checking, named expressions and limits run in
+real Excel. See docs/stage1-status.md for verified scope and remaining gates.
+No production checks are replaced.
 AccessTools 0.2.x is a reference line, not a build/runtime dependency.
 
 ## Developer checks (Windows)

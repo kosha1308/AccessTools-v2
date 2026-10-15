@@ -51,6 +51,45 @@ Public Function AT_CreateRegistry() As ATRegistry
     registry.Register AT_MakePrimitive("LOWER", "FUNCTION", "TEXT", "TEXT", "LOWER(@NAME)")
     registry.Register AT_MakePrimitive("INTERSECTS", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP INTERSECTS @OTHER")
     registry.Register AT_MakePrimitive("CONTAINED_BY", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP CONTAINED_BY @ALLOWED")
+    registry.Register AT_MakePrimitive("IN", "OPERATOR", "IP_EXPRESSION,IP_EXPRESSION", "BOOL", "@IP IN SOURCE(""ALLOWED_NETWORKS"")")
+    AT_AddSyntax registry, "OP_EQUALS", "=", "T,T", "BOOL"
+    AT_AddSyntax registry, "OP_NOT_EQUALS", "!=", "T,T", "BOOL"
+    For Each item In Array("AND", "OR")
+        AT_AddSyntax registry, CStr(item), CStr(item), "BOOL,BOOL", "BOOL"
+    Next item
+    AT_AddSyntax registry, "NOT", "NOT", "BOOL", "BOOL"
+    For Each item In Array("ADD|+", "SUBTRACT|-", "MULTIPLY|*", "DIVIDE|/", "REMAINDER|%")
+        AT_AddSyntax registry, Split(CStr(item), "|")(0), Split(CStr(item), "|")(1), "NUMBER,NUMBER", "NUMBER"
+    Next item
+    AT_AddSyntax registry, "UNARY_PLUS", "UNARY_PLUS", "NUMBER", "NUMBER"
+    AT_AddSyntax registry, "UNARY_MINUS", "UNARY_MINUS", "NUMBER", "NUMBER"
+    For Each item In Array("GREATER|>", "LESS|<", "GREATER_EQUAL|>=", "LESS_EQUAL|<=")
+        Set primitive = AT_MakePrimitive(Split(CStr(item), "|")(0), "OPERATOR", "NUMBER,NUMBER", "BOOL", "@A " & Split(CStr(item), "|")(1) & " @B")
+        primitive.SetSyntax Split(CStr(item), "|")(1)
+        primitive.AddSignature "DATE,DATE", "BOOL"
+        primitive.AddSignature "TEXT,TEXT", "BOOL"
+        registry.Register primitive
+    Next item
+    Set primitive = AT_MakePrimitive("DATE_LITERAL", "FUNCTION", "TEXT", "DATE", "DATE(""2026-10-15"")")
+    primitive.SetSyntax "DATE"
+    registry.Register primitive
+    For Each item In Array("ALLROWS", "ANYROW", "NOROWS")
+        registry.Register AT_MakePrimitive(CStr(item), "QUANTIFIER", "COLLECTION<ROW<T>>,BOOL", "BOOL", CStr(item) & "(@ROWS AS t, TRUE)")
+    Next item
+    registry.Register AT_MakePrimitive("FILTER", "QUANTIFIER", "COLLECTION<ROW<T>>,BOOL", "COLLECTION<ROW<T>>", "FILTER(@ROWS AS t, TRUE)")
+    registry.Register AT_MakePrimitive("COUNT", "FUNCTION", "COLLECTION<ROW<T>>", "NUMBER", "COUNT(@ROWS)")
+    registry.Register AT_MakePrimitive("DISTINCT_COUNT", "FUNCTION", "LIST<T>", "NUMBER", "DISTINCT_COUNT(@VALUES)")
+    registry.Register AT_MakePrimitive("EXISTS", "FUNCTION", "COLLECTION<ROW<T>>", "BOOL", "EXISTS(@ROWS)")
+    registry.Register AT_MakePrimitive("SOURCE", "FUNCTION", "TEXT", "T", "SOURCE(""SOURCE_ID"")")
+    registry.AllowConversion "LIST<NUMBER>", "PORT_SET"
+    registry.AllowConversion "NUMBER", "PORT_SET"
     Set AT_CreateRegistry = registry
 End Function
+
+Private Sub AT_AddSyntax(ByVal registry As ATRegistry, ByVal idValue As String, ByVal syntaxValue As String, ByVal argumentTypes As String, ByVal returnType As String)
+    Dim primitive As ATPrimitive
+    Set primitive = AT_MakePrimitive(idValue, "OPERATOR", argumentTypes, returnType, "expression " & syntaxValue & " expression")
+    primitive.SetSyntax syntaxValue
+    registry.Register primitive
+End Sub
 

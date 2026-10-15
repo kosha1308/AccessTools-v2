@@ -62,7 +62,8 @@ public static class ATExcelProcess {
     Write-Output '[RUN] AT_RunTests'
     $json = [string]$excel.Run("'$($book.Name)'!AT_RunTests")
     $result = $json | ConvertFrom-Json
-    if ($null -eq $result.passed -or $null -eq $result.failed -or $result.passed -lt 1 -or $result.failed -lt 0) { throw 'EXCEL_TEST_RESULT: invalid or empty test result' }
+    if (($result.passed -isnot [int] -and $result.passed -isnot [long]) -or ($result.failed -isnot [int] -and $result.failed -isnot [long])) { throw 'EXCEL_TEST_RESULT: counters must be JSON integers' }
+    if ($result.passed -lt 1 -or $result.failed -lt 0 -or $result.failures -isnot [string]) { throw 'EXCEL_TEST_RESULT: invalid or empty test result' }
     [IO.File]::WriteAllText((Join-Path $RunDirectory 'vba-tests.json'), $json)
     Write-Output "VBA tests: $($result.passed) PASS / $($result.failed) FAIL"
     if ($result.failed -ne 0) { throw "EXCEL_TEST_FAILURE: $($result.failures)" }

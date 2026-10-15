@@ -20,10 +20,12 @@ Private mStatus As String
 Private mDeterminism As String
 Private mExamples As String
 Private mTestContract As String
+Private mSyntax As String
 
 Public Sub Initialize(ByVal idValue As String, ByVal categoryValue As String, ByVal descriptionValue As String, ByVal evaluatorValue As String, ByVal versionValue As String, ByVal statusValue As String, ByVal determinismValue As String, ByVal examplesValue As String, ByVal testContractValue As String)
     If mFrozen Then Err.Raise vbObjectError + 2120, "ATPrimitive", "REG_FROZEN"
     mId = AT_CanonicalId(idValue)
+    mSyntax = mId
     mCategory = UCase$(categoryValue)
     Select Case mCategory
         Case "DATATYPE", "OPERATOR", "FUNCTION", "QUANTIFIER"
@@ -41,6 +43,46 @@ Public Sub Initialize(ByVal idValue As String, ByVal categoryValue As String, By
     mTestContract = testContractValue
     Set mSignatures = New Collection
 End Sub
+
+Public Sub SetSyntax(ByVal syntaxValue As String)
+    If mFrozen Then Err.Raise vbObjectError + 2120, "ATPrimitive", "REG_FROZEN"
+    mSyntax = syntaxValue
+End Sub
+
+Public Property Get Syntax() As String
+    Syntax = mSyntax
+End Property
+
+Public Property Get DisplayName() As String
+    DisplayName = mId
+End Property
+
+Public Property Get CachePolicy() As String
+    If mDeterminism = "PURE" Then CachePolicy = "SESSION" Else CachePolicy = "RUN_CONTEXT"
+End Property
+
+Public Property Get Associativity() As String
+    If mSyntax = "NOT" Or mSyntax = "UNARY_PLUS" Or mSyntax = "UNARY_MINUS" Then
+        Associativity = "RIGHT"
+    ElseIf Precedence = 5 Then
+        Associativity = "NONE"
+    Else
+        Associativity = "LEFT"
+    End If
+End Property
+
+Public Property Get Precedence() As Long
+    Select Case mSyntax
+        Case "OR": Precedence = 8
+        Case "AND": Precedence = 7
+        Case "NOT": Precedence = 6
+        Case "+", "-": Precedence = 4
+        Case "*", "/", "%": Precedence = 3
+        Case "UNARY_PLUS", "UNARY_MINUS": Precedence = 2
+        Case Else
+            If mCategory = "OPERATOR" Then Precedence = 5 Else Precedence = 1
+    End Select
+End Property
 
 Public Sub AddSignature(ByVal argumentTypes As String, ByVal resultType As String)
     Dim signature As New ATSignature

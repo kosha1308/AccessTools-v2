@@ -87,3 +87,7 @@ Review observation ruled: layout validity limited to one synchronous unchanged-s
 read, documented. Full fingerprint belongs to published profile stage. Other declined
 items (full profile, single fields, rulebook, Superset/coordinator/UI) are explicit pending
 first-use requirements, not silently dropped. No review correctness findings deferred.
+Clean-checkout acceptance: e23614e cloned without hardlinks into AccessTools-v2-extraction-verify.
+CompilePASS9733/0, catalogmatch and static7/7; reportexcel-f960b4c08d56499285469391d3fd9660.
+Build uses only this repository, without old artifacts/private sources. Local clone required
+existing elevated process permission after ordinary sandbox blocked Git's helper process.

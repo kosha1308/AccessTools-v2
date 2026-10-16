@@ -251,3 +251,23 @@ Fresh independent review86e2f29..ea5ae65: no actionable Critical/Important findi
 RAW source readers complete; policy/catalog/messages/routing application,
 Superset matcher/hostname refinement, coordinator output and full package pending.
 Clean checkoutea5ae65: CompilePASS10551/0 default60s, static7/7; reportexcel-e17a3d029c6f4ccba6f12807a971ae5e. Standard suite requires no private source books.
+
+## Validated Rulebook catalog / local policy application 2026-10-16
+
+Base1369b65. Four RAW tables compiled: PROTOCOLS/PROBLEMS/ROUTING/COMMON_TEXT.
+Immutable protocol list, explicit flags, scoped original-severity keys, custom
+user/coordinator messages and nonrecursive template expansion. Wrapper invokes
+existing10checks unchanged, recalculates severity outcomes, preserves skipped/
+blocked, exposes routed channels and separateUserErrorCount. No source annotations.
+Task1 missing-class RED ->10620/0; Task2 missing-class RED ->10639/0.
+Fresh review found protocol compiler/consumer charset/count mismatch; verified
+existing contract and reproduced. Added1000/1001 and direct10001-row boundaries.
+Diagnostics guard + config-error classification RED10654/2 ->fixed; shared text
+budget RED10657/1 ->Step consumed text lengths ->CompilePASS10660/0.
+Real provided Rulebook/request ReadOnly: POLICY0/PROTOCOLS0/CHECKS10/ERRORS6/
+WARNINGS2/USER_ERRORS6/USER_ISSUES8. Both hashes unchanged; reportexcel-
+439609ba75994b08b6af611e953ccf78. Static7/7 gate9/9. No review finding deferred.
+General initiator/IP/hostname/port/service rule evaluation, source matcher,
+coordinator UI/outputs and user package remain pending. AllReport is not a
+filtered user report; future UI must consume channel data/UserErrorCount explicitly.
+Clean checkout1c6d8de: CompilePASS10660/0 default60s, static7/7; reportexcel-4fe55b829f664bd79f0e50015e90c92c. Standard suite needs no private sources.

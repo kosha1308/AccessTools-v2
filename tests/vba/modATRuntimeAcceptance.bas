@@ -12,6 +12,7 @@ Public Sub AT_TestRuntimeAcceptance()
     schema.AddField "NAME", "TEXT"
     schema.AddField "VALUES", "LIST<NUMBER>"
     schema.AddField "IP", "IP_EXPRESSION"
+    schema.AddField "UNSUPPORTED", "ENUM"
     schema.AddField "ROWS", "COLLECTION<ROW<T>>"
     schema.AddSource "S", "NUMBER", "NUMBER"
     schema.AddSourceColumn "S", "N", "NUMBER"
@@ -28,7 +29,7 @@ Public Sub AT_TestRuntimeAcceptance()
         Set result = evaluator.Evaluate(compiler.Compile(CStr(item), schema), context)
         AT_Assert result.Diagnostics(1).Code = "AGGREGATE_EMPTY", "empty aggregate explicit error"
     Next item
-    For Each item In Array("@IP COVER @IP", "@NAME MATCHES "".*""", "@NAME LIKE ""*""", "SOURCE(""S"") = 1", "LOOKUP(""S"",1,""N"") = 1", "COUNT(@ROWS) = 0", "EXISTS(@ROWS)", "ALLROWS(@ROWS AS t, TRUE)", "ANYROW(@ROWS AS t, TRUE)", "NOROWS(@ROWS AS t, FALSE)", "COUNT(FILTER(@ROWS AS t, TRUE)) = 0", "DISTINCT_COUNT(@VALUES) = 0")
+    For Each item In Array("@UNSUPPORTED = @UNSUPPORTED", "@NAME MATCHES "".*""", "@NAME LIKE ""*""", "SOURCE(""S"") = 1", "LOOKUP(""S"",1,""N"") = 1", "COUNT(@ROWS) = 0", "EXISTS(@ROWS)", "ALLROWS(@ROWS AS t, TRUE)", "ANYROW(@ROWS AS t, TRUE)", "NOROWS(@ROWS AS t, FALSE)", "COUNT(FILTER(@ROWS AS t, TRUE)) = 0", "DISTINCT_COUNT(@VALUES) = 0")
         Set compiled = compiler.Compile(CStr(item), schema)
         AT_Assert Not compiled.Root Is Nothing, "deferred fixture compiles: " & CStr(item)
         Set result = evaluator.Evaluate(compiled, context)

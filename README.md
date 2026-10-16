@@ -17,6 +17,12 @@ Stage 2A Runtime core is implemented on feat/runtime-core and verified in deskto
 
 ## Developer checks (Windows)
 
+Stage 2B.1 adds verified IP/port domains, frozen interval payloads and bounded
+normalization/evaluation; see [network-domains-status.md](docs/network-domains-status.md).
+The user-facing readiness target includes NETWORK_ACCESS checks, Superset and the
+coordinator summary: [first-use milestone](docs/first-use-network-access.md).
+Request adapters, row evaluation and coordinator delivery remain to implement.
+
 Run from the repository root in Windows PowerShell 5.1:
 
 ```powershell

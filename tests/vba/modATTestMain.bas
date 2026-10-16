@@ -46,6 +46,7 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestTrace tracePath, "domain-intervals"
     AT_TestIntervals
     AT_TestDomainParse
+    AT_TestDomainEval
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

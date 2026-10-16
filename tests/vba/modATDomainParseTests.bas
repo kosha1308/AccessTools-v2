@@ -29,6 +29,10 @@ Public Sub AT_TestDomainParse()
     Set result = AT_ParseDomain("IP_EXPRESSION", "192.0.2.1,2,3", Nothing, budget)
     Set other = AT_ParseDomain("IP_EXPRESSION", "192.0.2.1-3", Nothing, budget)
     AT_Assert AT_IPDeclarationsEqual(result.Value, other.Value, budget), "nonCIDR declaration coverage equivalent"
+    Set result = AT_ParseDomain("IP_EXPRESSION", "192.0.2.1,3-5", Nothing, budget)
+    Set other = AT_ParseDomain("IP_EXPRESSION", "192.0.2.1,192.0.2.3-5", Nothing, budget)
+    AT_Assert result.Value.ValueState = atValuePresent, "compact range continuation uses prior prefix"
+    If result.Value.ValueState = atValuePresent Then AT_Assert AT_IPDeclarationsEqual(result.Value, other.Value, budget), "compact range continuation equivalent coverage"
     Set result = AT_ParseDomain("PORT_SET", "0,443/8443\65535;100 - 102", Nothing, budget)
     AT_Assert result.Value.ValueState = atValuePresent, "port separators and numeric boundaries"
     For Each expression In Array("65536", "1.5", "1-0", "443oops", "-1", "443;bad", "000443")

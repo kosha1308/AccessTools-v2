@@ -111,6 +111,10 @@ Public Sub InitializeDomain(ByVal typeName As String, ByVal intervals As ATInter
     expectedMaximum = 4294967295#
     If typeName = "PORT" Or typeName = "PORT_SET" Then expectedMaximum = 65535#
     If intervals.Maximum <> expectedMaximum Then BadType
+    If typeName = "IP" Or typeName = "PORT" Then
+        If intervals.Count <> 1 Then BadType
+        If intervals.Item(1).Low <> intervals.Item(1).High Then BadType
+    End If
     Set mDomain = intervals
     Set mDeclarations = New Collection
     For Each key In declarations

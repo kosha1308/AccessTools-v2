@@ -48,7 +48,9 @@ Public Sub AT_ParseIPToken(ByVal token As String, ByVal intervals As ATIntervalS
     ElseIf InStr(token, "-") > 0 Then
         parts = Split(token, "-")
         If UBound(parts) <> 1 Then GoTo Invalid
-        low = AT_ParseIPv4(CStr(parts(0)))
+        endpoint = CStr(parts(0))
+        If AT_Digits(endpoint, 3) And Len(prefix) > 0 Then endpoint = prefix & endpoint
+        low = AT_ParseIPv4(endpoint)
         base = AT_IPText(low)
         endpoint = CStr(parts(1))
         If AT_Digits(endpoint, 3) Then endpoint = Left$(base, InStrRev(base, ".")) & endpoint

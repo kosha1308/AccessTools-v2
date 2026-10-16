@@ -9,6 +9,10 @@ Public Function AT_ApplyScalar(ByVal node As ATAstNode, ByVal args As Collection
     Set a = args(1)
     If args.Count > 1 Then Set b = args(2)
     If args.Count > 2 Then Set c = args(3)
+    If AT_RuntimeDomainType(a.DataType) Then
+        Set AT_ApplyScalar = AT_ApplyDomain(node, args, budget)
+        Exit Function
+    End If
     Select Case node.PrimitiveId
         Case "ANY", "NONE", "COVER", "EXACT", "OVERLAPS", "IN"
             Set AT_ApplyScalar = AT_ApplySet(node, args, context, budget)

@@ -54,3 +54,8 @@ parser/reader/check тестами, ветки нового адаптера п�
 Используется explicit TimeoutSeconds90 текущего Windows-хоста; default60 и runtime
 бюджеты прежние. Дальше: единый controller с актуальностью файлов/несохранённых
 изменений, запуск/сохранение из Excel, XLAM-пакет и приёмка полного сценария.
+
+Чистый отдельный clone source commitc19d55827f4d383535f0d175d0d97817da158335:
+Compile VBAProject PASS,11265 PASS/0 FAIL, explicit90s. Excel gate9/0.
+Draft PR24, branch feat/coordinator-technical-notes, base feat/superset-rule-annotations
+(PR23). Слияние и пользовательский выпуск не выполнялись.

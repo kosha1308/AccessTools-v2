@@ -12,7 +12,7 @@ guarded table-read entry. External production reference required, no invented NE
 
 Baseline9845/0; updated TZ including SKUF/support remains binding. No source/settings mutation.
 256 anchors/1024 relations/1000000 total scanned cells; minimum2 independent anchors/1relation.
-No release claim. User asked for location of actual XLSX; generic mechanism independent of reply.
+No release claim. User supplied actual XLSX in Drive work/Шаблоны заявок during execution.
 
 ## Review Focus
 
@@ -47,3 +47,16 @@ only allowed profile invokes existing reader.
 
 Pre-flight: Task1 decision consumed before Task2 reader; no core/schema changes required.
 Ruling: retain dedicated clone and new feature branch; no extra technical approval loop.
+
+### Task3 — confirmed reference profile (added after user supplied XLSX)
+
+Files: modATNetworkProfile.bas; extend ATTemplateProfile with AddTableAnchor(id,
+firstRow,lastRow,firstCol,lastCol,headers As Variant of[label,col,width],Optional requireLocked=False);
+tests/vba/modATNetworkProfileTests.bas and main.
+- [ ] RED concrete factory and grouped headers: source-like synthetic fixture, dynamic lower table,
+  user default edits/isolated header words ignored, individual merge changes rejected.
+- [ ] Build immutable grouped metadata and AT_NetworkProfileV3 from inspected blank form.
+  All user values/validation lists excluded. No invented protection requirement.
+- [ ] Full GREEN and actual source opened read-only via owned Excel runner; Verify returns MATCH,
+  SHA256 before/after unchanged. Original XLSX/private data never committed. Independent review
+  covers all3 tasks; status distinguishes profile checks from complete application release.

@@ -19,6 +19,10 @@ Public ParameterBindings As Collection
 Public PrimitiveId As String
 Public Signature As ATSignature
 Public ConversionNormalizerId As String
+Public FieldId As String
+Public TableId As String
+Public RowAlias As String
+Public NamedScope As String
 
 Private Sub Class_Initialize()
     Set Children = New Collection

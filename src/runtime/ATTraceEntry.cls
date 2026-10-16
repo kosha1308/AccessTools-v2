@@ -6,15 +6,29 @@ Attribute VB_Name = "ATTraceEntry"
 Option Explicit
 Private mSource As String, mPrimitive As String, mStatus As String, mValueState As String, mReason As String
 Private mStart As Long, mLength As Long, mOrdinal As Long, mFrozen As Boolean
+Private mRowId As String, mTableId As String, mFieldId As String, mCellRef As String
 
-Public Sub Initialize(ByVal sourceId As String, ByVal start As Long, ByVal length As Long, ByVal primitiveId As String, ByVal status As String, ByVal valueState As String, ByVal reason As String, ByVal ordinal As Long)
+Public Sub Initialize(ByVal sourceId As String, ByVal start As Long, ByVal length As Long, ByVal primitiveId As String, ByVal status As String, ByVal valueState As String, ByVal reason As String, ByVal ordinal As Long, Optional ByVal rowId As String = "", Optional ByVal tableId As String = "", Optional ByVal fieldId As String = "", Optional ByVal cellRef As String = "")
     If mFrozen Then Err.Raise vbObjectError + 2500, , "RUNTIME_VALUE_FROZEN"
     mSource = sourceId: mStart = start: mLength = length: mPrimitive = primitiveId
     mStatus = status: mValueState = valueState: mReason = reason: mOrdinal = ordinal
+    mRowId = rowId: mTableId = tableId: mFieldId = fieldId: mCellRef = cellRef
     mFrozen = True
 End Sub
 Public Property Get SourceId() As String
     SourceId = mSource
+End Property
+Public Property Get RowId() As String
+    RowId = mRowId
+End Property
+Public Property Get TableId() As String
+    TableId = mTableId
+End Property
+Public Property Get FieldId() As String
+    FieldId = mFieldId
+End Property
+Public Property Get CellRef() As String
+    CellRef = mCellRef
 End Property
 Public Property Get Start() As Long
     Start = mStart

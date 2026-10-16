@@ -16,8 +16,13 @@ Public Function AT_RuntimeSupports(ByVal node As ATAstNode) As Boolean
     For Each child In node.Children
         If Not AT_RuntimeTypeSupported(child.DataType) Then Exit Function
         If Len(child.ConversionNormalizerId) > 0 And child.ConversionNormalizerId <> "PORT_SET_V1" Then Exit Function
+        If AT_RuntimeRowCollection(child.DataType) Then
+            If node.PrimitiveId = "OP_EQUALS" Or node.PrimitiveId = "OP_NOT_EQUALS" Then Exit Function
+        End If
     Next child
     Select Case node.PrimitiveId
+        Case "ALLROWS", "ANYROW", "NOROWS", "FILTER", "COUNT", "EXISTS"
+            AT_RuntimeSupports = True
         Case "AND", "OR", "NOT", "COALESCE", "ADD", "SUBTRACT", "MULTIPLY", "DIVIDE", "REMAINDER", "UNARY_PLUS", "UNARY_MINUS", "OP_EQUALS", "OP_NOT_EQUALS", "GREATER", "LESS", "GREATER_EQUAL", "LESS_EQUAL", "BETWEEN"
             AT_RuntimeSupports = True
         Case "LOWER", "UPPER", "TRIM", "LEN", "STARTS_WITH", "ENDS_WITH", "CONTAINS", "ABS", "ROUND", "MIN", "MAX", "SUM", "AVG", "DATE_LITERAL", "TODAY", "DATE_DIFF", "IN", "ANY", "NONE", "COVER", "EXACT", "OVERLAPS", "INTERSECTS", "CONTAINED_BY"
@@ -25,11 +30,14 @@ Public Function AT_RuntimeSupports(ByVal node As ATAstNode) As Boolean
     End Select
 End Function
 Public Function AT_RuntimeTypeSupported(ByVal typeName As String) As Boolean
-    If AT_RuntimeScalarType(typeName) Or AT_RuntimeDomainType(typeName) Then
+    If AT_RuntimeScalarType(typeName) Or AT_RuntimeDomainType(typeName) Or AT_RuntimeRowCollection(typeName) Then
         AT_RuntimeTypeSupported = True
     ElseIf Left$(typeName, 5) = "LIST<" And Right$(typeName, 1) = ">" Then
         AT_RuntimeTypeSupported = AT_RuntimeScalarType(Mid$(typeName, 6, Len(typeName) - 6))
     End If
+End Function
+Public Function AT_RuntimeRowCollection(ByVal typeName As String) As Boolean
+    AT_RuntimeRowCollection = (Len(typeName) > 17 And Left$(typeName, 15) = "COLLECTION<ROW<" And Right$(typeName, 2) = ">>")
 End Function
 Public Function AT_Usable(ByVal value As ATRuntimeValue, ByVal node As ATAstNode, Optional ByVal budget As ATEvalBudget = Nothing) As ATEvalResult
     Dim i As Long, result As ATEvalResult

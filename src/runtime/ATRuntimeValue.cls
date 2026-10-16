@@ -12,6 +12,8 @@ Private mItems As Collection
 Private mInitialized As Boolean
 Private mDomain As ATIntervalSet
 Private mDeclarations As Collection
+Private mRows As Collection
+Private mRowTable As String
 
 Public Sub InitializeScalar(ByVal typeName As String, ByVal state As ATValueState, ByVal payload As Variant)
     If mInitialized Then Err.Raise vbObjectError + 2500, , "RUNTIME_VALUE_FROZEN"
@@ -61,9 +63,14 @@ End Property
 Public Property Get Scalar() As Variant
     If Not mInitialized Or mState <> atValuePresent Or Not mItems Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
     If Not mDomain Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
+    If Not mRows Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
     Scalar = mScalar
 End Property
 Public Property Get Count() As Long
+    If Not mRows Is Nothing Then
+        Count = mRows.Count
+        Exit Property
+    End If
     If mItems Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
     Count = mItems.Count
 End Property
@@ -74,7 +81,9 @@ End Function
 Public Function Clone() As ATRuntimeValue
     Dim result As New ATRuntimeValue
     If Not mInitialized Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
-    If Not mDomain Is Nothing Then
+    If Not mRows Is Nothing Then
+        result.InitializeRows mRowTable, mRows
+    ElseIf Not mDomain Is Nothing Then
         result.InitializeDomain mType, mDomain, mDeclarations
     ElseIf mItems Is Nothing Then
         result.InitializeScalar mType, mState, mScalar
@@ -88,6 +97,10 @@ Public Sub ValidateBudget(ByVal budget As ATEvalBudget)
     Dim item As ATRuntimeValue
     If mState <> atValuePresent Then Exit Sub
     If mType = "TEXT" Then budget.CheckText Len(mScalar)
+    If Not mRows Is Nothing Then
+        budget.CheckList mRows.Count
+        budget.Step mRows.Count
+    End If
     If Not mDomain Is Nothing Then
         budget.CheckList mDomain.Count
         budget.CheckList mDeclarations.Count
@@ -125,6 +138,35 @@ End Sub
 Public Property Get Domain() As ATIntervalSet
     If mDomain Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
     Set Domain = mDomain
+End Property
+
+Public Sub InitializeRows(ByVal tableId As String, ByVal rows As Collection)
+    Dim copy As New Collection, seen As New Collection, row As ATRuntimeRow, ignored As String, duplicate As Boolean
+    If mInitialized Then Err.Raise vbObjectError + 2500, , "RUNTIME_VALUE_FROZEN"
+    tableId = AT_CanonicalId(tableId)
+    For Each row In rows
+        If row Is Nothing Then BadType
+        If row.TableId <> tableId Then BadType
+        On Error Resume Next
+        ignored = seen(row.RowId)
+        duplicate = Err.Number = 0
+        Err.Clear
+        On Error GoTo 0
+        If duplicate Then Err.Raise vbObjectError + 2701, , "RUNTIME_DUPLICATE_ROW"
+        seen.Add row.RowId, row.RowId
+        copy.Add row.Snapshot
+    Next row
+    Set mRows = copy
+    mRowTable = tableId: mType = "COLLECTION<ROW<" & tableId & ">>"
+    mState = atValuePresent: mInitialized = True
+End Sub
+Public Function Row(ByVal index As Long) As ATRuntimeRow
+    If mRows Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
+    Set Row = mRows(index)
+End Function
+Public Property Get RowTableId() As String
+    If mRows Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
+    RowTableId = mRowTable
 End Property
 Public Property Get DeclarationKeys() As Collection
     Dim copy As New Collection, key As Variant

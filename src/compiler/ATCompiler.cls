@@ -70,7 +70,7 @@ End Function
 
 Private Function CheckNode(ByVal node As ATAstNode, ByVal aliases As Collection, ByVal parameters As Collection) As String
     Dim types As New Collection, child As ATAstNode
-    Dim definition As ATFieldDefinition, primitive As ATPrimitive
+    Dim definition As ATFieldDefinition, primitive As ATPrimitive, aliasDefinition As ATFieldDefinition
     Dim typeName As String, item As Variant, contextualIndex As Long
     Set mCurrent = node
     node.SourceId = mSourceId
@@ -84,6 +84,17 @@ Private Function CheckNode(ByVal node As ATAstNode, ByVal aliases As Collection,
         Case "BOOL": typeName = "BOOL"
         Case "FIELD"
             Set definition = mResolver.ResolveField(node.Text, mContext, aliases)
+            node.FieldId = definition.Id
+            node.TableId = definition.TableId
+            If Len(definition.TableId) > 0 Then
+                If InStr(node.Text, ".") > 0 Then
+                    node.RowAlias = Split(node.Text, ".")(0)
+                Else
+                    For Each aliasDefinition In aliases
+                        If aliasDefinition.TableId = definition.TableId Then node.RowAlias = aliasDefinition.Id
+                    Next aliasDefinition
+                End If
+            End If
             typeName = definition.TypeName
             mResult.Dependencies.Add "FIELD:" & definition.TableId & ":" & definition.Id, Owner()
         Case "LIST"
@@ -275,6 +286,7 @@ Private Function CheckNamed(ByVal node As ATAstNode, ByVal aliases As Collection
     Next parameter
     Set definition = mContext.FindNamed(node.Text)
     If definition Is Nothing Then Err.Raise vbObjectError + 2351, "ATCompiler", "RESOLVE_UNKNOWN_NAMED: " & node.Text
+    node.NamedScope = definition.Scope
     If definition.Status = "DEPRECATED" Then
         Set warning = New ATDiagnostic
         warning.Initialize "NAMED_DEPRECATED", "SEMANTIC", "WARNING", node.Start, node.Length, "Deprecated named expression " & node.Text & "; replacement: " & definition.ReplacedBy

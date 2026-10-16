@@ -1,0 +1,71 @@
+﻿param([Parameter(Mandatory=$true)][string]$PackageDirectory, [Parameter(Mandatory=$true)][string]$RunDirectory)
+Set-StrictMode -Version Latest
+$ErrorActionPreference = 'Stop'
+$excel = $null; $addin = $null; $request = $null; $copy = $null; $exitCode = 1; $passed = 0
+try {
+    Add-Type -TypeDefinition @'
+using System;
+using System.Runtime.InteropServices;
+public static class ATPilotExcelProcess {
+    [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint processId);
+}
+'@
+    $installParent = Join-Path $RunDirectory 'install'
+    New-Item -ItemType Directory -Path $installParent | Out-Null
+    $install = Join-Path $installParent 'AccessTools'
+    Copy-Item -LiteralPath $PackageDirectory -Destination $install -Recurse
+    $manifest = Get-Content -LiteralPath (Join-Path $install 'manifest.json') -Raw -Encoding UTF8 | ConvertFrom-Json
+    $excel = New-Object -ComObject Excel.Application
+    $excel.Visible = $false; $excel.DisplayAlerts = $false; $excel.AskToUpdateLinks = $false
+    [uint32]$ownedId = 0
+    [void][ATPilotExcelProcess]::GetWindowThreadProcessId([intptr]$excel.Hwnd, [ref]$ownedId)
+    if ($ownedId -eq 0) { throw 'PILOT_OWNERSHIP' }
+    $owned = Get-Process -Id $ownedId
+    @{Id=$ownedId;StartTicks=$owned.StartTime.ToUniversalTime().Ticks} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $RunDirectory 'excel-process.json')
+    $addin = $excel.Workbooks.Open((Join-Path $install 'AccessTools.xlam'), 0, $true)
+    if (-not $addin.IsAddin -or $addin.FileFormat -ne 55) { throw 'PILOT_LOADED_FORMAT' }; $passed++
+    $macro = "'$($addin.Name)'!"
+    $identity = [string]$excel.Run($macro + 'AT_PackageIdentity')
+    if ($identity -cne "$($manifest.Version)|$($manifest.ReleaseId)|COORDINATOR|$($manifest.Commit)" -or $identity -match 'DEV') { throw 'PILOT_LOADED_IDENTITY' }; $passed++
+    if ([string]$excel.Run($macro + 'AT_PackageInstalledCode') -ne '') { throw 'PILOT_LOADED_METADATA' }; $passed++
+    foreach ($book in $excel.Workbooks) { if ($book.Name -ne $addin.Name) { throw 'PILOT_STARTUP_OPENED_BOOKS' } }; $passed++
+    $names = @($addin.VBProject.VBComponents | ForEach-Object { $_.Name })
+    if (@($names | Where-Object { $_ -like '*Test*' }).Count -gt 0) { throw 'PILOT_TEST_MODULE_LEAK' }; $passed++
+    $code = $addin.VBProject.VBComponents.Item('modATNetworkCommand').CodeModule
+    $text = $code.Lines(1, $code.CountOfLines)
+    if ($text -notmatch 'Public Sub AT_RibbonCheck' -or $text -notmatch 'Public Sub AT_RibbonSave') { throw 'PILOT_CALLBACK_MISSING' }; $passed++
+    $versionPath = Join-Path $install 'VERSION.txt'
+    [IO.File]::WriteAllText($versionPath, 'wrong-version')
+    if ([string]$excel.Run($macro + 'AT_PackageInstalledCode') -ne 'PACKAGE_MISMATCH') { throw 'PILOT_MIXED_VERSION_ACCEPTED' }; $passed++
+    [IO.File]::WriteAllText($versionPath, $manifest.Version)
+    $demo = Join-Path $install 'Пример'
+    $request = $excel.Workbooks.Open((Join-Path $demo 'Заявка-пример.xlsx'), 0, $true)
+    $before = $excel.Workbooks.Count
+    [void]$excel.Run($macro + 'AT_CommandExecute', $request.Worksheets.Item(1), (Join-Path $demo '01_Правила_NETWORK_ACCESS.xlsx'), (Join-Path $demo 'Выгрузка-Superset.xlsx'), 'PILOT_SMOKE', '2026-10-17', 'Europe/Moscow')
+    $saved = [string]$excel.Run($macro + 'AT_CommandSave', $RunDirectory)
+    if (-not (Test-Path -LiteralPath (Join-Path $saved 'Отчёт-проверок.xlsx')) -or -not (Test-Path -LiteralPath (Join-Path $saved 'Сводка-координатора.xlsx'))) { throw 'PILOT_OUTPUTS_MISSING' }; $passed++
+    if ($excel.Workbooks.Count -ne $before + 2 -or -not $request.ReadOnly -or -not $request.Saved) { throw 'PILOT_BOOK_OWNERSHIP' }; $passed++
+    $copy = $excel.Workbooks.Open((Join-Path $saved 'Сводка-координатора.xlsx'), 0, $true)
+    if ($copy.Worksheets.Count -ne 2 -or $copy.Worksheets.Item(1).Cells.Item(6,5).Value2 -ne 'Сервис из правил' -or $copy.Worksheets.Item(1).Cells.Item(6,6).Value2 -notlike '*Техническая инструкция*') { throw 'PILOT_OUTPUT_CONTENT' }; $passed++
+    $copy.Close($false); $copy = $null
+    foreach ($item in $manifest.Files) {
+        if ((Get-FileHash -LiteralPath (Join-Path $install $item.Path)).Hash -cne $item.SHA256) { throw 'PILOT_INPUT_CHANGED' }
+    }; $passed++
+    @{Passed=$passed;Failed=0;Identity=$identity;Saved=$saved;Modules=$names} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $RunDirectory 'smoke.json') -Encoding UTF8
+    "Pilot installed XLAM: $passed PASS / 0 FAIL"
+    $exitCode = 0
+} catch { Write-Output ('PILOT_SMOKE_FAILED: ' + $_.Exception.Message) }
+finally {
+    if ($copy) { try { $copy.Close($false) } catch {} }
+    if ($request) { try { $request.Close($false) } catch {} }
+    if ($excel) {
+        try { for ($i=$excel.Workbooks.Count; $i -ge 1; $i--) { $excel.Workbooks.Item($i).Close($false) } } catch {}
+    }
+    if ($addin) { try { $addin.Close($false) } catch {} }
+    if ($excel) { try { $excel.Quit() } catch {} }
+    foreach ($obj in @($copy,$request,$addin,$excel)) {
+        if ($null -ne $obj -and [Runtime.InteropServices.Marshal]::IsComObject($obj)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($obj) }
+    }
+    [GC]::Collect(); [GC]::WaitForPendingFinalizers()
+}
+exit $exitCode

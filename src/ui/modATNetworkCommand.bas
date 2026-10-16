@@ -59,6 +59,7 @@ Public Sub ПроверитьСвязанности()
     Dim profile As ATTemplateProfile, decision As ATTemplateGateResult, previousStatus As Variant
     Dim previousScreen As Boolean, runId As String, runDate As String, timezoneId As String, message As String
     If mBusy Then Exit Sub
+    If Not AT_PackageAllowCommand() Then Exit Sub
     mBusy = True: previousStatus = Application.StatusBar: previousScreen = Application.ScreenUpdating
     On Error GoTo Failed
     AT_CommandReset
@@ -106,9 +107,16 @@ End Sub
 
 Public Sub СохранитьРезультатыСвязанностей()
     If mBusy Then Exit Sub
+    If Not AT_PackageAllowCommand() Then Exit Sub
     mBusy = True
     SaveCurrent
     mBusy = False
+End Sub
+Public Sub AT_RibbonCheck(ByVal control As Object)
+    ПроверитьСвязанности
+End Sub
+Public Sub AT_RibbonSave(ByVal control As Object)
+    СохранитьРезультатыСвязанностей
 End Sub
 Private Function ChooseSource(ByVal title As String) As String
     Dim choice As Variant

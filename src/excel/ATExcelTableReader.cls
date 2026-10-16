@@ -42,7 +42,7 @@ Public Function Read(ByVal ws As Worksheet, ByVal layout As ATExcelTableLayout, 
                 End If
                 raw = data(anchorsR(i) - firstRow + 1, anchorsC(i) - firstCol + 1)
                 values(i) = raw
-                refs(i) = CellReference(ws.Name, anchorsR(i), anchorsC(i))
+                refs(i) = AT_ExcelCellReference(ws.Name, anchorsR(i), anchorsC(i))
                 If Not AT_ExcelBlank(raw) Then
                     If layout.Usage(i) = "INHERITED" Or (layout.Usage(i) = "DIRECT" And anchorsR(i) = r) Then used = True
                 End If
@@ -117,12 +117,3 @@ Private Function FindPreviousValue(ByVal scan As Range, ByVal after As Range) As
     Set FindPreviousValue = scan.Find(What:="*", After:=after, LookIn:=xlValues, LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlPrevious, MatchCase:=False, MatchByte:=False, SearchFormat:=False)
 End Function
 
-Private Function CellReference(ByVal sheetName As String, ByVal rowNumber As Long, ByVal columnNumber As Long) As String
-    Dim letters As String, remainder As Long
-    Do While columnNumber > 0
-        remainder = (columnNumber - 1) Mod 26
-        letters = Chr$(65 + remainder) & letters
-        columnNumber = (columnNumber - 1) \ 26
-    Loop
-    CellReference = "'" & Replace(sheetName, "'", "''") & "'!" & letters & CStr(rowNumber)
-End Function

@@ -46,3 +46,13 @@ Public Function AT_ExcelBlock(ByVal area As Range) As Variant
         AT_ExcelBlock = data
     End If
 End Function
+
+Public Function AT_ExcelCellReference(ByVal sheetName As String, ByVal rowNumber As Long, ByVal columnNumber As Long) As String
+    Dim letters As String, remainder As Long
+    Do While columnNumber > 0
+        remainder = (columnNumber - 1) Mod 26
+        letters = Chr$(65 + remainder) & letters
+        columnNumber = (columnNumber - 1) \ 26
+    Loop
+    AT_ExcelCellReference = "'" & Replace(sheetName, "'", "''") & "'!" & letters & CStr(rowNumber)
+End Function

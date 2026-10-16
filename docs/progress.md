@@ -109,3 +109,23 @@ coordinator/UI items remain explicit pending first-use requirements; no correctn
 Clean-checkout fields acceptance:1a97f21 cloned without hardlinks into AccessTools-v2-fields-verify;
 CompilePASS9796/0, catalogmatch, static7/7, reportexcel-8c40967230df469bbdc205a7f2c64558.
 No legacy source or old generated artifacts required.
+
+## Revised TZ / Superset enrichment 2026-10-16
+
+Fetched current and immediately previous Drive revisions of v0.13. Previous matches cached
+162214 chars; current163176 chars modified2026-10-16T10:34:07.429Z. Delta: SKUF group and
+support team from actual visible linked Superset rows, header whitespace tolerance, expanded
+real-app smoke acceptance. Old baseline85/0/0 is explicitly not v2 evidence. Current local TZ
+cache updated, previous preserved outside public repo. No private old code/data copied.
+Ruling: implement revised enrichment contract now; pending template fingerprint remains scheduled.
+Branch feat/superset-enrichment based0aef522. Fresh baseline9796/0 reportexcel-1f8b2723714d4914ab3fa34b1719bab2.
+Text-set/bucket missing-class RED ->9809/0, reportexcel-8dc3cc540ab84b5e8823168c3e6c47cb.
+Visible linked adapter missing-class RED ->9834/0; expanded ids/schema/Cyrillic/long-prefix
+coverage ->CompilePASS9845/0, reportexcel-da4bf09d1a7249998cc068d00a735f61. Source snapshot
+copied once; number canonicalization linear. Static7/7, gate9/9, catalogmatch.
+Fresh independent review: no requested changes; trim semantics clarified in spec. Declined
+items are explicit pending pipeline/release scope; combined maximum-limit performance not
+measured, bounded work limit tested. No correctness findings deferred.
+Clean-checkout enrichment acceptance:69e03d2 cloned without hardlinks into AccessTools-v2-enrichment-verify.
+CompilePASS9845/0, catalogmatch, static7/7; reportexcel-e9a8f1184d4a4fc19e51b8fb91314262.
+No old artifacts or private runtime checkout required.

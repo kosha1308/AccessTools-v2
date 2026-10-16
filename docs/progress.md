@@ -314,3 +314,30 @@ final coordinator workbook/UI/package remain pending; this is not user-ready v2.
 Clean checkout b2d1ca4: CompilePASS10814/0 default60s, static7/7, reportexcel-
 de731ec2b8af4906a633ecc338e528e5. Final actual RulebookReadOnly3/0 reportexcel-
 516ef4a7ca904ceb8f8e275943470410, SHA256unchanged.
+
+## Technical Rulebook check integration 2026-10-16
+
+Base648ea41/PR18. ATNetworkRuleChecks adapter, NET.IP_EXCEPTIONS messages with
+full technical context, outputs/instructions/source refs, explicit conflicts.
+Literal request protocol splitter/dedup reuses existing delimiter semantics.
+Unknown/Excel-error contexts incomplete; empty table notPASS, full ports only.
+New RunWithRules preserves original Run13 and adds14th outcome, Russian Excel
+labels/writer path. Rule hits/conflicts default coordinator-only/non-user errors;
+explicit catalog/routes override. Message/component limits replace partial new
+hits with BLOCKED, independent previous13 remain.
+RED10175/2 ->10836/1: remaining failure was fixture Excel coercion443,9000 to4439000,
+diagnosed and text format fixed; no product parser weakening ->10841/0.
+Fresh review2 Important reproduced10841/2: severity downgrade could hide incomplete,
+custom message expansion could erase13. Immutable Incomplete optionaldefaultFalse,
+independent rule presentation and report/decision merge preserve completed results.
+Reverse severity upgrade regression10844/1 ->10845/0 CompilePASS. Each final issue
+formatted once; previous formatted issues never re-enter template expansion.
+Original 13-check algorithms unchanged; defaultFalse preserves old outcome behavior.
+Actual original empty template and Rulebook ReadOnly6/0: first13 statuses/errors
+identical, new14, writer separate workbook; bothSHA256 unchanged.
+Scope stays NETWORK_ACCESS_PARTIAL_POLICY. Hostname/Superset context, shared
+source index/matcher/cache, final coordinator workbook and package still pending.
+Final clean checkouta098fea: CompilePASS10845/0 default60s, static7/7,
+reportexcel-8dee5743a93d46bf8db0066fce7a05e7. ExcelGate9/9.
+Final actual ReadOnly6/0 reportexcel-8c3ca339d69b48d0a836d9152853f633,
+bothSHA256unchanged. Standard suite no private inputs.

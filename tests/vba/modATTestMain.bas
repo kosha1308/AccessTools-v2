@@ -51,6 +51,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestRowBinding
     AT_TestRowModel
     AT_TestRowEval
+    AT_TestTrace tracePath, "excel-locator"
+    AT_TestExcelLocator
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

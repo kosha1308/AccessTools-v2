@@ -15,6 +15,7 @@ Public Function Read(ByVal ws As Worksheet, ByVal spec As ATExcelFieldSpec) As A
     id = spec.FieldId: spec.Validate
     If ws Is Nothing Then Err.Raise vbObjectError + 2810, , "EXCEL_FIELD_SHEET_REQUIRED"
     sheetName = ws.Name: key = AT_ExcelHeader(spec.AnchorText)
+    CheckLeadingMerges ws, spec, key
     data = AT_ExcelBlock(ws.Range(ws.Cells(spec.FirstRow, spec.FirstColumn), ws.Cells(spec.LastRow, spec.LastColumn)))
     For r = 1 To UBound(data, 1)
         For c = 1 To UBound(data, 2)
@@ -61,3 +62,43 @@ Failed:
     Set result = AT_RuntimeFailure(atEvalError, code, Nothing)
     Resume BuildValue
 End Function
+
+Private Sub CheckLeadingMerges(ByVal ws As Worksheet, ByVal spec As ATExcelFieldSpec, ByVal key As String)
+    Dim edge As Range, probes As Long
+    Set edge = ws.Range(ws.Cells(spec.FirstRow, spec.FirstColumn), ws.Cells(spec.FirstRow, spec.LastColumn))
+    CheckEdge edge, True, spec, key, probes
+    If spec.LastRow > spec.FirstRow Then
+        Set edge = ws.Range(ws.Cells(spec.FirstRow + 1, spec.FirstColumn), ws.Cells(spec.LastRow, spec.FirstColumn))
+        CheckEdge edge, False, spec, key, probes
+    End If
+End Sub
+
+Private Sub CheckEdge(ByVal edge As Range, ByVal horizontal As Boolean, ByVal spec As ATExcelFieldSpec, ByVal key As String, ByRef probes As Long)
+    Dim mergeState As Variant, position As Long, count As Long, area As Range, raw As Variant
+    mergeState = edge.MergeCells
+    If Not IsNull(mergeState) Then
+        If Not CBool(mergeState) Then Exit Sub
+    End If
+    position = 1
+    If horizontal Then count = edge.Columns.Count Else count = edge.Rows.Count
+    Do While position <= count
+        probes = probes + 1
+        If probes > 10000 Then Err.Raise vbObjectError + 2810, , "EXCEL_FIELD_MERGE_LIMIT"
+        If horizontal Then
+            Set area = edge.Cells(1, position).MergeArea
+        Else
+            Set area = edge.Cells(position, 1).MergeArea
+        End If
+        If area.Row < spec.FirstRow Or area.Column < spec.FirstColumn Then
+            raw = area.Cells(1, 1).Value2
+            If Not IsError(raw) Then
+                If AT_ExcelHeader(AT_ExcelText(raw)) = key Then Err.Raise vbObjectError + 2810, , "EXCEL_MERGE_BOUNDS"
+            End If
+        End If
+        If horizontal Then
+            position = area.Column + area.Columns.Count - edge.Column + 1
+        Else
+            position = area.Row + area.Rows.Count - edge.Row + 1
+        End If
+    Loop
+End Sub

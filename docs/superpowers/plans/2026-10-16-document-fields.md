@@ -10,6 +10,7 @@
 ## Global Constraints
 
 Baseline9733/0. No input mutation. All raw fields TEXT. Search<=1000000 cells.
+Boundary merge metadata probes<=10000 (review fix; unrelated partial labels remain missing).
 No release claim; first-use still requires full NETWORK_ACCESS+Superset+coordinator.
 
 ## Review Focus

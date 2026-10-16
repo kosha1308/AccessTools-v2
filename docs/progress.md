@@ -91,3 +91,18 @@ Clean-checkout acceptance: e23614e cloned without hardlinks into AccessTools-v2-
 CompilePASS9733/0, catalogmatch and static7/7; reportexcel-f960b4c08d56499285469391d3fd9660.
 Build uses only this repository, without old artifacts/private sources. Local clone required
 existing elevated process permission after ordinary sandbox blocked Git's helper process.
+
+## Document fields 2026-10-16
+
+Branch feat/document-fields based1401791. Fresh baseline9733/0, reportexcel-a2b88bcc7ede46a58d3a9ba675bc3fae.
+Immutable external field specs/results and bounded locator with signed offsets from merged
+boundaries; raw TEXT and Found/MISSING/EMPTY/ERROR metadata. Shared source-cell helper.
+Missing-class RED ->9774/0; optional document AddField CellRef missing-API RED ->9787/0.
+Document Snapshot and evaluation trace preserve source cell, distinct from active row fields;
+ERROR, lazy OR and metadata text budgets covered.
+Fresh independent reviewer: one Important partial merged anchor crossing left/top search edge.
+Real Excel9788/2 RED ->9792/0 with bounded leading-edge metadata validation. Added metadata
+limit/reuse/frozen spec coverage ->CompilePASS9796/0, reportexcel-d2b1d72852b04ba791a94f6219a681a6.
+Static7/7, gate9/9, catalogmatch. Boundary merge probing<=10000, unchanged plain edges skipped
+in one query. Ruling: all declined production profile/fingerprint/normalizers/rulebook/Superset/
+coordinator/UI items remain explicit pending first-use requirements; no correctness findings deferred.

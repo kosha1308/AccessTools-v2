@@ -69,6 +69,17 @@ Public Sub AT_TestExcelFields()
     Set spec = AT_TestExcelFieldSpec("BOUNDS_RAW", "email address", 4, 4, 4, 6, 1, 0)
     Set value = reader.Read(ws, spec)
     AT_Assert value.Result.Diagnostics(1).Code = "EXCEL_MERGE_BOUNDS", "anchor merge cannot escape search bounds"
+    Set spec = AT_TestExcelFieldSpec("BOUNDS_RAW", "email address", 4, 5, 5, 6, 0, 1)
+    Set value = reader.Read(ws, spec)
+    AT_Assert value.Result.State = atEvalError, "left edge inside anchor merge is not missing"
+    If value.Result.State = atEvalError Then AT_Assert value.Result.Diagnostics(1).Code = "EXCEL_MERGE_BOUNDS", "left partial anchor merge stable error"
+    Set spec = AT_TestExcelFieldSpec("BOUNDS_RAW", "email address", 5, 5, 4, 6, 0, 1)
+    Set value = reader.Read(ws, spec)
+    AT_Assert value.Result.State = atEvalError, "top edge inside anchor merge is not missing"
+    If value.Result.State = atEvalError Then AT_Assert value.Result.Diagnostics(1).Code = "EXCEL_MERGE_BOUNDS", "top partial anchor merge stable error"
+    Set spec = AT_TestExcelFieldSpec("OTHER_RAW", "unrelated label", 5, 5, 4, 6, 0, 1)
+    Set value = reader.Read(ws, spec)
+    AT_Assert value.Result.State = atEvalOK And value.Result.Value.ValueState = atValueMissing, "unrelated partial merge does not supply an absent anchor"
     ws.Range("A20").Value2 = "Edge"
     Set spec = AT_TestExcelFieldSpec("EDGE_RAW", "Edge", 20, 20, 1, 1, 0, -1)
     Set value = reader.Read(ws, spec)
@@ -109,4 +120,17 @@ Private Sub AT_TestExcelBadFieldSpecs(ByVal reader As ATExcelFieldReader, ByVal 
     AT_Assert value.Result.State = atEvalError, "uninitialized spec controlled error"
     Set value = reader.Read(ws, Nothing)
     AT_Assert value.Result.State = atEvalError, "missing spec controlled error"
+    ws.Range("A15000:A15001").Merge
+    Set spec = AT_TestExcelFieldSpec("LIMIT_RAW", "absent", 100, 20100, 1, 2, 0, 1)
+    Set value = reader.Read(ws, spec)
+    AT_Assert value.Result.State = atEvalError, "large mixed merge edge bounded before full scan"
+    If value.Result.State = atEvalError Then AT_Assert value.Result.Diagnostics(1).Code = "EXCEL_FIELD_MERGE_LIMIT", "merge metadata budget stable code"
+    ws.Range("A15000:A15001").UnMerge
+    Set value = reader.Read(ws, spec)
+    AT_Assert value.Result.State = atEvalOK And value.Result.Value.ValueState = atValueMissing, "reader reuse and unmerged long edges avoid cell probes"
+    On Error Resume Next
+    spec.Initialize "NEW", "Other", 1, 1, 1, 1, 0, 1
+    caught = Err.Number <> 0: Err.Clear
+    On Error GoTo 0
+    AT_Assert caught And spec.FieldId = "LIMIT_RAW", "field spec cannot be changed after initialization"
 End Sub

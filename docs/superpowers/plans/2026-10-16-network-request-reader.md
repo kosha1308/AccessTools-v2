@@ -25,8 +25,8 @@ tests/vba/modATExcelFieldTests.bas and new modATNetworkReadTests.bas.
 Interfaces: FieldValue.RawValue2 As Variant scalar, optional rawValue2 in Friend Initialize;
 AT_NetworkDocumentFieldsV3() As Collection; AT_NetworkTechnicalSpecV3/AddressSpecV3()
 As ATExcelTableSpec with RAW field/table IDs fixed by spec. Profile and readers share header arrays.
-- [ ] RED native scalar CVErr/numeric/closure immutability and metadata factory tests.
-- [ ] Implement scalar retention and metadata factories, full Excel GREEN, commit.
+- [x] RED native scalar CVErr/numeric/closure immutability and metadata factory tests.
+- [x] Implement scalar retention and metadata factories, full Excel GREEN, commit.
 
 ### Task2 — verified extraction and runtime context
 
@@ -34,12 +34,12 @@ Files: src/templates/ATNetworkReadResult.cls, ATNetworkRequestReader.cls;
 tests/vba/modATNetworkReadTests.bas; main.
 Interfaces: Reader.Read(ws,runId,runDate,timezoneId) As ATNetworkReadResult;
 result.State/Diagnostics/Context, initialized once, Context only when OK and immutable.
-- [ ] RED synthetic full form: all11fields, doc/table cell refs, fresh upper/lower bounds,
+- [x] RED synthetic full form: all11fields, doc/table cell refs, fresh upper/lower bounds,
   merged spacers, CVErr, EMPTY vs serial/date1904, no partial context after structural/bounds error,
   context validation, rerun, source unchanged/closed and compiled DSL over extracted tables.
-- [ ] Implement Verify-first raw context, full GREEN; independent review, fix Important RED/GREEN.
+- [x] Implement Verify-first raw context, full GREEN; independent review, fix Important RED/GREEN.
   Static7/7, gate9/9, actual original read-only acceptance with unchanged hash, clean checkout.
-- [ ] Russian status/checklist; new feature branch draft PR against feat/template-gate,
+- [x] Russian status/checklist; new feature branch draft PR against feat/template-gate,
   attach and confirm latest-head CI. No merge/release.
 
 Pre-flight: Task1 metadata/native type consumed by Task2; no generic runtime behavior changes.

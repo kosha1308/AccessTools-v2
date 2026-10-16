@@ -163,3 +163,4 @@ Actual source XLSX opened ReadOnly, unified extraction OK|TECH=0|ADDR=0|DB='Ли
 full9941/0 reportexcel-a914b7b0fcb94b6fb4e9d5efd3e5495b. Source SHA256 unchanged
 21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7.
 Static tooling7/7. Raw snapshot only; normalization/business checks/full release remain pending.
+Clean checkout e2bbfd1 cloned without hardlinks to AccessTools-v2-request-verify: CompilePASS9941/0, static7/7, reportexcel-a484ff4fc4364d4790d4966d64a23980. Excel gate integration9/9. No private reference required for normal tests.

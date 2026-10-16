@@ -34,7 +34,7 @@ Public Function Create(ByVal report As ATCheckReport, ByVal source As Worksheet)
     Header view.Range("A9:F9")
     For i = 1 To issues.Count
         Set issue = issues(i): row = i + 9
-        view.Cells(row, 1).Resize(1, 6).Value2 = Array(CStr(i), AT_SeverityTitle(issue.Severity), AT_CheckTitle(issue.CheckId), AT_FieldTitle(issue.FieldId), issue.Message, issue.CellRef)
+        view.Cells(row, 1).Resize(1, 6).Value2 = Array(CStr(i), AT_SeverityTitle(issue.Severity), AT_CheckTitle(issue.CheckId), AT_FieldTitle(issue.FieldId), Literal(issue.Message), Literal(issue.CellRef))
         Shade view.Cells(row, 1).Resize(1, 6), i
         If issue.Severity = "ERROR" Then
             view.Cells(row, 2).Interior.Color = RGB(252, 228, 228): view.Cells(row, 2).Font.Color = RGB(156, 0, 6)
@@ -44,10 +44,10 @@ Public Function Create(ByVal report As ATCheckReport, ByVal source As Worksheet)
         ref = TrustedAddress(source, issue.CellRef)
         If Len(ref) > 0 Then
             If Len(source.Parent.Path) > 0 Then
-                view.Hyperlinks.Add Anchor:=view.Cells(row, 6), Address:=source.Parent.FullName, SubAddress:=issue.CellRef, TextToDisplay:=issue.CellRef
+                view.Hyperlinks.Add Anchor:=view.Cells(row, 6), Address:=source.Parent.FullName, SubAddress:=issue.CellRef, TextToDisplay:=Literal(issue.CellRef)
             Else
                 target = "'[" & Replace(source.Parent.Name, "'", "''") & "]" & Replace(source.Name, "'", "''") & "'!" & ref
-                view.Hyperlinks.Add Anchor:=view.Cells(row, 6), Address:="", SubAddress:=target, TextToDisplay:=issue.CellRef
+                view.Hyperlinks.Add Anchor:=view.Cells(row, 6), Address:="", SubAddress:=target, TextToDisplay:=Literal(issue.CellRef)
             End If
         End If
     Next i
@@ -61,7 +61,7 @@ Public Function Create(ByVal report As ATCheckReport, ByVal source As Worksheet)
     checks.Range("A4:C4").Value2 = Array("Проверка", "Результат", "Причина / пояснение"): Header checks.Range("A4:C4")
     For i = 1 To outcomes.Count
         Set outcome = outcomes(i): row = i + 4
-        checks.Cells(row, 1).Resize(1, 3).Value2 = Array(AT_CheckTitle(outcome.CheckId), AT_StatusTitle(outcome.Status), outcome.Reason)
+        checks.Cells(row, 1).Resize(1, 3).Value2 = Array(AT_CheckTitle(outcome.CheckId), AT_StatusTitle(outcome.Status), Literal(outcome.Reason))
         Shade checks.Cells(row, 1).Resize(1, 3), i
     Next i
     If outcomes.Count > 0 Then checks.Range("A5:C" & CStr(outcomes.Count + 4)).Rows.AutoFit
@@ -77,6 +77,10 @@ Failed:
     If armed Then Application.EnableEvents = previousEvents
     On Error GoTo 0
     Err.Raise vbObjectError + 2960, "ATExcelReportWriter", "REPORT_CREATE_FAILED"
+End Function
+Private Function Literal(ByVal text As String) As String
+    If Left$(text, 1) = "'" Then text = "'" & text
+    Literal = text
 End Function
 Private Sub Prepare(ByVal ws As Worksheet, ByVal lastRow As Long, ByVal lastColumn As Long)
     With ws.Range(ws.Cells(1, 1), ws.Cells(lastRow, lastColumn))

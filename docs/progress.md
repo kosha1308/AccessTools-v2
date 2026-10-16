@@ -197,3 +197,25 @@ full10381/0 reportexcel-c1e999ffef3b42cb904c8eece4f1bc47. Source SHA256 unchange
 21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7. Static7/7.
 Full table checks, source lookups, dispatcher/Rulebook UI, Superset and coordinator writer/package remain pending.
 Clean checkoutbec2fd4 cloned without hardlinks into AccessTools-v2-document-checks-verify: CompilePASS10381/0, static7/7, reportexcel-d8ed8e2ee472479eb1e5b3f26b17009c. Standard suite needs no private original. Excel gate integration9/9.
+
+## Table input checks + Russian workbook report 2026-10-16
+
+Basef5e3204. Task1 missing-class RED; reserved local identifier renamed. FirstGREEN10403/0.
+Separator-only protocol reproduction10403/1 ->explicit no-token rejection ->10404/0
+reportexcel-a353bd6288bb4c4cbb5c159bac2ab357. Task2 missing writer class RED ->10424/0
+reportexcel-35e448f10bd2461a87ae496d97b03f8e. Native hyperlink Follow verified actual
+owned unsaved source/A5. Writer no original mutation, literal formula-like text,
+foreign refs, copied report, events restoration/repeat verified.
+Fresh whole-branch review found inappropriate IP tokenizer joining hyphenated protocol
+words. Visual QA found lost opening apostrophe in ref text. Reproduced10426/4 ->
+protocol-only splitter + literal prefix escaping ->CompilePASS10430/0. No core parser changes.
+Actual original ReadOnly: STATE=0|CHECKS=9|ERRORS=6|WARNINGS=2|LINKS=8; unchangedSHA256
+21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7.
+Final acceptance/sample/report-preview artifacts:excel-91d53946b05b46d49a3a99d08b47c75c.
+Two-page native Excel print export rendered with bundled pypdfium2 and inspected;
+readable, no clipping, full Russian labels, scope disclaimer. Private QA exports only.
+Static tooling7/7. Review finding resolved; no correctness finding deferred.
+Rulings: native VBA writer is application implementation tested in required Excel engine;
+print/XLSX examples are QA intermediates, not standalone artifact-tool deliverables.
+Conservative group/manual and explicit protocol catalog semantics retained. Exact
+TOP-LOWER, Rulebook/source loaders, Superset/coordinator and app package still pending.

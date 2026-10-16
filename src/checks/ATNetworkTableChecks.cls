@@ -61,7 +61,7 @@ Public Function Run(ByVal source As ATNetworkReadResult, ByVal allowedProtocols 
             Set row = raw.Row(i): Set value = row.ResolveField("PROTOCOL_RAW")
             If value.State = atEvalOK Then
                 If value.Value.ValueState = atValuePresent Then
-                    Set tokens = AT_DomainTokens(CStr(value.Value.Scalar), False, budget)
+                    Set tokens = ProtocolTokens(CStr(value.Value.Scalar), budget)
                     If tokens.Count = 0 Then AddIssue issues, "NET.PROTOCOLS", "PROTOCOL_INVALID", "ERROR", "TECH_PROTOCOL", row.CellRef("PROTOCOL_RAW"), "Укажите протокол, а не только разделители."
                     For Each token In tokens
                         If Not HasProtocol(catalog, AT_AsciiCase(CStr(token), True)) Then
@@ -92,6 +92,22 @@ Failed:
     code = AT_StableErrorCode(Err.Description, "NETWORK_TABLE_INPUT_INVALID")
     If Left$(code, 7) <> "CONFIG_" And Left$(code, 14) <> "RUNTIME_LIMIT_" And code <> "CHECK_REPORT_LIMIT" Then code = "NETWORK_TABLE_INPUT_INVALID"
     Set Run = Blocked(code, "Не удалось завершить проверки таблиц. Проверьте данные и справочник протоколов.")
+End Function
+Private Function ProtocolTokens(ByVal text As String, ByVal budget As ATEvalBudget) As Collection
+    Dim result As New Collection, i As Long, start As Long, ch As String, separator As Boolean
+    budget.CheckText Len(text)
+    For i = 1 To Len(text) + 1
+        budget.Step: ch = Mid$(text, i, 1)
+        separator = (Len(ch) = 0 Or InStr(1, ",;| " & vbTab & vbCr & vbLf, ch, vbBinaryCompare) > 0)
+        If separator Then
+            If start > 0 Then
+                budget.CheckList result.Count + 1: result.Add Mid$(text, start, i - start): start = 0
+            End If
+        ElseIf start = 0 Then
+            start = i
+        End If
+    Next i
+    Set ProtocolTokens = result
 End Function
 Private Sub CheckIP(ByVal raw As ATRuntimeRow, ByVal typed As ATRuntimeRow, ByVal rawId As String, ByVal id As String, ByVal checkId As String, ByVal issues As Collection, ByRef manual As Boolean, ByVal budget As ATEvalBudget)
     Dim value As ATEvalResult, text As String, i As Long, ch As String, unusual As Boolean

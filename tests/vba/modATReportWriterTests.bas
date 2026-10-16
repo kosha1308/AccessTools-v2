@@ -20,6 +20,7 @@ Public Sub AT_TestReportWriter()
     AT_Assert view.Range("B9").Value2 = "Важность" And view.Range("E9").Value2 = "Сообщение", "Russian issue headers"
     AT_Assert view.Range("C10").Value2 = "Обязательные поля инициатора" And view.Range("D10").Value2 = "Фамилия Имя Отчество", "internal check and field IDs translated"
     AT_Assert view.Hyperlinks.Count = report.Issues.Count, "trusted refs produce source hyperlinks"
+    AT_Assert view.Range("F10").Value2 = report.Issues(1).CellRef, "linked source ref text preserves opening quote"
     AT_Assert view.Hyperlinks(1).Address = "" And InStr(view.Hyperlinks(1).SubAddress, "[" & book.Name & "]") > 0, "unsaved open source linked explicitly"
     view.Hyperlinks(1).Follow
     AT_Assert Application.ActiveWorkbook Is book, "hyperlink follows actual source workbook"
@@ -30,6 +31,7 @@ Public Sub AT_TestReportWriter()
     AT_Assert InStr(rendered.Worksheets("Проверки").Range("B5").Value2, "ошибки") > 0, "outcome status localized"
     Set repeated = writer.Create(report, Nothing)
     AT_Assert Not repeated Is rendered And repeated.Worksheets("Отчёт").Hyperlinks.Count = 0, "repeat creates fresh book; no source gives plain refs"
+    AT_Assert repeated.Worksheets("Отчёт").Range("F10").Value2 = report.Issues(1).CellRef, "plain source ref text preserves opening quote"
     repeated.Close False: Set repeated = Nothing
     issue.Initialize "NET.REQUEST_TYPE", "TEST", "ERROR", "REQUEST_TYPE", "'OTHER'!A1", "=1+1"
     issues.Add issue: outcome.Initialize "NET.REQUEST_TYPE", "FAIL", "=1+1": outcomes.Add outcome
@@ -76,4 +78,14 @@ Public Function AT_ExportReportSample(ByVal folder As String) As String
     book.ExportAsFixedFormat xlTypePDF, folder & "\report-preview.pdf"
     book.Close False
     AT_ExportReportSample = "SAVED"
+End Function
+Public Function AT_VerifyTableReportReference(ByVal workbookName As String) As String
+    Dim reader As New ATNetworkRequestReader, checks As New ATNetworkLocalChecks, writer As New ATExcelReportWriter
+    Dim report As ATCheckReport, book As Workbook, ws As Worksheet
+    Set ws = Application.Workbooks(workbookName).Worksheets(1)
+    Set report = checks.Run(reader.Read(ws, "REFERENCE", "2026-10-16", "UTC"), Nothing)
+    Set book = writer.Create(report, ws)
+    AT_VerifyTableReportReference = "STATE=" & CStr(report.State) & "|CHECKS=" & CStr(report.Checks.Count) & "|ERRORS=" & CStr(report.ErrorCount) & "|WARNINGS=" & CStr(report.WarningCount) & "|LINKS=" & CStr(book.Worksheets("Отчёт").Hyperlinks.Count)
+    If book.Worksheets("Отчёт").Hyperlinks(1).Address <> ws.Parent.FullName Then Err.Raise vbObjectError + 2999, , "REFERENCE_LINK_FAILED"
+    book.Close False
 End Function

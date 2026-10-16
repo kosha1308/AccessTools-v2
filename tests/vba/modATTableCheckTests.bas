@@ -4,7 +4,7 @@ Public Sub AT_TestTableChecks()
     Dim book As Workbook, ws As Worksheet, reader As New ATNetworkRequestReader
     Dim checker As New ATNetworkTableChecks, localRunner As New ATNetworkLocalChecks
     Dim source As ATNetworkReadResult, report As ATCheckReport, protocols As New Collection
-    Dim issue As ATCheckIssue, item As Variant, number As Long, description As String, i As Long
+    Dim issue As ATCheckIssue, item As Variant, number As Long, description As String, i As Long, special As New Collection
     On Error GoTo CleanupError
     protocols.Add "TCP": protocols.Add "UDP"
     Set book = Application.Workbooks.Add(xlWBATWorksheet): Set ws = book.Worksheets(1): ws.Name = "Лист1"
@@ -40,6 +40,17 @@ Public Sub AT_TestTableChecks()
     ws.Range("C15").Value2 = "; | ,"
     Set report = checker.Run(reader.Read(ws, "NO_TOKENS", "2026-10-16", "UTC"), protocols)
     AT_Assert report.ErrorCount = 1 And AT_TestIssueCodeCount(report, "PROTOCOL_INVALID") = 1, "separator-only protocol cannot pass membership"
+    special.Add "HTTP-ALT"
+    For Each item In Array("HTTP - ALT", "HTTP " & ChrW(&H2014) & " ALT")
+        ws.Range("C15").Value2 = item
+        Set report = checker.Run(reader.Read(ws, "LITERAL", "2026-10-16", "UTC"), special)
+        AT_Assert report.ErrorCount = 1, "protocol catalog comparison never joins dash-separated tokens"
+    Next item
+    ws.Range("C15").Value2 = "http-alt"
+    Set report = checker.Run(reader.Read(ws, "LITERAL_OK", "2026-10-16", "UTC"), special)
+    AT_Assert report.ErrorCount = 0, "literal hyphenated protocol still accepted case-insensitively"
+    Set report = checker.Run(reader.Read(ws, "", "bad", ""), protocols)
+    AT_Assert report.State = atEvalError And InStr(report.Issues(1).Message, "CONFIG_") = 0, "blocked table message remains Russian without raw internal code"
     ws.Range("C15").Value2 = "TCP": ws.Range("A17").ClearContents: ws.Range("C17").MergeArea.ClearContents: ws.Range("E17").MergeArea.ClearContents
     Set report = checker.Run(reader.Read(ws, "LOWER", "2026-10-16", "UTC"), protocols)
     AT_Assert report.ErrorCount = 1 And report.WarningCount = 2, "hostname required system and role warnings"

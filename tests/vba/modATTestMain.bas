@@ -67,6 +67,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestNetworkSourceRead
     AT_TestTrace tracePath, "policy-catalog"
     AT_TestPolicyCatalog
+    AT_TestTrace tracePath, "policy-apply"
+    AT_TestPolicyApply
     AT_TestTrace tracePath, "template-profile"
     AT_TestTemplateProfiles
     AT_TestTemplateRead

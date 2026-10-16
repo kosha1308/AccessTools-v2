@@ -427,3 +427,4 @@ settings restored. IsComplete and AllChecksPassed have separate meanings.
 Full Excel11286/0, compilePASS, static7/0, gate9/0. Actual reference6/0,
 all3SHAunchanged; synthetic two-output example generated and PDF reviewed.
 Fresh review no blocking findings. Next: Russian command/file selection/save/XLAM.
+Clean clone6369dc9: compilePASS11286/0. DraftPR25 basePR24; sourcepush and PR CI success. No merge/release.

@@ -380,3 +380,13 @@ Provided ReadOnly request/Rulebook/Superset acceptance25/0, all hashes unchanged
 Final Superset/coordinator writer, hostname/service rule integration, source freshness
 and user-facing package remain pending; see network-registry-plan-status.md.
 Clean clone46ed5d1: explicit VBA compilePASS,11174/0. Draft PR21 basePR20, no merge/release.
+
+2026-10-16 — Coordinator workbook, basePR21/2ece9de:
+ATCoordinatorWorkbookWriter.Create(registry) builds separate ATVIEW_SUPERSET book,
+summary first and unique source-value rows second, exact multi-summary links.
+Existing enrichment reads final sheet ordinary columns; no-hit/unconfirmed entries,
+all request refs and five information fields preserved. Rulebook annotations explicitly
+pending, no implicit save. Bounds/errors close only created partial book, restore events.
+Full Excel11205/0, compilePASS, static7/0, referencesReadOnly16/0 and unchangedSHA.
+Independent review clean; synthetic XLSX/PDF locally rendered and both pages checked.
+See coordinator-workbook-status.md for scope/limits and next controller/rules stage.

@@ -1,5 +1,26 @@
 # Stage 1 progress
 
+## Runtime continuation 2026-10-16
+
+User delegated technical decisions and asked to continue after the Excel restriction
+was disclosed. Ruling: proceed with code and written regression tests while preserving
+explicit unverified status; do not claim RED/GREEN or stage acceptance. No sandbox
+escalation, Trust Center change or alternate execution bypass was attempted.
+Branch feat/runtime-core isolates implementation from the verified compiler branch.
+Runtime model, explicit normalization, typed traversal, lazy logic/state inspectors,
+named bindings, scalar/list handlers, budgets and trace are drafted. Binding IsDefault
+is explicit metadata, separate from diagnostic SourceId. Snapshot safely shares only
+internally immutable results; field validation checks budgets before returned copies.
+Independent static review reported four issues (trace primary failure loss, nested
+supplied-argument scope, DATE time-fraction bypass, copying before list limits).
+Corrections and dedicated regression fixtures are written; execution remains pending.
+Observed checks: 56-component structural validation PASS; static tooling 7 PASS / 0 FAIL;
+git diff whitespace check PASS. Excel gate fails at COM activation E_ACCESSDENIED
+80070005 before compilation. No new VBA test totals or compilation success asserted.
+Detailed status and remaining acceptance: docs/runtime-core-status.md.
+
+## Historical stage 1 evidence
+
 Plan: docs/superpowers/plans/2026-10-15-stage1-plan.md
 Design and plan approved in chat on 2026-10-15.
 
@@ -34,3 +55,6 @@ Final development verification: explicit Compile VBAProject PASS; VBA 953 PASS /
 Final independent review: no important blocker. Invalid NOT_EMPTY and placeholder examples fixed and verified across all examples. Deferred to evaluator/explain: nested deprecation-warning SourceId defaults to RULE; directly typed lookup/source literals, BIND and synthetic contextual LIST nodes can omit AST SourceId. Error diagnostic provenance is covered and retained.
 Rulings: port 0 is a valid unsigned numeric literal (business restrictions belong to policy); source LOOKUP uses declared metadata only and opens no files; named defaults resolve in definition scope with prior parameters. Stage closure is compiler profile 1.0.0 only; no evaluator, real-request cutover or old AccessTools changes.
 Clean-checkout acceptance: commit 3507720 cloned locally without hardlinks into AccessTools-v2-stage1-verify. Explicit Compile VBAProject PASS, VBA 953 PASS / 0 FAIL, catalog snapshot matches, static fixtures 7/7. No previous generated files or old AccessTools checkout required.
+Runtime verification restored: escalation is now available; Excel launched successfully. Compile failures localized by new runner output: cross-instance Private RetainField and VBA reserved local/scale names. Fixed Friend access with frozen guard, localFrame/factor names. First full execution: 1236 PASS / 12 FAIL. Exact LIST overloads lost to PORT_SET conversions, and generic table T bound to empty type; two-pass overload search plus explicit generic binding fixed these: 1258 PASS / 0 FAIL.
+Final independent review found invalid trailing list elements could yield a Boolean and AVG could underflow nonzero to zero. Added reproducing fixtures: 1260 PASS / 3 FAIL. Eager budgeted list usability validation and AVG range guard yield Compile PASS, 1264 PASS / 0 FAIL (artifact excel-250143f025454ad6ae4c93cf049520f6). Earlier four static-review corrections are covered by executed fixtures. Static tooling 7/7, Excel gate integration 9/9 including compile-error diagnostics. No important findings deferred.
+Clean-checkout acceptance: 0412cee cloned without hardlinks into AccessTools-v2-runtime-verify. Compile VBAProject PASS, 1264 PASS / 0 FAIL; catalog snapshot matches; static fixtures7/7. Report excel-15c20ebe9caa4fcda4935a5c73901f0c. Remote API publication history reconciled only after exact baseline tree equality was checked; no force push and no merge into compiler/main.

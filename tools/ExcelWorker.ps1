@@ -57,7 +57,16 @@ public static class ATExcelProcess {
     Write-Output '[COMPILE] VBAProject'
     if (-not $compile.Enabled) { throw 'EXCEL_COMPILE_UNAVAILABLE: new imported project was not marked compilable' }
     $compile.Execute()
-    if ($compile.Enabled) { throw 'EXCEL_COMPILE_FAILED: command remains enabled' }
+    if ($compile.Enabled) {
+        try {
+            $pane = $excel.VBE.ActiveCodePane
+            [int]$startLine = 0; [int]$startColumn = 0; [int]$endLine = 0; [int]$endColumn = 0
+            $pane.GetSelection([ref]$startLine, [ref]$startColumn, [ref]$endLine, [ref]$endColumn)
+            Write-Output ("[COMPILE] Location: {0}:{1}:{2}" -f $pane.CodeModule.Parent.Name, $startLine, $startColumn)
+            if ($startLine -gt 0) { Write-Output $pane.CodeModule.Lines($startLine, 1) }
+        } catch { Write-Output '[COMPILE] No error location available' }
+        throw 'EXCEL_COMPILE_FAILED: command remains enabled'
+    }
     Write-Output '[COMPILE] PASS'
     Write-Output '[RUN] AT_RunTests'
     if (Test-Path -LiteralPath (Join-Path $Root 'tests/vba/modATTestMain.bas')) {

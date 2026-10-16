@@ -13,6 +13,8 @@ for acceptance evidence, scope and the boundary before Runtime evaluation.
 No production checks are replaced.
 AccessTools 0.2.x is a reference line, not a build/runtime dependency.
 
+Stage 2A Runtime core is implemented on feat/runtime-core and verified in desktop Excel: 1264 assertions PASS / 0 FAIL, including the compiler baseline. See [runtime-core-status.md](docs/runtime-core-status.md) for scope, review findings and acceptance evidence. Domain/source/row capabilities follow in stage 2B; no production checks are replaced.
+
 ## Developer checks (Windows)
 
 Run from the repository root in Windows PowerShell 5.1:

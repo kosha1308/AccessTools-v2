@@ -110,6 +110,7 @@ Private Function CheckNode(ByVal node As ATAstNode, ByVal aliases As Collection,
                 node.PrimitiveId = primitive.CanonicalId
                 Set node.Signature = primitive.Signatures(1)
                 child.DataType = "TEXT"
+                child.SourceId = mSourceId
                 child.Text = definition.Id
                 mResult.Dependencies.Add "SOURCE:" & definition.Id, Owner()
             ElseIf mContext.Registry.HasSyntax(node.Text, "QUANTIFIER") Then
@@ -181,6 +182,8 @@ Private Function CheckLookup(ByVal node As ATAstNode, ByVal aliases As Collectio
     If source.LookupKeyType = "PORT_SET" And keyType <> "PORT_SET" Then AT_ValidatePortLiteral node.Children(2)
     node.Children(1).DataType = "TEXT"
     node.Children(3).DataType = "TEXT"
+    node.Children(1).SourceId = node.SourceId
+    node.Children(3).SourceId = node.SourceId
     node.Children(1).Text = source.Id
     node.Children(3).Text = column.Id
     argumentTypes.Add "TEXT"
@@ -210,6 +213,7 @@ Private Sub WrapContextValue(ByVal parent As ATAstNode, ByVal index As Long)
     wrapper.Kind = "LIST"
     wrapper.Start = child.Start
     wrapper.Length = child.Length
+    wrapper.SourceId = child.SourceId
     wrapper.Children.Add child
     wrapper.DataType = "LIST<" & child.DataType & ">"
     wrapper.Depth = child.Depth + 1
@@ -228,6 +232,7 @@ Private Function CheckCollection(ByVal node As ATAstNode, ByVal aliases As Colle
     If mCollectionDepth > mLimits.MaxCollectionNesting Then Err.Raise vbObjectError + 2403, "ATCompiler", "LIMIT_COLLECTION_NESTING"
     If node.Children.Count <> 2 Then Err.Raise vbObjectError + 2340, "ATCompiler", "TYPE_QUANTIFIER_ARITY"
     Set binding = node.Children(1)
+    binding.SourceId = node.SourceId
     If binding.Kind <> "BIND" Then Err.Raise vbObjectError + 2341, "ATCompiler", "RESOLVE_EXPLICIT_ALIAS_REQUIRED"
     collectionType = CheckNode(binding.Children(1), aliases, parameters)
     If Left$(collectionType, 15) <> "COLLECTION<ROW<" Or Right$(collectionType, 2) <> ">>" Then Err.Raise vbObjectError + 2342, "ATCompiler", "TYPE_ROW_COLLECTION_REQUIRED"
@@ -273,6 +278,7 @@ Private Function CheckNamed(ByVal node As ATAstNode, ByVal aliases As Collection
     If definition.Status = "DEPRECATED" Then
         Set warning = New ATDiagnostic
         warning.Initialize "NAMED_DEPRECATED", "SEMANTIC", "WARNING", node.Start, node.Length, "Deprecated named expression " & node.Text & "; replacement: " & definition.ReplacedBy
+        warning.SourceId = node.SourceId
         mResult.Diagnostics.Add warning
     End If
     For Each present In mNamedStack
@@ -315,6 +321,7 @@ Private Function CheckNamed(ByVal node As ATAstNode, ByVal aliases As Collection
         binding.Id = parameter.Id
         binding.DataType = parameter.TypeName
         Set binding.Expression = actualNode
+        binding.IsDefault = (index > node.Children.Count)
         If actualType <> parameter.TypeName Then binding.NormalizerId = mContext.Registry.GetPrimitive(parameter.TypeName).NormalizerId
         node.ParameterBindings.Add binding
         mSourceId = callerSource

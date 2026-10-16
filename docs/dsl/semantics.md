@@ -1,6 +1,6 @@
-# Evaluation contract reserved for the next implementation stage
+# Evaluation contract and stage-2A runtime
 
-This document defines the contract; no evaluator executes these operations yet.
+This document defines the full contract. The supported stage-2A subset is implemented and verified in Excel; see ../runtime-core-status.md. Domains, source adapters, rows and safe patterns remain a separate stage.
 Compiler acceptance and Runtime readiness are separate gates.
 
 ## Results and failure propagation
@@ -109,7 +109,7 @@ an executable safe-regex handler and its work/time budgets belong to stage 2.
 
 ## Explicit unsupported capabilities
 
-Runtime source data adapters, actual normalization/evaluation, legacy ALLROWS
+Runtime source data adapters, full domain normalization/evaluation, legacy ALLROWS
 import, production extraction, explain execution, Admin UI, publishing and release
 profiles are not implemented here. LOOKUP/SOURCE_VALUE compiler schema binding
 and operator/function signatures are implemented. Unregistered syntax/functions/

@@ -34,25 +34,27 @@ Public Function HasRegionPolicy(ByVal scope As String) As Boolean
 End Function
 Public Function IdentityReport(ByVal ref As String) As ATCheckReport
     Dim issues As New Collection, checks As New Collection, report As New ATCheckReport, outcome As ATCheckOutcome
-    Dim status As String, entry As Variant, message As String
+    Dim status As String, entry As Variant, message As String, reason As String
     RequireReady
     status = "PASS"
-    If Not mValid Or Not mHasAllowed Then
-        status = "SKIPPED"
+    If Not mValid Then
+        status = "SKIPPED": reason = "Не указана корректная почта инициатора."
+    ElseIf Not mHasAllowed Then
+        status = "SKIPPED": reason = "Нет активных правил допуска инициатора."
     ElseIf Not mAdmitted Then
         status = "FAIL"
         AT_InitiatorIssue issues, "NET.INITIATOR_ALLOWED", "INITIATOR_NOT_ALLOWED", "ERROR", "EMAIL", ref, "Почта или домен инициатора отсутствует среди разрешённых."
     End If
-    Set outcome = New ATCheckOutcome: outcome.Initialize "NET.INITIATOR_ALLOWED", status, "": checks.Add outcome
-    status = "PASS"
-    If Not mValid Then status = "SKIPPED"
+    Set outcome = New ATCheckOutcome: outcome.Initialize "NET.INITIATOR_ALLOWED", status, reason: checks.Add outcome
+    status = "PASS": reason = ""
+    If Not mValid Then status = "SKIPPED": reason = "Не указана корректная почта инициатора."
     For Each entry In mApprovals
         message = "Для инициатора «" & mEmail & "» требуется согласование: " & CStr(entry(0)) & "."
         If Len(CStr(entry(2))) > 0 Then message = message & vbLf & CStr(entry(2))
         AT_InitiatorIssue issues, "NET.INITIATOR_APPROVAL_RULES", "INITIATOR_APPROVAL_REQUIRED", CStr(entry(1)), "APPROVAL", ref, message
         If CStr(entry(1)) = "ERROR" Then status = "FAIL"
     Next entry
-    Set outcome = New ATCheckOutcome: outcome.Initialize "NET.INITIATOR_APPROVAL_RULES", status, "": checks.Add outcome
+    Set outcome = New ATCheckOutcome: outcome.Initialize "NET.INITIATOR_APPROVAL_RULES", status, reason: checks.Add outcome
     report.Initialize atEvalOK, "NETWORK_INITIATOR_IDENTITY", issues, checks: Set IdentityReport = report
 End Function
 Public Function Evaluate(ByVal expression As ATRuntimeValue, ByVal scope As String, ByVal budget As ATEvalBudget) As ATEvalResult

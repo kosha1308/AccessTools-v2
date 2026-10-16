@@ -33,7 +33,7 @@ Public Function Read(ByVal ws As Worksheet, ByVal layout As ATExcelTableLayout, 
                 If hasMerges Then
                     If r > ends(i) Then
                         Set area = ws.Cells(r, col).MergeArea
-                        If area.Row < firstRow Or area.Row + area.Rows.Count - 1 > lastDataRow Or area.Column < firstCol Or area.Column + area.Columns.Count - 1 > lastCol Then Err.Raise vbObjectError + 2800, , "EXCEL_MERGE_BOUNDS"
+                        ValidateMerge area, layout, firstRow, lastDataRow
                         ends(i) = area.Row + area.Rows.Count - 1
                         anchorsR(i) = area.Row: anchorsC(i) = area.Column
                     End If
@@ -75,6 +75,7 @@ End Function
 
 Public Function LastValueRow(ByVal ws As Worksheet, ByVal layout As ATExcelTableLayout) As Long
     Dim i As Long, scan As Range, hit As Range, firstAddress As String, candidates As Long
+    Dim area As Range, bottom As Long
     layout.ValidateSheet ws
     LastValueRow = layout.HeaderLastRow
     If layout.HeaderLastRow = ws.Rows.Count Then Exit Function
@@ -87,7 +88,10 @@ Public Function LastValueRow(ByVal ws As Worksheet, ByVal layout As ATExcelTable
                 candidates = candidates + 1
                 If candidates > 10000 Then Err.Raise vbObjectError + 2800, , "EXCEL_FIND_LIMIT"
                 If Not AT_ExcelBlank(hit.Value2) Then
-                    If hit.Row > LastValueRow Then LastValueRow = hit.Row
+                    Set area = hit.MergeArea
+                    ValidateMerge area, layout, layout.HeaderLastRow + 1, ws.Rows.Count
+                    bottom = area.Row + area.Rows.Count - 1
+                    If bottom > LastValueRow Then LastValueRow = bottom
                     Exit Do
                 End If
                 Set hit = FindPreviousValue(scan, hit)
@@ -97,6 +101,17 @@ Public Function LastValueRow(ByVal ws As Worksheet, ByVal layout As ATExcelTable
         End If
     Next i
 End Function
+
+Private Sub ValidateMerge(ByVal area As Range, ByVal layout As ATExcelTableLayout, ByVal firstRow As Long, ByVal lastRow As Long)
+    Dim i As Long, mapped As Long, lastCol As Long, col As Long
+    lastCol = area.Column + area.Columns.Count - 1
+    If area.Row < firstRow Or area.Row + area.Rows.Count - 1 > lastRow Or area.Column < layout.FirstColumn Or lastCol > layout.LastColumn Then Err.Raise vbObjectError + 2800, , "EXCEL_MERGE_BOUNDS"
+    For i = 1 To layout.Count
+        col = layout.ColumnNumber(i)
+        If col >= area.Column And col <= lastCol Then mapped = mapped + 1
+    Next i
+    If mapped > 1 Then Err.Raise vbObjectError + 2800, , "EXCEL_MERGE_COLUMNS"
+End Sub
 
 Private Function FindPreviousValue(ByVal scan As Range, ByVal after As Range) As Range
     Set FindPreviousValue = scan.Find(What:="*", After:=after, LookIn:=xlValues, LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlPrevious, MatchCase:=False, MatchByte:=False, SearchFormat:=False)

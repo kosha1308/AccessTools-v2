@@ -85,8 +85,13 @@ Public Sub AT_TestExcelReader()
     Set result = reader.Read(lower, layout, 0)
     AT_Assert result.Diagnostics(1).Code = "EXCEL_DATA_BOUNDS", "reader rejects inverted bounds"
     AT_TestExcelReaderWidth reader, wrong
+    AT_TestExcelMergeEdges reader, wrong
 Finish:
     book.Close False
+    If Not saved Is Nothing Then
+        Set field = saved.Row(1).ResolveField("SRC_RAW")
+        AT_Assert field.Value.Scalar = "192.0.2.1", "snapshot remains usable after source workbook closes"
+    End If
     Exit Sub
 CleanupError:
     savedNumber = Err.Number: savedText = Err.Description
@@ -94,6 +99,48 @@ CleanupError:
     If Not book Is Nothing Then book.Close False
     On Error GoTo 0
     Err.Raise savedNumber, , savedText
+End Sub
+
+Private Sub AT_TestExcelMergeEdges(ByVal reader As ATExcelTableReader, ByVal ws As Worksheet)
+    Dim spec As ATExcelTableSpec, layout As ATExcelTableLayout, result As ATEvalResult
+    ws.Cells.Clear
+    ws.Range("A1").Value2 = "Source": ws.Range("B1").Value2 = "Destination"
+    Set spec = AT_TestExcelSpec("T", 1, 1, 1, 2)
+    spec.AddColumn "A", "Source", "INHERITED": spec.AddColumn "B", "Destination", "INHERITED"
+    Set layout = spec.Locate(ws)
+    ws.Range("A2:B2").Merge: ws.Range("A2").Value2 = "192.0.2.1"
+    Set result = reader.Read(ws, layout, 2)
+    AT_Assert result.State = atEvalError, "horizontal merge cannot fabricate another field"
+    If result.State = atEvalError Then AT_Assert result.Diagnostics(1).Code = "EXCEL_MERGE_COLUMNS", "cross-field horizontal merge explicit error"
+    ws.Range("A2:B2").UnMerge: ws.Range("A2").ClearContents
+    ws.Range("A2:A5").Merge: ws.Range("A2").Value2 = "192.0.2.1"
+    AT_Assert reader.LastValueRow(ws, layout) = 5, "last value covers vertical merged key extent"
+    Set result = reader.Read(ws, layout, reader.LastValueRow(ws, layout))
+    AT_Assert result.State = atEvalOK, "merged final value can be read using discovered boundary"
+    If result.State = atEvalOK Then AT_Assert result.Value.Count = 4, "last merged key inherits through final physical row"
+    Set spec = AT_TestExcelSpec("D", 1, 1, 1, 2)
+    spec.AddColumn "A", "Source", "DIRECT": spec.AddColumn "B", "Destination", "DIRECT"
+    Set layout = spec.Locate(ws)
+    Set result = reader.Read(ws, layout, reader.LastValueRow(ws, layout))
+    AT_Assert result.State = atEvalOK, "last direct auxiliary merge accepted"
+    If result.State = atEvalOK Then AT_Assert result.Value.Count = 1, "auxiliary extent does not create blank records"
+    ws.Range("A2:A5").UnMerge: ws.Range("A2").ClearContents
+    ws.Range("B1").ClearContents: ws.Range("C1").Value2 = "Destination"
+    Set spec = AT_TestExcelSpec("H", 1, 1, 1, 3)
+    spec.AddColumn "A", "Source", "INHERITED": spec.AddColumn "B", "Destination", "INHERITED"
+    Set layout = spec.Locate(ws)
+    ws.Range("A2:B2").Merge: ws.Range("A2").Value2 = "192.0.2.20"
+    ws.Range("C2").Value2 = "198.51.100.20"
+    Set result = reader.Read(ws, layout, 2)
+    AT_Assert result.State = atEvalOK, "horizontal merge within one logical field remains legal"
+    If result.State = atEvalOK Then
+        AT_Assert result.Value.Row(1).ResolveField("B").Value.Scalar = "198.51.100.20", "owned horizontal merge cannot alter adjacent field"
+    End If
+    ws.Range("A2:B2").UnMerge: ws.Range("A2:C2").ClearContents
+    ws.Range("C10001").Value2 = "198.51.100.30"
+    Set result = reader.Read(ws, layout, 10001)
+    AT_Assert result.State = atEvalOK, "exact physical-row limit accepted"
+    If result.State = atEvalOK Then AT_Assert result.Value.Row(1).RowId = "10001", "last allowed row retained after blanks"
 End Sub
 
 Private Sub AT_TestExcelRowsDSL(ByVal rows As ATRuntimeValue)

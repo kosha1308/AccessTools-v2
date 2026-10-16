@@ -151,3 +151,16 @@ Clean-checkout template gate acceptance:4693424 cloned without hardlinks into Ac
 CompilePASS9889/0, catalogmatch, static7/7; reportexcel-afcbac1566b34cc487d141a78fdab562.
 Normal test suite reproduces without original private XLSX; separate real-source read-only
 acceptance and unchanged hash are recorded above.
+
+## Unified request reader 2026-10-16
+
+Branch feat/network-request-reader based f3ff679. Task1 native scalar preservation/shared
+metadata RED ->9898/0. Task2 missing classes RED, then9938/2: DSL test compared present
+text with EMPTY literal (RUNTIME_VALUE_UNUSABLE). Test corrected to LEN >0, no runtime
+semantics changed ->CompilePASS9941/0, reportexcel-b2582e1066004f22951711e01e06bff6.
+Fresh independent review of f3ff679..021a145 found no actionable issues.
+Actual source XLSX opened ReadOnly, unified extraction OK|TECH=0|ADDR=0|DB='Лист1'!C10,
+full9941/0 reportexcel-a914b7b0fcb94b6fb4e9d5efd3e5495b. Source SHA256 unchanged
+21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7.
+Static tooling7/7. Raw snapshot only; normalization/business checks/full release remain pending.
+Clean checkout e2bbfd1 cloned without hardlinks to AccessTools-v2-request-verify: CompilePASS9941/0, static7/7, reportexcel-a484ff4fc4364d4790d4966d64a23980. Excel gate integration9/9. No private reference required for normal tests.

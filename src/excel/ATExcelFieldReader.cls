@@ -53,7 +53,7 @@ Public Function Read(ByVal ws As Worksheet, ByVal spec As ATExcelFieldSpec) As A
     End If
 BuildValue:
     On Error GoTo 0
-    value.Initialize id, found, sheetName, anchorRef, cellRef, result
+    value.Initialize id, found, sheetName, anchorRef, cellRef, result, raw
     Set Read = value
     Exit Function
 Failed:

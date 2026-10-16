@@ -67,6 +67,9 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestTemplateProfiles
     AT_TestTemplateRead
     AT_TestNetworkProfile
+    AT_TestTrace tracePath, "network-metadata"
+    AT_TestNetworkMetadata
+    AT_TestNetworkRead
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

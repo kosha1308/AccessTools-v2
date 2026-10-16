@@ -6,6 +6,7 @@ Private mFailed As Long
 Private mFailures As String
 
 Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
+    Dim ipStarted As Single
     mPassed = 0
     mFailed = 0
     mFailures = ""
@@ -77,6 +78,13 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestRulebook
     AT_TestTrace tracePath, "rulebook-checks"
     AT_TestRuleChecks
+    AT_TestTrace tracePath, "shared-ip-source"
+    ipStarted = Timer
+    AT_TestIPSource
+    AT_TestTrace tracePath, "shared-ip-source-seconds:" & Format$(Timer - ipStarted, "0.000")
+    ipStarted = Timer
+    AT_TestIPSourceCache
+    AT_TestTrace tracePath, "shared-ip-cache-seconds:" & Format$(Timer - ipStarted, "0.000")
     AT_TestTrace tracePath, "template-profile"
     AT_TestTemplateProfiles
     AT_TestTemplateRead

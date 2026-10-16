@@ -69,3 +69,8 @@ runtime-бюджеты не менялись.
 сводкой, контроль свежести файла/несохранённых правок и пользовательский controller,
 сохранение результата, XLAM/регрессии полного рабочего сценария. Этот этап
 не выводит порт/протокол и роль source/destination из IP-only Superset-контекста.
+
+Чистый отдельный clone source commitacdb4ca873b92fa79e77f59f21d1ccf35f0d9de6:
+Compile VBAProject PASS,11247 PASS/0 FAIL, explicit90s. Excel gate9/0.
+Draft PR23, branch feat/superset-rule-annotations, base feat/coordinator-workbook
+(PR22). Слияние и пользовательский выпуск не выполнялись.

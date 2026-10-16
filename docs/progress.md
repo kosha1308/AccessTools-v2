@@ -403,3 +403,4 @@ adds independent16thoutcome; published hostname/conflict keys, coordinator fallb
 Full Excel11247/0, explicitcompilePASS, static7/0; actualReadOnly27/0, allSHAunchanged.
 Fresh review clean. Rulebook issue templates/routes apply separately from raw E/F
 outputs. Technical-rule correlation/controller freshness/save/XLAM remain pending.
+Clean cloneacdb4ca compilePASS11247/0, gate9/0. DraftPR23 attached basePR22; no merge/release.

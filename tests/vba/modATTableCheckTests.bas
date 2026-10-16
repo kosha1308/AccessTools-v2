@@ -70,7 +70,7 @@ Public Sub AT_TestTableChecks()
     Set report = checker.Run(reader.Read(ws, "KEY", "2026-10-16", "UTC"), protocols)
     AT_Assert AT_TestIssueCodeCount(report, "ROW_DUPLICATE") = 0, "duplicate key delimiter collision avoided"
     Set report = localRunner.Run(source, protocols)
-    AT_Assert report.ScopeId = "NETWORK_LOCAL" And report.Checks.Count = 9, "localRunner report aggregates six document and three table checks"
+    AT_Assert report.ScopeId = "NETWORK_LOCAL" And report.Checks.Count = 10, "local report appends exact address matching to completed checks"
     protocols.Add "BAD|ENTRY"
     Set report = localRunner.Run(source, protocols)
     AT_Assert report.State = atEvalError And report.Checks.Count = 1 And report.Checks(1).Status = "BLOCKED", "bad catalog discards partial document PASS outcomes"

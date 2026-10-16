@@ -126,3 +126,6 @@ copied once; number canonicalization linear. Static7/7, gate9/9, catalogmatch.
 Fresh independent review: no requested changes; trim semantics clarified in spec. Declined
 items are explicit pending pipeline/release scope; combined maximum-limit performance not
 measured, bounded work limit tested. No correctness findings deferred.
+Clean-checkout enrichment acceptance:69e03d2 cloned without hardlinks into AccessTools-v2-enrichment-verify.
+CompilePASS9845/0, catalogmatch, static7/7; reportexcel-e9a8f1184d4a4fc19e51b8fb91314262.
+No old artifacts or private runtime checkout required.

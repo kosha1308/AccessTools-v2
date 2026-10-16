@@ -24,6 +24,7 @@ Public Function Create(ByVal report As ATCheckReport, ByVal source As Worksheet)
     MergedText view.Range("A2:F2"), "Отдельный отчёт • исходная заявка не изменялась", 11, False
     target = "Проверена только часть заявки. Superset и сводка координатора не выполнялись. Пропущенные проверки перечислены на листе «Проверки»."
     If report.ScopeId = "NETWORK_ACCESS_REGISTRY_POLICY" Or report.ScopeId = "NETWORK_REGISTRY" Then target = "Это промежуточный отчёт с результатом IP-поиска. Итоговая копия Superset и сводка координатора ещё не формировались. Пропущенные проверки перечислены на листе «Проверки»."
+    If report.ScopeId = "NETWORK_ACCESS_SUPERSET_POLICY" Then target = "Отчёт включает IP-поиск и правила Superset. Координаторская книга формируется отдельно. Пропуски и неполные результаты требуют ручной проверки."
     MergedText view.Range("A3:F4"), target, 11, False
     view.Range("A3:F4").Interior.Color = RGB(255, 242, 204): view.Rows("3:4").RowHeight = 23
     MergedText view.Range("A6:F6"), "Ошибок: " & CStr(report.ErrorCount) & "  •  предупреждений: " & CStr(report.WarningCount) & "  •  пропущено проверок: " & CStr(report.SkippedCount), 12, True
@@ -32,6 +33,7 @@ Public Function Create(ByVal report As ATCheckReport, ByVal source As Worksheet)
     If report.ScopeId = "NETWORK_DOCUMENT" Then target = "Проверки одиночных полей"
     If report.ScopeId = "NETWORK_TABLE_INPUT" Then target = "Проверки заполнения таблиц"
     If report.ScopeId = "NETWORK_ACCESS_REGISTRY_POLICY" Then target = "Поля, таблицы, правила и поиск IP в Superset"
+    If report.ScopeId = "NETWORK_ACCESS_SUPERSET_POLICY" Then target = "Поля, таблицы, технические правила, IP и правила Superset"
     MergedText view.Range("A7:F7"), target, 11, False
     view.Range("A9:F9").Value2 = Array("№", "Важность", "Проверка", "Поле", "Сообщение", "Ячейка")
     Header view.Range("A9:F9")

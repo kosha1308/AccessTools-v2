@@ -4,16 +4,27 @@ BEGIN
 END
 Attribute VB_Name = "ATCoordinatorWorkbookWriter"
 Option Explicit
-Public Function Create(ByVal registry As ATNetworkRegistryResult) As Workbook
+Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal annotations As ATNetworkSupersetResult = Nothing) As Workbook
     Dim book As Workbook, summary As Worksheet, view As Worksheet, entries As Collection, entry As ATNetworkRegistryEntry
     Dim ids As New Collection, data As Variant, count As Long, spec As ATExcelTableSpec, enrichment As ATEvalResult
     Dim enricher As New ATSupersetEnricher, rows As ATRuntimeValue, row As ATRuntimeRow, refs As ATRuntimeValue
     Dim i As Long, j As Long, text As String, fields As Variant, status As String, reference As String
     Dim previousEvents As Boolean, armed As Boolean, code As String
+    Dim annotationRows As ATRuntimeValue, annotation As ATRuntimeRow, note As String
     On Error GoTo Failed
     If registry Is Nothing Then Err.Raise vbObjectError + 3120, , "VIEW_INPUT_INVALID"
     If registry.State <> atEvalOK Then Err.Raise vbObjectError + 3120, , "VIEW_REGISTRY_BLOCKED"
     Set entries = registry.Entries
+    If Not annotations Is Nothing Then
+        annotations.ValidateRegistry registry
+        If annotations.State = atEvalOK Then
+            Set annotationRows = annotations.Annotations
+            If annotationRows.Count <> entries.Count Then Err.Raise vbObjectError + 3140, , "SUPERSET_RULES_BINDING"
+            For i = 1 To entries.Count
+                If annotationRows.Row(i).RowId <> entries(i).Id Then Err.Raise vbObjectError + 3140, , "SUPERSET_RULES_BINDING"
+            Next i
+        End If
+    End If
     If entries.Count > 10000 Then Err.Raise vbObjectError + 3120, , "VIEW_ROW_LIMIT"
     data = AT_ViewRows(entries, count)
     previousEvents = Application.EnableEvents: armed = True: Application.EnableEvents = False
@@ -28,7 +39,12 @@ Public Function Create(ByVal registry As ATNetworkRegistryResult) As Workbook
     Set enrichment = enricher.Read(view, spec.Locate(view), count + 5, ids)
     If enrichment.State <> atEvalOK Then Err.Raise vbObjectError + 3120, , enrichment.Diagnostics(1).Code
     Set rows = enrichment.Value
-    Prepare summary, entries.Count + 5, 12, "Сводка координатора", "Сервисы и инструкции Rulebook ещё не применены. Ненайденные адреса и неполные результаты требуют ручной проверки."
+    note = "Сервисы и инструкции Rulebook ещё не применены. Ненайденные адреса и неполные результаты требуют ручной проверки."
+    If Not annotations Is Nothing Then
+        note = "Контексты Superset проверены по Rulebook. Неполные результаты требуют ручной проверки; технические порты и протоколы оцениваются отдельно."
+        If annotations.State <> atEvalOK Then note = "Правила Superset не завершены. Результаты IP-поиска сохранены; требуется ручная проверка."
+    End If
+    Prepare summary, entries.Count + 5, 12, "Сводка координатора", note
     summary.Range("A5:L5").Value2 = Array("№", "IP/сеть из заявки", "Статус Superset", "Найдено строк", "Сервис", "Инструкция", "Имя хоста (Superset)", "Сервис (Superset)", "Полное имя ИС (Superset)", "СКУФ ГРУППА ТП (Superset)", "КОМАНДА ПОДДЕРЖКИ (Superset)", "Ячейки заявки")
     fields = Array("HOSTNAME", "SERVICE", "IS_NAME", "SKUF_GROUP", "SUPPORT_TEAM")
     For i = 1 To entries.Count
@@ -38,6 +54,13 @@ Public Function Create(ByVal registry As ATNetworkRegistryResult) As Workbook
         If entry.Status = "UNCONFIRMED" Then status = "НЕ ПОДТВЕРЖДЕНО"
         If entry.Status = "FOUND" And Not entry.SourceComplete Then status = "НАЙДЕН; ИСТОЧНИК НЕПОЛНЫЙ"
         summary.Cells(i + 5, 1).Resize(1, 4).Value2 = Array(entry.Id, entry.Address, status, row.ResolveField("MATCH_COUNT").Value.Scalar)
+        If Not annotationRows Is Nothing Then
+            Set annotation = annotationRows.Row(i)
+            summary.Cells(i + 5, 5).Value2 = AT_ViewLiteral(AT_ViewText(annotation.ResolveField("SERVICE_RESULT")))
+            summary.Cells(i + 5, 6).Value2 = AT_ViewLiteral(AT_ViewText(annotation.ResolveField("INSTRUCTION")))
+        ElseIf Not annotations Is Nothing Then
+            summary.Cells(i + 5, 6).Value2 = "Правила Superset не завершены. Требуется ручная проверка."
+        End If
         For j = 0 To 4
             summary.Cells(i + 5, j + 7).Value2 = AT_ViewLiteral(AT_ViewText(row.ResolveField(CStr(fields(j)))))
         Next j
@@ -54,6 +77,11 @@ Public Function Create(ByVal registry As ATNetworkRegistryResult) As Workbook
     For i = 1 To entries.Count
         Set entry = entries(i)
         If entry.Status <> "FOUND" Or Not entry.SourceComplete Then summary.Cells(i + 5, 3).Interior.Color = RGB(255, 242, 204)
+        If Not annotationRows Is Nothing Then
+            status = AT_ViewText(annotationRows.Row(i).ResolveField("STATUS"))
+            If status = "SKIPPED" Then summary.Cells(i + 5, 6).Interior.Color = RGB(255, 242, 204)
+            If status = "FAIL" Then summary.Cells(i + 5, 6).Interior.Color = RGB(252, 228, 228)
+        End If
     Next i
     summary.Columns("A").ColumnWidth = 6: summary.Columns("B").ColumnWidth = 22
     summary.Columns("D").ColumnWidth = 12: summary.Columns("F").ColumnWidth = 42

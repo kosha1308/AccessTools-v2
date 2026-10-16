@@ -391,3 +391,16 @@ Full Excel11205/0, compilePASS, static7/0, referencesReadOnly16/0 and unchangedS
 Independent review clean; synthetic XLSX/PDF locally rendered and both pages checked.
 See coordinator-workbook-status.md for scope/limits and next controller/rules stage.
 Clean clone8d94f4b: explicitcompilePASS11205/0, gate9/0. DraftPR22 basePR21; sourcecommit push/PR CI success.
+
+2026-10-16 — Superset rule annotations, basePR22/342e4f2:
+ATNetworkSupersetRules/Result and modATSupersetRules apply unchanged engine to
+strict intersection(entry IP, actual source row IP) + actual hostname/original
+service. No chaining or whole-network cross-row falsematches. Manual contexts
+retain confirmed others; system/budget failures discard new annotations only.
+Writer optional bound annotations fills E/F without overwriting raw source fields;
+blocked rules preserve base workbook, wrong binding rejects. ApplySupersetRules
+adds independent16thoutcome; published hostname/conflict keys, coordinator fallback.
+Full Excel11247/0, explicitcompilePASS, static7/0; actualReadOnly27/0, allSHAunchanged.
+Fresh review clean. Rulebook issue templates/routes apply separately from raw E/F
+outputs. Technical-rule correlation/controller freshness/save/XLAM remain pending.
+Clean cloneacdb4ca compilePASS11247/0, gate9/0. DraftPR23 attached basePR22; no merge/release.

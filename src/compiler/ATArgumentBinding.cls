@@ -9,3 +9,4 @@ Public Id As String
 Public DataType As String
 Public Expression As ATAstNode
 Public NormalizerId As String
+Public IsDefault As Boolean

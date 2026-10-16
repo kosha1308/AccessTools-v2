@@ -1,5 +1,26 @@
 # Stage 1 progress
 
+## Runtime continuation 2026-10-16
+
+User delegated technical decisions and asked to continue after the Excel restriction
+was disclosed. Ruling: proceed with code and written regression tests while preserving
+explicit unverified status; do not claim RED/GREEN or stage acceptance. No sandbox
+escalation, Trust Center change or alternate execution bypass was attempted.
+Branch feat/runtime-core isolates implementation from the verified compiler branch.
+Runtime model, explicit normalization, typed traversal, lazy logic/state inspectors,
+named bindings, scalar/list handlers, budgets and trace are drafted. Binding IsDefault
+is explicit metadata, separate from diagnostic SourceId. Snapshot safely shares only
+internally immutable results; field validation checks budgets before returned copies.
+Independent static review reported four issues (trace primary failure loss, nested
+supplied-argument scope, DATE time-fraction bypass, copying before list limits).
+Corrections and dedicated regression fixtures are written; execution remains pending.
+Observed checks: 56-component structural validation PASS; static tooling 7 PASS / 0 FAIL;
+git diff whitespace check PASS. Excel gate fails at COM activation E_ACCESSDENIED
+80070005 before compilation. No new VBA test totals or compilation success asserted.
+Detailed status and remaining acceptance: docs/runtime-core-status.md.
+
+## Historical stage 1 evidence
+
 Plan: docs/superpowers/plans/2026-10-15-stage1-plan.md
 Design and plan approved in chat on 2026-10-15.
 

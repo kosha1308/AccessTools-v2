@@ -28,7 +28,7 @@ ATInitiatorPolicyResult.cls, ATInitiatorPolicyCompiler.cls, ATInitiatorSelection
 modATInitiatorText.bas, modATNetworkPolicyProfile.bas;
 tests/vba/modATInitiatorPolicyTests.bas, main invocation.
 Compile(initiators,ipRules AsATEvalResult,noPolicyAction AsString) AsATInitiatorPolicyResult.
-Policy.Select(email,budget) AsATInitiatorSelection with IdentityReport(ref),
+Policy.ForEmail(email,budget) AsATInitiatorSelection with IdentityReport(ref),
 Evaluate(expression AsATRuntimeValue,scope,budget) AsATEvalResult, AccountForbidden,
 HasDirectionalRules; selections immutable. Source primitives use existing interval sets.
 - [ ] RED selector/identity/approvals and coverage corpus: exact/domain priority,

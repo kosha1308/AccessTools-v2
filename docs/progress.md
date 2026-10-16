@@ -428,3 +428,17 @@ Full Excel11286/0, compilePASS, static7/0, gate9/0. Actual reference6/0,
 all3SHAunchanged; synthetic two-output example generated and PDF reviewed.
 Fresh review no blocking findings. Next: Russian command/file selection/save/XLAM.
 Clean clone6369dc9: compilePASS11286/0. DraftPR25 basePR24; sourcepush and PR CI success. No merge/release.
+
+2026-10-17 — Russian Excel command and result export, basePR25/a6f928a:
+modATNetworkCommand captures active request before dialogs, gates template,
+calls unchanged controller16checks, distinguishes execution/check success,
+offers folder selection and separate retry-save macro. Cancel/new failure resets
+session save target, retains previous open books. Windows local date/current
+UTC offset captured explicitly; screen/status restored and reentrancy guarded.
+ATNetworkOutputSaver exports two XLSX copies into uniquely owned timestamped
+folder, no previous overwrite; events restored, partial own files cleaned,
+nonempty directory retained. Original open outputs retain identity/path/state.
+Full Excel11303/0 compilePASS, static7/0; fresh review no blockers. UI dialog
+clicks and injected mid-write filesystem failure not tested; documented.
+Next XLAM/Ribbon profile-aware packaging, UI acceptance and clean installation.
+Clean cloneab49a80: compilePASS11303/0; gate9/0. DraftPR26 basePR25, sourcepush/PR CI success; no merge/release.

@@ -4,6 +4,51 @@ BEGIN
 END
 Attribute VB_Name = "ATNetworkAccessChecks"
 Option Explicit
+Public Function RunWithRules(ByVal source As ATNetworkReadResult, ByVal catalog As ATNetworkPolicyResult, ByVal actor As ATInitiatorPolicyResult, ByVal rules As ATNetworkRulebookResult) As ATNetworkPolicyReport
+    Dim ruleRunner As New ATNetworkRuleChecks, presenter As New ATNetworkPolicyChecks
+    Dim previous As ATNetworkPolicyReport, added As ATNetworkPolicyReport, raw As ATCheckReport, ready As New ATCheckReport
+    Dim capacity As Long, code As String
+    On Error GoTo FailedRules
+    Set previous = Run(source, catalog, actor)
+    If previous.AllReport.State <> atEvalOK Then Set RunWithRules = previous: Exit Function
+    capacity = 1000 - previous.AllReport.Issues.Count
+    Set raw = ruleRunner.Run(source, rules)
+    If raw.Issues.Count > capacity Then
+        Set added = BlockedRules(catalog, "CHECK_REPORT_LIMIT", capacity)
+    Else
+        ' The new component can be BLOCKED while the completed report is assembled.
+        ready.Initialize atEvalOK, "NETWORK_RULES", raw.Issues, raw.Checks
+        Set added = presenter.Apply(ready, catalog)
+        If added.AllReport.State <> atEvalOK Then Set added = BlockedRules(catalog, added.AllReport.Issues(1).Code, capacity)
+    End If
+    Set RunWithRules = Combine(previous, added): Exit Function
+FailedRules:
+    code = AT_StableErrorCode(Err.Description, "RULEBOOK_INPUT_INVALID")
+    If previous Is Nothing Then Set RunWithRules = Run(source, catalog, actor): Exit Function
+    If previous.AllReport.State <> atEvalOK Then Set RunWithRules = previous: Exit Function
+    Set RunWithRules = Combine(previous, BlockedRules(catalog, code, 1000 - previous.AllReport.Issues.Count))
+End Function
+Private Function BlockedRules(ByVal catalog As ATNetworkPolicyResult, ByVal code As String, ByVal capacity As Long) As ATNetworkPolicyReport
+    Dim raw As New ATCheckReport, issues As New Collection, checks As New Collection, issue As New ATCheckIssue, outcome As New ATCheckOutcome
+    Dim presenter As New ATNetworkPolicyChecks
+    If capacity > 0 Then
+        issue.Initialize "NET.IP_EXCEPTIONS", code, "ERROR", "TECHNICAL_ROWS", "", "Общие правила не включены: не удалось подготовить итоговые сообщения. Проверьте настройки текста и объём отчёта.": issues.Add issue
+    End If
+    outcome.Initialize "NET.IP_EXCEPTIONS", "BLOCKED", "Общие правила не завершены. Предыдущие проверки сохранены.": checks.Add outcome
+    raw.Initialize atEvalOK, "NETWORK_RULES", issues, checks: Set BlockedRules = presenter.Apply(raw, catalog)
+End Function
+Private Function Combine(ByVal previous As ATNetworkPolicyReport, ByVal added As ATNetworkPolicyReport) As ATNetworkPolicyReport
+    Dim report As New ATCheckReport, result As New ATNetworkPolicyReport, issues As New Collection, checks As New Collection
+    Dim decisions As New Collection, issue As ATCheckIssue, outcome As ATCheckOutcome, decision As ATNetworkPolicyDecision
+    For Each issue In previous.AllReport.Issues: issues.Add issue: Next issue
+    For Each issue In added.AllReport.Issues: issues.Add issue: Next issue
+    For Each outcome In previous.AllReport.Checks: checks.Add outcome: Next outcome
+    For Each outcome In added.AllReport.Checks: checks.Add outcome: Next outcome
+    For Each decision In previous.Decisions: decisions.Add decision: Next decision
+    For Each decision In added.Decisions: decisions.Add decision: Next decision
+    report.Initialize atEvalOK, "NETWORK_ACCESS_PARTIAL_POLICY", issues, checks
+    result.Initialize report, decisions: Set Combine = result
+End Function
 Public Function Run(ByVal source As ATNetworkReadResult, ByVal catalog As ATNetworkPolicyResult, ByVal actor As ATInitiatorPolicyResult) As ATNetworkPolicyReport
     Dim localRunner As New ATNetworkLocalChecks, actorRunner As New ATNetworkInitiatorChecks, presenter As New ATNetworkPolicyChecks
     Dim localReport As ATCheckReport, identity As ATCheckReport, combined As New ATCheckReport

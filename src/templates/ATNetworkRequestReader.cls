@@ -23,12 +23,12 @@ Public Function Read(ByVal ws As Worksheet, ByVal runId As String, ByVal runDate
     If data.State <> atEvalOK Then
         result.Initialize atEvalError, Nothing, data.Diagnostics: Set Read = result: Exit Function
     End If
-    context.AddField "TECHNICAL_ROWS_RAW", data
+    context.AddField "TECHNICAL_ROWS_RAW", data, AT_ExcelCellReference(ws.Name, upper.HeaderFirstRow, upper.ColumnNumber(1))
     Set data = tables.Read(ws, lower, tables.LastValueRow(ws, lower))
     If data.State <> atEvalOK Then
         result.Initialize atEvalError, Nothing, data.Diagnostics: Set Read = result: Exit Function
     End If
-    context.AddField "ADDRESS_ROWS_RAW", data
+    context.AddField "ADDRESS_ROWS_RAW", data, AT_ExcelCellReference(ws.Name, lower.HeaderFirstRow, lower.ColumnNumber(2))
     Set specs = AT_NetworkDocumentFieldsV3()
     For Each fieldSpec In specs
         Set field = fields.Read(ws, fieldSpec)

@@ -4,17 +4,28 @@ BEGIN
 END
 Attribute VB_Name = "ATCoordinatorWorkbookWriter"
 Option Explicit
-Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal annotations As ATNetworkSupersetResult = Nothing) As Workbook
+Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal annotations As ATNetworkSupersetResult = Nothing, Optional ByVal technicalNotes As ATCoordinatorNotesResult = Nothing) As Workbook
     Dim book As Workbook, summary As Worksheet, view As Worksheet, entries As Collection, entry As ATNetworkRegistryEntry
     Dim ids As New Collection, data As Variant, count As Long, spec As ATExcelTableSpec, enrichment As ATEvalResult
     Dim enricher As New ATSupersetEnricher, rows As ATRuntimeValue, row As ATRuntimeRow, refs As ATRuntimeValue
     Dim i As Long, j As Long, text As String, fields As Variant, status As String, reference As String
     Dim previousEvents As Boolean, armed As Boolean, code As String
     Dim annotationRows As ATRuntimeValue, annotation As ATRuntimeRow, note As String
+    Dim technicalRows As ATRuntimeValue, technicalText As String, baseText As String, omitted As Long, technicalStatus As String
     On Error GoTo Failed
     If registry Is Nothing Then Err.Raise vbObjectError + 3120, , "VIEW_INPUT_INVALID"
     If registry.State <> atEvalOK Then Err.Raise vbObjectError + 3120, , "VIEW_REGISTRY_BLOCKED"
     Set entries = registry.Entries
+    If Not technicalNotes Is Nothing Then
+        technicalNotes.ValidateRegistry registry
+        If technicalNotes.State = atEvalOK Then
+            Set technicalRows = technicalNotes.Rows
+            If technicalRows.Count <> entries.Count Then Err.Raise vbObjectError + 3160, , "COORDINATOR_NOTES_BINDING"
+            For i = 1 To entries.Count
+                If technicalRows.Row(i).RowId <> entries(i).Id Then Err.Raise vbObjectError + 3160, , "COORDINATOR_NOTES_BINDING"
+            Next i
+        End If
+    End If
     If Not annotations Is Nothing Then
         annotations.ValidateRegistry registry
         If annotations.State = atEvalOK Then
@@ -44,6 +55,20 @@ Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal
         note = "Контексты Superset проверены по Rulebook. Неполные результаты требуют ручной проверки; технические порты и протоколы оцениваются отдельно."
         If annotations.State <> atEvalOK Then note = "Правила Superset не завершены. Результаты IP-поиска сохранены; требуется ручная проверка."
     End If
+    If Not technicalNotes Is Nothing Then
+        note = "Правила Superset ещё не применены."
+        If Not annotations Is Nothing Then
+            note = "Правила Superset обработаны."
+            If annotations.State <> atEvalOK Then note = "Правила Superset не завершены."
+        End If
+        If technicalNotes.State = atEvalOK Then
+            note = note & " Технические результаты перенесены с учётом маршрутизации."
+            If technicalNotes.Incomplete Then note = note & " Техническая проверка неполная; см. отдельный отчёт проверок."
+            If technicalNotes.GlobalCount > 0 Then note = note & " Непривязанных: " & CStr(technicalNotes.GlobalCount) & "; см. отдельный отчёт проверок."
+        Else
+            note = note & " Технические инструкции не перенесены; см. отдельный отчёт проверок."
+        End If
+    End If
     Prepare summary, entries.Count + 5, 12, "Сводка координатора", note
     summary.Range("A5:L5").Value2 = Array("№", "IP/сеть из заявки", "Статус Superset", "Найдено строк", "Сервис", "Инструкция", "Имя хоста (Superset)", "Сервис (Superset)", "Полное имя ИС (Superset)", "СКУФ ГРУППА ТП (Superset)", "КОМАНДА ПОДДЕРЖКИ (Superset)", "Ячейки заявки")
     fields = Array("HOSTNAME", "SERVICE", "IS_NAME", "SKUF_GROUP", "SUPPORT_TEAM")
@@ -61,6 +86,19 @@ Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal
         ElseIf Not annotations Is Nothing Then
             summary.Cells(i + 5, 6).Value2 = "Правила Superset не завершены. Требуется ручная проверка."
         End If
+        If Not technicalNotes Is Nothing Then
+            technicalText = "Технические инструкции не перенесены. Требуется ручная проверка."
+            If Not technicalRows Is Nothing Then technicalText = AT_ViewText(technicalRows.Row(i).ResolveField("INSTRUCTION"))
+            If Len(technicalText) > 0 Then
+                baseText = AT_ExcelText(summary.Cells(i + 5, 6).Value2)
+                If Len(baseText) + Len(technicalText) + 2 > 32767 Then
+                    omitted = omitted + 1
+                Else
+                    If Len(baseText) > 0 Then baseText = baseText & vbLf & vbLf
+                    summary.Cells(i + 5, 6).Value2 = AT_ViewLiteral(baseText & technicalText)
+                End If
+            End If
+        End If
         For j = 0 To 4
             summary.Cells(i + 5, j + 7).Value2 = AT_ViewLiteral(AT_ViewText(row.ResolveField(CStr(fields(j)))))
         Next j
@@ -73,6 +111,7 @@ Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal
         Next j
         summary.Cells(i + 5, 12).Value2 = AT_ViewLiteral(text)
     Next i
+    If omitted > 0 Then summary.Cells(3, 1).Value2 = note & " Не перенесено из-за длины: " & CStr(omitted) & "; см. отдельный отчёт проверок."
     Finish view, count + 5, 9: Finish summary, entries.Count + 5, 12
     For i = 1 To entries.Count
         Set entry = entries(i)
@@ -81,6 +120,15 @@ Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal
             status = AT_ViewText(annotationRows.Row(i).ResolveField("STATUS"))
             If status = "SKIPPED" Then summary.Cells(i + 5, 6).Interior.Color = RGB(255, 242, 204)
             If status = "FAIL" Then summary.Cells(i + 5, 6).Interior.Color = RGB(252, 228, 228)
+        End If
+        If Not technicalNotes Is Nothing Then
+            technicalStatus = "WARNING"
+            If Not technicalRows Is Nothing Then technicalStatus = AT_ViewText(technicalRows.Row(i).ResolveField("STATUS"))
+            If technicalStatus = "FAIL" Then
+                summary.Cells(i + 5, 6).Interior.Color = RGB(252, 228, 228)
+            ElseIf technicalStatus = "WARNING" Then
+                If summary.Cells(i + 5, 6).Interior.Color <> RGB(252, 228, 228) Then summary.Cells(i + 5, 6).Interior.Color = RGB(255, 242, 204)
+            End If
         End If
     Next i
     summary.Columns("A").ColumnWidth = 6: summary.Columns("B").ColumnWidth = 22

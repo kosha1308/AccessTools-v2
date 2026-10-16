@@ -404,3 +404,15 @@ Full Excel11247/0, explicitcompilePASS, static7/0; actualReadOnly27/0, allSHAunc
 Fresh review clean. Rulebook issue templates/routes apply separately from raw E/F
 outputs. Technical-rule correlation/controller freshness/save/XLAM remain pending.
 Clean cloneacdb4ca compilePASS11247/0, gate9/0. DraftPR23 attached basePR22; no merge/release.
+
+2026-10-17 — Coordinator technical notes, basePR23/b87f2bb:
+ATCoordinatorTechnicalNotes consumes finished policy.SupersetIssues NET.IP_EXCEPTIONS,
+no check/engine reruns. Connection context attached to upper refs/lower numeric overlap,
+coordinator templates/routes honored once; no false service attribution to endpoints.
+Immutable notes bound to registry; registry additive request provenance prevents other
+snapshot correlation. Writer optionalthirdarg appendsF/preservesE+infofields; blocked
+notes/appendoverflow retain basebook/oldF with explicit marker/count/report pointer.
+FullExcel11265/0, compilePASS, static7/0; ReadOnly references28/0, allSHAunchanged;
+16outcomes/inputerrors unchanged. Independent review no blockingfindings; source/policy
+same-run contract remains controller responsibility. Demo XLSX/PDF visually reviewed.
+Next freshness/unsavedchanges/controller/save/XLAM fullscenarioacceptance.

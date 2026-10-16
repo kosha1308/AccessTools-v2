@@ -50,6 +50,7 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestTrace tracePath, "row-binding"
     AT_TestRowBinding
     AT_TestRowModel
+    AT_TestRowEval
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

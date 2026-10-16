@@ -116,4 +116,3 @@ End Sub
 Private Function FindPreviousValue(ByVal scan As Range, ByVal after As Range) As Range
     Set FindPreviousValue = scan.Find(What:="*", After:=after, LookIn:=xlValues, LookAt:=xlPart, SearchOrder:=xlByRows, SearchDirection:=xlPrevious, MatchCase:=False, MatchByte:=False, SearchFormat:=False)
 End Function
-

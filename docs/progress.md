@@ -106,3 +106,6 @@ limit/reuse/frozen spec coverage ->CompilePASS9796/0, reportexcel-d2b1d72852b04b
 Static7/7, gate9/9, catalogmatch. Boundary merge probing<=10000, unchanged plain edges skipped
 in one query. Ruling: all declined production profile/fingerprint/normalizers/rulebook/Superset/
 coordinator/UI items remain explicit pending first-use requirements; no correctness findings deferred.
+Clean-checkout fields acceptance:1a97f21 cloned without hardlinks into AccessTools-v2-fields-verify;
+CompilePASS9796/0, catalogmatch, static7/7, reportexcel-8c40967230df469bbdc205a7f2c64558.
+No legacy source or old generated artifacts required.

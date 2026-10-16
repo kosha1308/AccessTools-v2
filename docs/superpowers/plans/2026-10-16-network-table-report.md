@@ -25,14 +25,14 @@ Source/app state after writer failure/repeat and input closure: preserve source/
 
 Files reader/normalizer refs; src/checks/ATNetworkTableChecks.cls,
 ATNetworkLocalChecks.cls; tests/vba/modATTableCheckTests.bas, main.
-- [ ] RED rows, bounds, refs, errors/warnings/groups/protocol/catalog/duplicate/limits and6+3 aggregation.
-- [ ] Implement; real Excel full GREEN; commit.
+- [x] RED rows, bounds, refs, errors/warnings/groups/protocol/catalog/duplicate/limits and6+3 aggregation.
+- [x] Implement; real Excel full GREEN; commit.
 
 ### Task2: Russian separate-workbook report
 
 Files src/ui/ATExcelReportWriter.cls, modATReportLabels.bas;
 tests/vba/modATReportWriterTests.bas, main.
-- [ ] RED labels/counts/no-source-write/formula safety/hyperlink trust/repeat/events.
-- [ ] Implement; full GREEN, visual PDF render/inspect sample; commit.
-- [ ] Fresh review/fix Important RED→GREEN; static7/7/gate9/9, original ReadOnly/hash, clean checkout.
-- [ ] Status/readiness; push draft PR base feat/network-document-checks, attach, latest-head CI; no merge/release.
+- [x] RED labels/counts/no-source-write/formula safety/hyperlink trust/repeat/events.
+- [x] Implement; full GREEN, visual PDF render/inspect sample; commit.
+- [x] Fresh review/fix Important RED→GREEN; static7/7/gate9/9, original ReadOnly/hash, clean checkout.
+- [x] Status/readiness; push draft PR base feat/network-document-checks, attach, latest-head CI; no merge/release.

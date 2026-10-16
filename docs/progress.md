@@ -219,3 +219,4 @@ Rulings: native VBA writer is application implementation tested in required Exce
 print/XLSX examples are QA intermediates, not standalone artifact-tool deliverables.
 Conservative group/manual and explicit protocol catalog semantics retained. Exact
 TOP-LOWER, Rulebook/source loaders, Superset/coordinator and app package still pending.
+Clean checkoutf91d83d cloned without hardlinks to AccessTools-v2-table-report-verify: CompilePASS10430/0 under standard60s gate, static7/7; reportexcel-2f905fcb182f4b4c955fc95265a71a99. Excel gate integration9/9. Standard suite needs no private original.

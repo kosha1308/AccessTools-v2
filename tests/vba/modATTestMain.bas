@@ -65,6 +65,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestSupersetRead
     AT_TestTrace tracePath, "template-profile"
     AT_TestTemplateProfiles
+    AT_TestTemplateRead
+    AT_TestNetworkProfile
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

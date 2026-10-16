@@ -6,6 +6,8 @@ Public Function AT_NetworkIssuePolicyKey(ByVal issue As ATCheckIssue) As String
     Dim field As String, check As String
     check = issue.CheckId
     Select Case check
+        Case "NET.IP_REGISTRY"
+            If issue.Code = "REGISTRY_NOT_FOUND" Then field = "Проверка IP"
         Case "NET.IP_EXCEPTIONS"
             If issue.Code = "RULEBOOK_MATCH" Then field = "Правило / исключение"
             If issue.Code = "RULEBOOK_CONFLICT" Then field = "Конфликт Rulebook"

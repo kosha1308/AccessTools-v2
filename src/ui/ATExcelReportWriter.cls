@@ -22,13 +22,16 @@ Public Function Create(ByVal report As ATCheckReport, ByVal source As Worksheet)
     MergedText view.Range("A1:F1"), "AccessTools 2.0 — результаты проверки", 18, True
     view.Rows(1).RowHeight = 34
     MergedText view.Range("A2:F2"), "Отдельный отчёт • исходная заявка не изменялась", 11, False
-    MergedText view.Range("A3:F4"), "Проверена только часть заявки. Superset и сводка координатора не выполнялись. Пропущенные проверки перечислены на листе «Проверки».", 11, False
+    target = "Проверена только часть заявки. Superset и сводка координатора не выполнялись. Пропущенные проверки перечислены на листе «Проверки»."
+    If report.ScopeId = "NETWORK_ACCESS_REGISTRY_POLICY" Or report.ScopeId = "NETWORK_REGISTRY" Then target = "Это промежуточный отчёт с результатом IP-поиска. Итоговая копия Superset и сводка координатора ещё не формировались. Пропущенные проверки перечислены на листе «Проверки»."
+    MergedText view.Range("A3:F4"), target, 11, False
     view.Range("A3:F4").Interior.Color = RGB(255, 242, 204): view.Rows("3:4").RowHeight = 23
     MergedText view.Range("A6:F6"), "Ошибок: " & CStr(report.ErrorCount) & "  •  предупреждений: " & CStr(report.WarningCount) & "  •  пропущено проверок: " & CStr(report.SkippedCount), 12, True
     view.Rows(6).RowHeight = 27
     target = "Локальные проверки полей и таблиц"
     If report.ScopeId = "NETWORK_DOCUMENT" Then target = "Проверки одиночных полей"
     If report.ScopeId = "NETWORK_TABLE_INPUT" Then target = "Проверки заполнения таблиц"
+    If report.ScopeId = "NETWORK_ACCESS_REGISTRY_POLICY" Then target = "Поля, таблицы, правила и поиск IP в Superset"
     MergedText view.Range("A7:F7"), target, 11, False
     view.Range("A9:F9").Value2 = Array("№", "Важность", "Проверка", "Поле", "Сообщение", "Ячейка")
     Header view.Range("A9:F9")

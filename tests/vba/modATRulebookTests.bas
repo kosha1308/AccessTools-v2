@@ -67,6 +67,33 @@ Public Sub AT_TestRulebook()
     Set r = loaded.Policy.Superset("192.0.2.1", "web", "", b)
     AT_Assert r.State = atEvalError And r.Diagnostics(1).Code = "RUNTIME_LIMIT_STEPS", "evaluation exhausted budget gives no partial matches"
     AT_TestRulebookEdges
+    AT_TestRulebookReview
+End Sub
+Private Sub AT_TestRulebookReview()
+    Dim c As New ATNetworkRulebookCompiler, loaded As ATNetworkRulebookResult, r As ATEvalResult, v As Variant
+    Dim row As Variant, column As Variant, protocols As Collection
+    Set protocols = AT_TestRuleProtocols()
+    Set loaded = c.Compile(AT_TestRulesRaw(Array(AT_TestHostRule("IP only", "", "", "Service"))), protocols)
+    protocols.Add "BOGUS"
+    Set r = loaded.Policy.Technical("192.0.2.1", "198.51.100.1", "443", "BOGUS", AT_TestInitiatorBudget())
+    AT_Assert r.State = atEvalManualReview, "unknown protocol context cannot produce rule matches, compiled catalog frozen"
+    Set loaded = c.Compile(AT_TestRulesRaw(Array(AT_TestHostRule("prefix", "web", "prefix", "Service"))), AT_TestRuleProtocols())
+    For Each v In Array("web invalid", "other invalid", "web" & vbTab & "test", String$(254, "a"), "web,other")
+        Set r = loaded.Policy.Superset("192.0.2.1", CStr(v), "", AT_TestInitiatorBudget())
+        AT_Assert r.State = atEvalManualReview, "invalid hostname context cannot produce matches or successful empty result"
+    Next v
+    For Each column In Array(2, 4, 6, 7, 8)
+        row = AT_TestHostRule("pipe", "web", "exact", "Service")
+        Select Case CLng(column)
+            Case 2: row(2) = "192.0.2.1|192.0.2.2"
+            Case 4: row(4) = "web|other"
+            Case 6: row(4) = "": row(5) = "": row(6) = "443|8443"
+            Case 7: row(7) = "TCP|UDP"
+            Case 8: row(8) = "service|other"
+        End Select
+        Set loaded = c.Compile(AT_TestRulesRaw(Array(row)), AT_TestRuleProtocols())
+        AT_Assert loaded.State = atEvalError, "unsupported pipe separator rejected per strict published Rulebook"
+    Next column
 End Sub
 Private Sub AT_TestRulebookEdges()
     Dim c As New ATNetworkRulebookCompiler, loaded As ATNetworkRulebookResult, r As ATEvalResult, row As Variant, rows As Variant

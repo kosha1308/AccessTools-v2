@@ -15,6 +15,7 @@ Friend Sub Initialize(ByVal raw As ATRuntimeRow, ByVal protocols As Object, ByVa
     ip = AT_PolicyCell(raw, "IP", budget): scope = AT_PolicyCell(raw, "IP_SCOPE", budget)
     host = AT_PolicyCell(raw, "HOSTNAME", budget): mode = AT_PolicyCell(raw, "HOSTNAME_MATCH", budget)
     port = AT_PolicyCell(raw, "DEST_PORT", budget): protocol = AT_PolicyCell(raw, "DEST_PROTOCOL", budget)
+    AT_RuleSeparators protocol
     service = AT_PolicyCell(raw, "SERVICE_CONDITION", budget)
     If AT_ExcelBlank(ip) And AT_ExcelBlank(host) And AT_ExcelBlank(port) And AT_ExcelBlank(protocol) And AT_ExcelBlank(service) Then Err.Raise vbObjectError + 2980, , "RULEBOOK_CONDITION_REQUIRED"
     If AT_ExcelBlank(ip) And Not AT_ExcelBlank(scope) Then Err.Raise vbObjectError + 2980, , "RULEBOOK_SCOPE_INVALID"
@@ -42,6 +43,7 @@ Friend Sub Initialize(ByVal raw As ATRuntimeRow, ByVal protocols As Object, ByVa
     mOutputs = Array("RULE_NAME", "SERVICE_RESULT", "DEST_GROUP", "APPROVAL", "COMMENT", "SEVERITY", "INSTRUCTION")
     For Each id In mOutputs
         value = AT_PolicyCell(raw, CStr(id), budget)
+        If CStr(id) = "SERVICE_RESULT" Or CStr(id) = "DEST_GROUP" Or CStr(id) = "APPROVAL" Then AT_RuleSeparators value
         If Len(value) > 32767 Then Err.Raise vbObjectError + 2980, , "RULEBOOK_OUTPUT_LIMIT"
         If CStr(id) <> "RULE_NAME" And CStr(id) <> "SEVERITY" And Not AT_ExcelBlank(value) Then hasOutput = True
         If CStr(id) = "SEVERITY" Then

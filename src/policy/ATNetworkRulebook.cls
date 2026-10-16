@@ -4,7 +4,7 @@ BEGIN
 END
 Attribute VB_Name = "ATNetworkRulebook"
 Option Explicit
-Private mReady As Boolean, mRules As Collection
+Private mReady As Boolean, mRules As Collection, mProtocols As Object
 Friend Sub Initialize(ByVal raw As ATEvalResult, ByVal protocols As Collection)
     Dim budget As New ATEvalBudget, limits As New ATEvalLimits, rows As ATRuntimeValue, row As ATRuntimeRow
     Dim allowed As Object, token As Variant, rule As ATNetworkRule, i As Long, active As String
@@ -13,6 +13,7 @@ Friend Sub Initialize(ByVal raw As ATEvalResult, ByVal protocols As Collection)
     If protocols Is Nothing Then Err.Raise vbObjectError + 2980, , "RULEBOOK_PROTOCOL_INVALID"
     If protocols.Count > 1000 Then Err.Raise vbObjectError + 2980, , "RULEBOOK_PROTOCOL_INVALID"
     Set allowed = CreateObject("Scripting.Dictionary")
+    Set mProtocols = allowed
     For Each token In protocols
         If VarType(token) <> vbString Then Err.Raise vbObjectError + 2980, , "RULEBOOK_PROTOCOL_INVALID"
         budget.CheckText Len(CStr(token)): budget.Step Len(CStr(token)) + 1
@@ -37,6 +38,7 @@ Public Function Technical(ByVal source As String, ByVal destination As String, B
     parsing = True
     Set src = AT_RuleDomain(source, False, budget): Set dst = AT_RuleDomain(destination, False, budget)
     Set portSet = AT_RuleDomain(ports, True, budget): protocol = AT_RuleProtocol(protocol)
+    If Not mProtocols.Exists(protocol) Then Err.Raise vbObjectError + 2980, , "RULEBOOK_PROTOCOL_INVALID"
     budget.CheckText Len(protocol): budget.Step Len(protocol) + 1
     parsing = False
     For Each rule In mRules
@@ -59,6 +61,7 @@ Public Function Superset(ByVal ip As String, ByVal hostname As String, ByVal ser
     If budget Is Nothing Then Err.Raise vbObjectError + 2980, , "RULEBOOK_BUDGET_REQUIRED"
     parsing = True
     budget.CheckText Len(hostname): budget.CheckText Len(service): budget.Step Len(hostname) + Len(service) + 1
+    If Not AT_ExcelBlank(hostname) Then hostname = AT_RuleHostname(hostname)
     Set addresses = AT_RuleDomain(ip, False, budget)
     parsing = False
     For Each rule In mRules

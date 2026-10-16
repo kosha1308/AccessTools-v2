@@ -1,9 +1,10 @@
-﻿param([string]$Root = (Split-Path $PSScriptRoot -Parent), [Parameter(Mandatory=$true)][string]$OutputDirectory,
+﻿param([string]$Root = '', [Parameter(Mandatory=$true)][string]$OutputDirectory,
     [ValidatePattern('^[0-9A-Za-z.-]{1,50}$')][string]$Version = '2.0.0-pilot.1', [ValidateRange(30,300)][int]$TimeoutSeconds = 90)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $worker = $null; $runDirectory = $null
 try {
+    if (-not $Root) { $Root = Split-Path $PSScriptRoot -Parent }
     $Root = (Resolve-Path -LiteralPath $Root).Path
     $OutputDirectory = [IO.Path]::GetFullPath($OutputDirectory)
     if (Test-Path -LiteralPath $OutputDirectory) { throw 'PILOT_OUTPUT_EXISTS' }

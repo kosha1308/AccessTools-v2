@@ -50,8 +50,12 @@ Verify(ws) возвращает immutable ATTemplateGateResult с Allowed, Code,
 неожиданная ошибка чтения — TEMPLATE_CHECK_ERROR; оба запрещают допуск с отдельным
 понятным сообщением администратору. Нет частичного успешного допуска.
 
-Для реального enforcement ATTemplateTableGate.Read(profile,ws,layout,lastDataRow)
-сначала вызывает Verify и только после Allowed=True вызывает ATExcelTableReader.
+Для реального enforcement ATTemplateTableGate.Read(profile,ws,spec,lastDataRow)
+сначала вызывает Verify и только после Allowed=True заново выполняет spec.Locate
+и вызывает ATExcelTableReader. Старый absolute layout не принимается: допустимое
+смещение нижнего заголовка не должно превращать его в бизнес-строку.
+lastDataRow — актуальная граница текущего чтения; её вызывающий pipeline вычисляет
+на текущем листе, не переиспользует из предыдущего запуска.
 При отказе возвращает ERROR с code gate и русским Message в diagnostics, без строк.
 Это вход для чтения таблицы, а не полный dispatcher приложения. Gate не вызывает
 динамические macro/callback и не пишет в книгу/настройки Excel. Каждый запуск читает

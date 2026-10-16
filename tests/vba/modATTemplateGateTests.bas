@@ -92,6 +92,7 @@ Public Function AT_TestTemplateProfile(Optional ByVal protection As Boolean = Fa
 End Function
 Private Sub AT_TestBadTemplateProfiles(ByVal ws As Worksheet)
     Dim profile As New ATTemplateProfile, caught As Boolean
+    Dim i As Long, headers As Variant, entry As Variant
     AT_Assert Not profile.Verify(ws).Allowed And profile.Verify(ws).Code = "TEMPLATE_PROFILE_INVALID", "uninitialized profile denies entry"
     profile.Initialize "T", "1", "Request"
     profile.AddAnchor "A", "Form v2", 1, 3, 4, 5, 1, 2
@@ -117,4 +118,42 @@ Private Sub AT_TestBadTemplateProfiles(ByVal ws As Worksheet)
     caught = Err.Number <> 0: Err.Clear
     On Error GoTo 0
     AT_Assert caught, "invalid merge shape rejected"
+    Set profile = New ATTemplateProfile
+    profile.Initialize "T", "1", "Request"
+    profile.AddAnchor "A", "A", 1, 1, 1, 1, 1, 1
+    profile.AddAnchor "B", "B", 2, 2, 1, 1, 1, 1
+    profile.AddRelation "A", "UNKNOWN", 0, 5, 0, 0
+    On Error Resume Next
+    profile.Seal
+    caught = Err.Number <> 0: Err.Clear
+    On Error GoTo 0
+    AT_Assert caught And Not profile.Verify(ws).Allowed, "unknown relation end cannot publish profile"
+    Set profile = New ATTemplateProfile
+    profile.Initialize "T", "1", "Request"
+    For i = 1 To 256
+        profile.AddAnchor "A" & CStr(i), "L" & CStr(i), 1, 1, 1, 1, 1, 1
+    Next i
+    On Error Resume Next
+    profile.AddAnchor "OVER", "OVER", 1, 1, 1, 1, 1, 1
+    caught = Err.Number <> 0: Err.Clear
+    On Error GoTo 0
+    AT_Assert caught, "profile anchor count bounded"
+    For i = 1 To 1024
+        profile.AddRelation "A1", "A2", 0, 5, 0, 0
+    Next i
+    On Error Resume Next
+    profile.AddRelation "A1", "A2", 0, 5, 0, 0
+    caught = Err.Number <> 0: Err.Clear
+    On Error GoTo 0
+    AT_Assert caught, "profile relation count bounded"
+    Set profile = New ATTemplateProfile
+    profile.Initialize "COPY", "1", "Request"
+    profile.AddAnchor "TITLE", "Form v2", 1, 3, 4, 5, 1, 2
+    headers = Array(Array("Left", 1, 1), Array("Right", 2, 1))
+    profile.AddTableAnchor "TABLE", 25, 25, 1, 2, headers
+    entry = headers(0): entry(0) = "Changed": headers(0) = entry
+    profile.AddRelation "TITLE", "TABLE", 23, 23, -3, -3
+    profile.Seal
+    ws.Range("A25").Value2 = "Left": ws.Range("B25").Value2 = "Right"
+    AT_Assert profile.Verify(ws).Allowed, "group metadata copied independently of caller arrays"
 End Sub

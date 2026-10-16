@@ -35,9 +35,10 @@ Result readonly Allowed/Code/Detail/Message, initialized once. Metadata arrays c
 ### Task2 — guarded reader
 
 Files: src/templates/ATTemplateTableGate.cls; same tests.
-Interface: Read(profile As ATTemplateProfile,ws As Worksheet,layout As ATExcelTableLayout,
+Interface: Read(profile As ATTemplateProfile,ws As Worksheet,spec As ATExcelTableSpec,
 lastDataRow As Long) As ATEvalResult. Verify first, reject with single localized diagnostic;
-only allowed profile invokes existing reader.
+only allowed profile locates fresh layout and invokes existing reader. Ruling after review:
+do not accept cached absolute layout across allowed lower table movement.
 - [ ] RED mismatch vs invalid data bounds; valid template reads rows; missing profile fails closed;
   source edits require fresh Verify, no partial data on rejection.
 - [ ] Implement guard, full GREEN; fresh independent whole-branch review, fix Important RED/GREEN.

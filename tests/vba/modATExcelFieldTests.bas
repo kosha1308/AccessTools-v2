@@ -52,12 +52,14 @@ Public Sub AT_TestExcelFields()
     ws.Range("G4").Value2 = CVErr(xlErrValue)
     Set value = reader.Read(ws, spec)
     AT_Assert value.Found And value.Result.State = atEvalError, "Excel cell error retains found location"
+    AT_Assert IsError(value.RawValue2), "native Excel error retained alongside controlled result"
     AT_Assert value.Result.Diagnostics(1).Code = "EXCEL_CELL_ERROR" And value.CellRef = "'AT''s form'!G4", "Excel cell error stable code and location"
     Set raw = value.Result: raw.Diagnostics.Remove 1
     AT_Assert value.Result.Diagnostics.Count = 1, "field result diagnostic getter isolated"
     ws.Range("G4").Value2 = 0
     Set value = reader.Read(ws, spec)
     AT_Assert value.Result.Value.Scalar = "0", "numeric zero not treated as blank field"
+    AT_Assert VarType(value.RawValue2) = vbDouble And value.RawValue2 = 0#, "native numeric zero distinct from raw TEXT"
     ws.Range("G4").Value2 = "broken-prefix 192.0.2.1" & vbLf & "raw suffix"
     Set value = reader.Read(ws, spec)
     AT_Assert value.Result.Value.Scalar = "broken-prefix 192.0.2.1" & vbLf & "raw suffix", "field raw multiline content retained whole"
@@ -91,6 +93,7 @@ Public Sub AT_TestExcelFields()
     AT_TestExcelBadFieldSpecs reader, ws
     book.Close False
     AT_Assert saved.SheetName = "AT's form" And saved.Result.Value.Scalar = "exact offset", "field snapshot survives closing workbook"
+    AT_Assert saved.RawValue2 = "exact offset", "native scalar detached from later edits and source closure"
     Exit Sub
 CleanupError:
     savedNumber = Err.Number: savedText = Err.Description

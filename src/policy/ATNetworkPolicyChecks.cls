@@ -5,7 +5,18 @@ END
 Attribute VB_Name = "ATNetworkPolicyChecks"
 Option Explicit
 Public Function Run(ByVal source As ATNetworkReadResult, ByVal loaded As ATNetworkPolicyResult) As ATNetworkPolicyReport
-    Dim localRunner As New ATNetworkLocalChecks, policy As ATNetworkPolicy, localReport As ATCheckReport
+    Dim localRunner As New ATNetworkLocalChecks
+    On Error GoTo Failed
+    If loaded Is Nothing Then Err.Raise vbObjectError + 2960, , "POLICY_INPUT_INVALID"
+    If loaded.State <> atEvalOK Then Err.Raise vbObjectError + 2960, , loaded.Diagnostics(1).Code
+    Set Run = Apply(localRunner.Run(source, loaded.Policy.Protocols), loaded)
+    Exit Function
+Failed:
+    Set Run = Apply(Nothing, loaded)
+End Function
+
+Public Function Apply(ByVal localReport As ATCheckReport, ByVal loaded As ATNetworkPolicyResult) As ATNetworkPolicyReport
+    Dim policy As ATNetworkPolicy
     Dim result As New ATNetworkPolicyReport, report As New ATCheckReport
     Dim decisions As New Collection, issues As New Collection, checks As New Collection
     Dim issue As ATCheckIssue, outcome As ATCheckOutcome, updated As ATCheckOutcome, decision As ATNetworkPolicyDecision
@@ -14,9 +25,9 @@ Public Function Run(ByVal source As ATNetworkReadResult, ByVal loaded As ATNetwo
     If loaded Is Nothing Then Err.Raise vbObjectError + 2960, , "POLICY_INPUT_INVALID"
     If loaded.State <> atEvalOK Then Err.Raise vbObjectError + 2960, , loaded.Diagnostics(1).Code
     Set policy = loaded.Policy
-    Set localReport = localRunner.Run(source, policy.Protocols)
+    If localReport Is Nothing Then Err.Raise vbObjectError + 2960, , "POLICY_INPUT_INVALID"
     If localReport.State <> atEvalOK Then
-        result.Initialize localReport, decisions: Set Run = result: Exit Function
+        result.Initialize localReport, decisions: Set Apply = result: Exit Function
     End If
     Set errors = CreateObject("Scripting.Dictionary")
     For Each issue In localReport.Issues
@@ -33,8 +44,10 @@ Public Function Run(ByVal source As ATNetworkReadResult, ByVal loaded As ATNetwo
         Set updated = New ATCheckOutcome
         updated.Initialize outcome.CheckId, status, outcome.Reason: checks.Add updated
     Next outcome
-    report.Initialize atEvalOK, "NETWORK_LOCAL_POLICY", issues, checks
-    result.Initialize report, decisions: Set Run = result
+    status = "NETWORK_LOCAL_POLICY"
+    If localReport.ScopeId = "NETWORK_ACCESS_PARTIAL" Then status = "NETWORK_ACCESS_PARTIAL_POLICY"
+    report.Initialize atEvalOK, status, issues, checks
+    result.Initialize report, decisions: Set Apply = result
     Exit Function
 Failed:
     code = AT_StableErrorCode(Err.Description, "POLICY_INPUT_INVALID")
@@ -44,5 +57,5 @@ Failed:
     issue.Initialize "NET.POLICY", code, "ERROR", "", "", "Не удалось применить книгу правил. Исправьте настройки Rulebook и повторите проверку.": issues.Add issue
     outcome.Initialize "NET.POLICY", "BLOCKED", "Применение правил не завершено.": checks.Add outcome
     report.Initialize atEvalError, "NETWORK_LOCAL_POLICY", issues, checks
-    result.Initialize report, decisions: Set Run = result
+    result.Initialize report, decisions: Set Apply = result
 End Function

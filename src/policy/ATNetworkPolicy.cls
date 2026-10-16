@@ -99,6 +99,9 @@ Public Function Decide(ByVal original As ATCheckIssue, ByVal key As String) As A
     If original Is Nothing Then Err.Raise vbObjectError + 2960, , "POLICY_INPUT_INVALID"
     message = original.Message: severity = original.Severity
     user = True: userError = (severity = "ERROR")
+    If original.CheckId = "NET.INITIATOR_APPROVAL_RULES" And original.Code = "INITIATOR_APPROVAL_REQUIRED" Then
+        user = False: userError = False: request = True: highlight = True
+    End If
     If Len(key) > 0 Then
         key = AT_PolicyKey(key): values = Split(key, "|"): field = CStr(values(2))
         If CStr(values(1)) <> original.Severity Then Err.Raise vbObjectError + 2960, , "POLICY_KEY_INVALID"
@@ -112,6 +115,7 @@ Public Function Decide(ByVal original As ATCheckIssue, ByVal key As String) As A
             values = mRoutes(key): user = CBool(values(0)): request = CBool(values(1)) And highlight: superset = CBool(values(2))
         End If
     End If
+    request = request And highlight
     If Len(coordinatorText) = 0 Then coordinatorText = message
     issue.Initialize original.CheckId, original.Code, severity, original.FieldId, original.CellRef, message
     coordinator.Initialize original.CheckId, original.Code, severity, original.FieldId, original.CellRef, coordinatorText

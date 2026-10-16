@@ -6,6 +6,13 @@ Public Function AT_NetworkIssuePolicyKey(ByVal issue As ATCheckIssue) As String
     Dim field As String, check As String
     check = issue.CheckId
     Select Case check
+        Case "NET.INITIATOR_ALLOWED"
+            If issue.Code = "INITIATOR_NOT_ALLOWED" Then field = "Электронная почта"
+        Case "NET.INITIATOR_APPROVAL_RULES"
+            If issue.Code = "INITIATOR_APPROVAL_REQUIRED" Then field = "Дополнительное согласование"
+        Case "NET.INITIATOR_IP_ACCESS"
+            If issue.Code = "INITIATOR_IP_DENIED" Then field = AT_FieldTitle(issue.FieldId)
+            If issue.Code = "INITIATOR_DB_ACCOUNT_FORBIDDEN" Then field = "Учетная запись"
         Case "NET.REQUIRED_FIELDS"
             If issue.Code = "FIELD_REQUIRED" Then
                 Select Case issue.FieldId

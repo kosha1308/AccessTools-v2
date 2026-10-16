@@ -72,6 +72,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestNetworkRead
     AT_TestTrace tracePath, "excel-date"
     AT_TestExcelDates
+    AT_TestTrace tracePath, "network-normalize"
+    AT_TestNetworkNormalize
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

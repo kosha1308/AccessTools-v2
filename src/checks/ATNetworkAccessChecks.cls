@@ -4,6 +4,39 @@ BEGIN
 END
 Attribute VB_Name = "ATNetworkAccessChecks"
 Option Explicit
+Public Function ApplySupersetRules(ByVal previous As ATNetworkPolicyReport, ByVal annotations As ATNetworkSupersetResult, ByVal catalog As ATNetworkPolicyResult) As ATNetworkPolicyReport
+    Dim presenter As New ATNetworkPolicyChecks, added As ATNetworkPolicyReport, ready As New ATCheckReport
+    Dim raw As ATCheckReport, capacity As Long, code As String
+    On Error GoTo FailedSuperset
+    If previous Is Nothing Then Set ApplySupersetRules = presenter.Apply(Nothing, catalog): Exit Function
+    If previous.AllReport.State <> atEvalOK Then Set ApplySupersetRules = previous: Exit Function
+    capacity = 1000 - previous.AllReport.Issues.Count
+    If annotations Is Nothing Then
+        Set added = BlockedSuperset(catalog, "SUPERSET_RULES_INPUT_INVALID", capacity)
+    Else
+        Set raw = annotations.Report
+        If raw.Issues.Count > capacity Then
+            Set added = BlockedSuperset(catalog, "CHECK_REPORT_LIMIT", capacity)
+        Else
+            ready.Initialize atEvalOK, "SUPERSET_RULES", raw.Issues, raw.Checks
+            Set added = presenter.Apply(ready, catalog)
+            If added.AllReport.State <> atEvalOK Then Set added = BlockedSuperset(catalog, added.AllReport.Issues(1).Code, capacity)
+        End If
+    End If
+    Set ApplySupersetRules = Combine(previous, added, "NETWORK_ACCESS_SUPERSET_POLICY"): Exit Function
+FailedSuperset:
+    code = AT_StableErrorCode(Err.Description, "SUPERSET_RULES_INPUT_INVALID")
+    If previous Is Nothing Then Set ApplySupersetRules = presenter.Apply(Nothing, catalog): Exit Function
+    If previous.AllReport.State <> atEvalOK Then Set ApplySupersetRules = previous: Exit Function
+    Set ApplySupersetRules = Combine(previous, BlockedSuperset(catalog, code, 1000 - previous.AllReport.Issues.Count), "NETWORK_ACCESS_SUPERSET_POLICY")
+End Function
+Private Function BlockedSuperset(ByVal catalog As ATNetworkPolicyResult, ByVal code As String, ByVal capacity As Long) As ATNetworkPolicyReport
+    Dim raw As New ATCheckReport, issues As New Collection, checks As New Collection, outcome As New ATCheckOutcome
+    Dim presenter As New ATNetworkPolicyChecks
+    If capacity > 0 Then AT_SupersetRuleIssue issues, code, "ERROR", "", "Не удалось оформить результат правил Superset. Предыдущие проверки сохранены."
+    outcome.Initialize "NET.HOSTNAME_RULES", "BLOCKED", "Правила Superset не завершены.": checks.Add outcome
+    raw.Initialize atEvalOK, "SUPERSET_RULES", issues, checks: Set BlockedSuperset = presenter.Apply(raw, catalog)
+End Function
 Public Function ApplyRegistry(ByVal previous As ATNetworkPolicyReport, ByVal registry As ATNetworkRegistryResult, ByVal catalog As ATNetworkPolicyResult) As ATNetworkPolicyReport
     Dim presenter As New ATNetworkPolicyChecks, added As ATNetworkPolicyReport, ready As New ATCheckReport
     Dim raw As ATCheckReport, capacity As Long, code As String

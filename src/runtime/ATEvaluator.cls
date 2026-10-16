@@ -87,7 +87,7 @@ End Sub
 
 Private Function EvaluateNode(ByVal node As ATAstNode, ByVal frame As Collection) As ATEvalResult
     Dim result As ATEvalResult, right As ATEvalResult, value As ATRuntimeValue, items As New Collection
-    Dim child As ATAstNode, args As New Collection, local As Collection, binding As ATArgumentBinding
+    Dim child As ATAstNode, args As New Collection, localFrame As Collection, binding As ATArgumentBinding
     Dim i As Long, state As ATValueState, answer As Boolean, param As ATEvalResult
     Select Case node.Kind
         Case "NUMBER"
@@ -144,14 +144,14 @@ Private Function EvaluateNode(ByVal node As ATAstNode, ByVal frame As Collection
                 End If
                 Exit Function
             End If
-            Set local = New Collection
+            Set localFrame = New Collection
             For Each binding In node.ParameterBindings
                 If Len(binding.NormalizerId) > 0 Then
                     Set EvaluateNode = AT_RuntimeFailure(atEvalError, "RUNTIME_UNSUPPORTED_NORMALIZER", binding.Expression)
                     Exit Function
                 End If
                 If binding.IsDefault Then
-                    Set result = Visit(binding.Expression, local)
+                    Set result = Visit(binding.Expression, localFrame)
                 Else
                     Set result = Visit(binding.Expression, frame)
                 End If
@@ -159,9 +159,9 @@ Private Function EvaluateNode(ByVal node As ATAstNode, ByVal frame As Collection
                     Set EvaluateNode = result
                     Exit Function
                 End If
-                local.Add result, binding.Id
+                localFrame.Add result, binding.Id
             Next binding
-            Set EvaluateNode = Visit(node.Expansion, local)
+            Set EvaluateNode = Visit(node.Expansion, localFrame)
             Exit Function
         Case "CALL", "UNARY", "BINARY", "RELATION"
         Case Else
@@ -211,7 +211,7 @@ Private Function EvaluateNode(ByVal node As ATAstNode, ByVal frame As Collection
             End If
             Exit Function
         Case "AND", "OR", "NOT"
-            Set result = AT_Usable(value, node)
+            Set result = AT_Usable(value, node, mBudget)
             If result.State <> atEvalOK Then
                 Set EvaluateNode = SkipRemaining(node, 2, result)
                 Exit Function
@@ -226,11 +226,11 @@ Private Function EvaluateNode(ByVal node As ATAstNode, ByVal frame As Collection
                 Exit Function
             End If
             Set right = Visit(node.Children(2), frame)
-            If right.State = atEvalOK Then Set right = AT_Usable(right.Value, node)
+            If right.State = atEvalOK Then Set right = AT_Usable(right.Value, node, mBudget)
             Set EvaluateNode = right
             Exit Function
     End Select
-    Set result = AT_Usable(value, node)
+    Set result = AT_Usable(value, node, mBudget)
     If result.State <> atEvalOK Then
         Set EvaluateNode = SkipRemaining(node, 2, result)
         Exit Function
@@ -242,7 +242,7 @@ Private Function EvaluateNode(ByVal node As ATAstNode, ByVal frame As Collection
             Set EvaluateNode = SkipRemaining(node, i + 1, result)
             Exit Function
         End If
-        Set result = AT_Usable(result.Value, node)
+        Set result = AT_Usable(result.Value, node, mBudget)
         If result.State <> atEvalOK Then
             Set EvaluateNode = SkipRemaining(node, i + 1, result)
             Exit Function

@@ -48,7 +48,8 @@ Public Function Snapshot() As ATEvaluationContext
     result.Freeze
     Set Snapshot = result
 End Function
-Private Sub RetainField(ByVal id As String, ByVal result As ATEvalResult)
+Friend Sub RetainField(ByVal id As String, ByVal result As ATEvalResult)
+    If mFrozen Then Err.Raise vbObjectError + 2500, , "RUNTIME_VALUE_FROZEN"
     mFields.Add result, id
     mIds.Add id
 End Sub

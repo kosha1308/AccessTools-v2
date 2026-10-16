@@ -21,7 +21,7 @@ Public Sub AT_TestRuntimeAcceptance()
     For Each item In Array("SUM(@VALUES) = 0", "@VALUES EXACT @VALUES", "@VALUES COVER [1]", "[1] CONTAINS @VALUES", "@VALUES NONE [1]", "@NAME = ""SECRET""", """SECRET"" = @NAME")
         Set compiled = compiler.Compile(CStr(item), schema)
         Set result = evaluator.Evaluate(compiled, context)
-        AT_Assert result.State = atEvalOK, "acceptance result state"
+        AT_Assert result.State = atEvalOK, "acceptance result state: " & CStr(item) & AT_RuntimeTestDetails(result)
         If result.State = atEvalOK Then AT_Assert result.Value.Scalar = True, "acceptance result value"
     Next item
     For Each item In Array("MIN(@VALUES) = 0", "MAX(@VALUES) = 0", "AVG(@VALUES) = 0")
@@ -30,9 +30,9 @@ Public Sub AT_TestRuntimeAcceptance()
     Next item
     For Each item In Array("@IP COVER @IP", "@NAME MATCHES "".*""", "@NAME LIKE ""*""", "SOURCE(""S"") = 1", "LOOKUP(""S"",1,""N"") = 1", "COUNT(@ROWS) = 0", "EXISTS(@ROWS)", "ALLROWS(@ROWS AS t, TRUE)", "ANYROW(@ROWS AS t, TRUE)", "NOROWS(@ROWS AS t, FALSE)", "COUNT(FILTER(@ROWS AS t, TRUE)) = 0", "DISTINCT_COUNT(@VALUES) = 0")
         Set compiled = compiler.Compile(CStr(item), schema)
-        AT_Assert Not compiled.Root Is Nothing, "deferred fixture compiles"
+        AT_Assert Not compiled.Root Is Nothing, "deferred fixture compiles: " & CStr(item)
         Set result = evaluator.Evaluate(compiled, context)
-        AT_Assert result.Diagnostics(1).Code = "RUNTIME_UNSUPPORTED_PRIMITIVE", "deferred signature explicit unsupported before missing input"
+        AT_Assert result.Diagnostics(1).Code = "RUNTIME_UNSUPPORTED_PRIMITIVE", "deferred signature explicit unsupported before missing input: " & CStr(item) & AT_RuntimeTestDetails(result)
     Next item
     Set compiled = compiler.Compile("@NAME = ""SECRET""", schema)
     before = serializer.Serialize(compiled.Root)
@@ -63,6 +63,39 @@ Public Sub AT_TestRuntimeAcceptance()
     Set result = evaluator.Evaluate(compiler.Compile("TRUE", schema), Nothing)
     AT_Assert result.Diagnostics(1).Code = "CONFIG_CONTEXT_REQUIRED", "missing evaluation context rejected"
     AT_TestRuntimeInputLimits
+    AT_TestInvalidListElements
+End Sub
+
+Private Sub AT_TestInvalidListElements()
+    Dim schema As New ATCompileContext, context As New ATEvaluationContext, compiler As New ATCompiler, evaluator As New ATEvaluator
+    Dim list As ATRuntimeValue, items As New Collection, result As ATEvalResult, expression As Variant
+    Dim tiny As Double, i As Long, nextContext As New ATEvaluationContext
+    schema.AddField "VALUES", "LIST<NUMBER>"
+    context.Initialize "INVALID_LIST", "2026-10-16", "UTC", "INVARIANT", "BINARY"
+    items.Add AT_RuntimeScalar("NUMBER", 1#)
+    items.Add AT_RuntimeState("NUMBER", atValueInvalid)
+    Set list = New ATRuntimeValue
+    list.InitializeList "NUMBER", items
+    context.AddField "VALUES", AT_RuntimeOK(list)
+    For Each expression In Array("@VALUES ANY [1]", "@VALUES EXACT [1]", "@VALUES = [1]")
+        Set result = evaluator.Evaluate(compiler.Compile(CStr(expression), schema), context)
+        AT_Assert result.State = atEvalError, "invalid trailing list element cannot yield Boolean"
+    Next expression
+    tiny = 2.2250738585072014E-308
+    For i = 1 To 52
+        tiny = tiny / 2#
+    Next i
+    AT_Assert tiny > 0#, "subnormal fixture preserves nonzero Double"
+    Set items = New Collection
+    items.Add AT_RuntimeScalar("NUMBER", tiny)
+    items.Add AT_RuntimeScalar("NUMBER", 0#)
+    Set list = New ATRuntimeValue
+    list.InitializeList "NUMBER", items
+    nextContext.Initialize "SUBNORMAL", "2026-10-16", "UTC", "INVARIANT", "BINARY"
+    nextContext.AddField "VALUES", AT_RuntimeOK(list)
+    Set result = evaluator.Evaluate(compiler.Compile("AVG(@VALUES) = 0", schema), nextContext)
+    AT_Assert result.State = atEvalError, "AVG nonzero underflow is error"
+    If result.Diagnostics.Count > 0 Then AT_Assert result.Diagnostics(1).Code = "RUNTIME_NUMBER_RANGE", "AVG underflow stable diagnostic"
 End Sub
 
 Private Sub AT_TestRuntimeInputLimits()

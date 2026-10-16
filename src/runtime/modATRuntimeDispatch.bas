@@ -31,9 +31,21 @@ Public Function AT_RuntimeTypeSupported(ByVal typeName As String) As Boolean
         AT_RuntimeTypeSupported = AT_RuntimeScalarType(Mid$(typeName, 6, Len(typeName) - 6))
     End If
 End Function
-Public Function AT_Usable(ByVal value As ATRuntimeValue, ByVal node As ATAstNode) As ATEvalResult
+Public Function AT_Usable(ByVal value As ATRuntimeValue, ByVal node As ATAstNode, Optional ByVal budget As ATEvalBudget = Nothing) As ATEvalResult
+    Dim i As Long, result As ATEvalResult
     Select Case value.ValueState
-        Case atValuePresent: Set AT_Usable = AT_RuntimeOK(value)
+        Case atValuePresent
+            If Left$(value.DataType, 5) = "LIST<" Then
+                For i = 1 To value.Count
+                    If Not budget Is Nothing Then budget.Step
+                    Set result = AT_Usable(value.Item(i), node, budget)
+                    If result.State <> atEvalOK Then
+                        Set AT_Usable = result
+                        Exit Function
+                    End If
+                Next i
+            End If
+            Set AT_Usable = AT_RuntimeOK(value)
         Case atValueMissing: Set AT_Usable = AT_RuntimeFailure(atEvalError, "RUNTIME_FIELD_MISSING", node)
         Case atValueInvalid: Set AT_Usable = AT_RuntimeFailure(atEvalError, "RUNTIME_INVALID_VALUE", node)
         Case Else: Set AT_Usable = AT_RuntimeFailure(atEvalError, "RUNTIME_VALUE_UNUSABLE", node)

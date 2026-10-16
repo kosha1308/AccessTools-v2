@@ -109,7 +109,11 @@ Public Function AT_ApplyScalar(ByVal node As ATAstNode, ByVal args As Collection
                         If (node.PrimitiveId = "MIN" And cmp < 0) Or (node.PrimitiveId = "MAX" And cmp > 0) Then Set value = item
                     End If
                 Next i
-                If node.PrimitiveId = "AVG" Then n = n / a.Count
+                If node.PrimitiveId = "AVG" Then
+                    x = n
+                    n = n / a.Count
+                    If x <> 0# And n = 0# Then GoTo NumberRange
+                End If
                 If value Is Nothing Then Set value = AT_RuntimeScalar("NUMBER", n)
             Else
                 cmp = Compare(a, b, context)
@@ -150,13 +154,13 @@ Private Function Compare(ByVal a As ATRuntimeValue, ByVal b As ATRuntimeValue, B
 End Function
 
 Private Function RoundEven(ByVal value As Double, ByVal precision As Long) As Double
-    Dim scale As Double, scaled As Double, whole As Double, fraction As Double
+    Dim factor As Double, scaled As Double, whole As Double, fraction As Double
     If Abs(value) >= 9007199254740992# Then
         RoundEven = value
         Exit Function
     End If
-    scale = 10# ^ precision
-    scaled = Abs(value) * scale
+    factor = 10# ^ precision
+    scaled = Abs(value) * factor
     If scaled >= 9007199254740992# Then
         RoundEven = value
         Exit Function
@@ -164,5 +168,5 @@ Private Function RoundEven(ByVal value As Double, ByVal precision As Long) As Do
     whole = Fix(scaled)
     fraction = scaled - whole
     If fraction > 0.5 Or (fraction = 0.5 And whole - 2# * Fix(whole / 2#) <> 0#) Then whole = whole + 1#
-    RoundEven = Sgn(value) * (whole / scale)
+    RoundEven = Sgn(value) * (whole / factor)
 End Function

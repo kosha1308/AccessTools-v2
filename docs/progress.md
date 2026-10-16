@@ -220,3 +220,18 @@ print/XLSX examples are QA intermediates, not standalone artifact-tool deliverab
 Conservative group/manual and explicit protocol catalog semantics retained. Exact
 TOP-LOWER, Rulebook/source loaders, Superset/coordinator and app package still pending.
 Clean checkoutf91d83d cloned without hardlinks to AccessTools-v2-table-report-verify: CompilePASS10430/0 under standard60s gate, static7/7; reportexcel-2f905fcb182f4b4c955fc95265a71a99. Excel gate integration9/9. Standard suite needs no private original.
+
+## Exact address declaration match 2026-10-16
+
+Basefea4c22; added NET.ADDRESS_MATCH as tenth local outcome. Declaration keys
+preserve IP/CIDR/range distinctions and invalid tokens; groups/masks/errors skip
+comparison. Missing/extra issues retain exact source refs; limits fail closed.
+First GREEN10483/0; numeric invalid tail with x RED10484/1 ->GREEN10485/0.
+Fresh independent review found missing typed-input text budget; RED10486/1 ->
+CheckText through ResolveField budget ->CompilePASS10488/0.
+Original ReadOnly STATE=0|CHECKS=10|ERRORS=6|WARNINGS=2|LINKS=8;
+unchangedSHA256 21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7.
+Reportexcel-9bb89ef98b3f47a7a50cfa641641ee1d. Static7/7, Excel gate9/9.
+User can provide empty Superset/Rulebook schema files; no real business data
+required. Source readers, matching/coordinator and full user package remain pending.
+Clean checkout0daf296: CompilePASS10488/0 under standard60s; static7/7, reportexcel-3ee05fd0e294460794d08605fa60d578.

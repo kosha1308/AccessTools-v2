@@ -26,7 +26,7 @@ New issues plus existing reports can exceed cap: block without partial positives
 Files src/checks/ATNetworkAddressMatch.cls, ATNetworkLocalChecks.cls,
 src/ui/modATReportLabels.bas, tests/vba/modATAddressMatchTests.bas, main;
 integration expected outcome count9→10 only in existing tests/helper.
-- [ ] RED pair corpus and real-reader cases, invalid/missing/extra/groups/errors/limits, integration10outcomes.
-- [ ] Implement; real Excel full GREEN, commit. Fresh independent review; fix Important RED/GREEN.
-- [ ] Static7/7 gate9/9, original ReadOnly/hash, clean-checkout compile/full suite.
+- [x] RED pair corpus and real-reader cases, invalid/missing/extra/groups/errors/limits, integration10outcomes.
+- [x] Implement; real Excel full GREEN, commit. Fresh independent review; fix Important RED/GREEN.
+- [x] Static7/7 gate9/9, original ReadOnly/hash, clean-checkout compile/full suite.
 - [ ] Russian status/readiness, push draft PR base feat/network-table-report, attach and verify latest-head CI. No merge/release.

@@ -34,6 +34,15 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestDiagnostics
     AT_TestTrace tracePath, "registry-examples"
     AT_TestRegistryExamples
+    AT_TestTrace tracePath, "runtime-model"
+    AT_TestRuntimeModel
+    AT_TestTrace tracePath, "runtime-normalize"
+    AT_TestNormalize
+    AT_TestTrace tracePath, "runtime-evaluator"
+    AT_TestEvaluator
+    AT_TestEvalLimits
+    AT_TestPrimitiveEval
+    AT_TestRuntimeAcceptance
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

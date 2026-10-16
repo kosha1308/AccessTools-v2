@@ -13,6 +13,11 @@ for acceptance evidence, scope and the boundary before Runtime evaluation.
 No production checks are replaced.
 AccessTools 0.2.x is a reference line, not a build/runtime dependency.
 
+Stage 2A Runtime core is drafted on feat/runtime-core. Its VBA compile/tests are
+blocked by the development environment denying Excel COM activation; this branch
+is not accepted or production-ready. See [runtime-core-status.md](docs/runtime-core-status.md)
+for the implemented scope, written tests and outstanding verification.
+
 ## Developer checks (Windows)
 
 Run from the repository root in Windows PowerShell 5.1:

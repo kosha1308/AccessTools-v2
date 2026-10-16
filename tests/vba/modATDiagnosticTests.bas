@@ -34,4 +34,51 @@ Public Sub AT_TestDiagnostics()
         AT_Assert result.Diagnostics(1).Code = "PARSE_EXPECTED_VALUE", "definition parser diagnostic preserved"
         AT_Assert result.Diagnostics(1).SourceId = "NAMED:BAD_SYNTAX", "definition parser source preserved"
     End If
+    AT_TestRuntimeProvenance
+End Sub
+
+Private Sub AT_TestRuntimeProvenance()
+    Dim context As New ATCompileContext, compiler As New ATCompiler
+    Dim result As ATCompileResult, named As ATNamedExpression, node As ATAstNode
+    context.AddField "N", "NUMBER"
+    context.AddField "VALUES", "LIST<NUMBER>"
+    context.AddField "ROWS", "COLLECTION<ROW<T>>"
+    context.AddSource "S", "LIST<NUMBER>", "NUMBER"
+    context.AddSourceColumn "S", "N", "NUMBER"
+    Set named = New ATNamedExpression
+    named.Initialize "OLD", "BOOL", "TRUE"
+    named.Status = "DEPRECATED"
+    context.AddNamed named
+    Set named = New ATNamedExpression
+    named.Initialize "OUTER", "BOOL", "$OLD"
+    context.AddNamed named
+    Set result = compiler.Compile("$OUTER", context)
+    AT_Assert result.Diagnostics.Count = 1, "nested warning present"
+    If result.Diagnostics.Count = 1 Then
+        AT_Assert result.Diagnostics(1).SourceId = "NAMED:OUTER", "nested warning original source"
+        AT_Assert result.Diagnostics(1).Start = 1 And result.Diagnostics(1).Length = 4, "nested warning exact span"
+    End If
+    Set result = compiler.Compile("SOURCE(""S"")", context, , "LIST<NUMBER>")
+    AT_Assert Not result.Root Is Nothing, "source provenance compiles"
+    If Not result.Root Is Nothing Then AT_Assert result.Root.Children(1).SourceId = "RULE", "source literal source"
+    Set result = compiler.Compile("LOOKUP(""S"",@N,""N"") = 1", context)
+    AT_Assert Not result.Root Is Nothing, "lookup provenance compiles"
+    If Not result.Root Is Nothing Then
+        Set node = result.Root.Children(1)
+        AT_Assert node.Children(1).SourceId = "RULE" And node.Children(3).SourceId = "RULE", "lookup literals source"
+        AT_Assert node.Children(1).Start = 8 And node.Children(3).Start = 15, "lookup literals exact span"
+    End If
+    Set result = compiler.Compile("ALLROWS(@ROWS AS t, TRUE)", context)
+    AT_Assert Not result.Root Is Nothing, "binding provenance compiles"
+    If Not result.Root Is Nothing Then AT_Assert result.Root.Children(1).SourceId = "RULE", "binding source"
+    Set named = New ATNamedExpression
+    named.Initialize "COVER_ONE", "BOOL", "@VALUES COVER: 1"
+    context.AddNamed named
+    Set result = compiler.Compile("$COVER_ONE", context)
+    AT_Assert Not result.Root Is Nothing, "contextual list provenance compiles"
+    If Not result.Root Is Nothing Then
+        Set node = result.Root.Expansion.Children(2)
+        AT_Assert node.SourceId = "NAMED:COVER_ONE", "contextual list source"
+        AT_Assert node.Start = 16 And node.Length = 1, "contextual list span"
+    End If
 End Sub

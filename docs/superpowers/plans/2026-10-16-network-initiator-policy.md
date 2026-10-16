@@ -31,10 +31,10 @@ Compile(initiators,ipRules AsATEvalResult,noPolicyAction AsString) AsATInitiator
 Policy.ForEmail(email,budget) AsATInitiatorSelection with IdentityReport(ref),
 Evaluate(expression AsATRuntimeValue,scope,budget) AsATEvalResult, AccountForbidden,
 HasDirectionalRules; selections immutable. Source primitives use existing interval sets.
-- [ ] RED selector/identity/approvals and coverage corpus: exact/domain priority,
+- [x] RED selector/identity/approvals and coverage corpus: exact/domain priority,
  exclusions, wildcard boundaries, deny/NOT, multi-row union, scope, no-policy,
  malformed/inactive/error/budget and snapshots; observe failure.
-- [ ] Implement, real Excel full GREEN, commit.
+- [x] Implement, real Excel full GREEN, commit.
 
 ### Task2 — checks and one-pass composition
 
@@ -43,9 +43,9 @@ modify ATNetworkPolicyChecks (extract Apply), policy bindings/default approval a
 tests/vba/modATInitiatorApplyTests.bas.
 Actor.Run(source,loadedActor) AsATCheckReport3 outcomes.
 Access.Run(source,loadedCatalog,loadedActor) AsATNetworkPolicyReport13 outcomes.
-- [ ] RED source/destination denied refs, lower actuals/unknown direction,
+- [x] RED source/destination denied refs, lower actuals/unknown direction,
  accountC10, mixed invalid inputs, missing email, admission/approval independence,
  unchanged local10, routing/one-pass messages and failures.
-- [ ] Implement, full GREEN; fresh independent review/fix.
+- [x] Implement, full GREEN; fresh independent review/fix.
 - [ ] Read-only original/hash, static7/7 gate9/9 clean-copy default60s full suite;
  status/readiness, draft PR basePR16, attach/verify CI. No merge/release.

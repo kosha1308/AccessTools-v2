@@ -271,3 +271,24 @@ General initiator/IP/hostname/port/service rule evaluation, source matcher,
 coordinator UI/outputs and user package remain pending. AllReport is not a
 filtered user report; future UI must consume channel data/UserErrorCount explicitly.
 Clean checkout1c6d8de: CompilePASS10660/0 default60s, static7/7; reportexcel-4fe55b829f664bd79f0e50015e90c92c. Standard suite needs no private sources.
+
+## Initiator admission, approvals and IP access 2026-10-16
+
+Base8ad6a2c/suite10660. User explicitly confirmed NoPolicyAction=ALLOW when no
+personal email/domain IP rules. Published NETWORK profile constant, compiler action
+required. INITIATORS +INITIATOR_IP typed RAW compile to immutable selector/selection.
+Exact-email IP policy replaces domain globally, scopes ANY/SOURCE/DESTINATION,
+allow union full coverage and no deny overlap, embeddedНЕ:/NOT:, x/х masks.
+Published header defaults apply to IP table only; empty allow remains emptyset.
+Identity admission independent from approvals and IP; account forbidden atC10.
+Task1 RED ->10723/0; Task2 RED/reserved local variable fixed, fixture merge clear
+corrected ->10734/0. Composite13raw checks thenApply once; approval fallback request
+only/non-user, explicit catalog can override. Existing local10/core/writer unchanged.
+Fresh review found malformed selectors and unparsed IP PASS when no policy;
+reproduced10734/7 ->strict config domains/leading@, manual on unparsed ->10746/0.
+Whole-form email checker unchanged. Original Rulebook/request ReadOnly ACTOR0/
+CHECKS13/ERRORS6/WARNINGS2/ACTOR_SKIPPED3; both SHA256 unchanged; reportexcel-
+24f24e7edf0a4e9ab530bde7f115d5bf. Static7/7 gate9/9. No review finding deferred.
+Skipped actor reasons now explicit Russian strings. General IP/hostname/port/service
+rules, Superset index/matcher, coordinator UI/outputs/instructions and package pending.
+Clean checkoutbd41767: CompilePASS10746/0 default60s static7/7; reportexcel-80ac01f7972e468e835ce26997bb7035. ExcelGate9/9; standard suite no private sources.

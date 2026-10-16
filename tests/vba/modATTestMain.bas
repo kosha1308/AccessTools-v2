@@ -71,6 +71,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestPolicyApply
     AT_TestTrace tracePath, "initiator-policy"
     AT_TestInitiatorPolicy
+    AT_TestTrace tracePath, "initiator-apply"
+    AT_TestInitiatorApply
     AT_TestTrace tracePath, "template-profile"
     AT_TestTemplateProfiles
     AT_TestTemplateRead

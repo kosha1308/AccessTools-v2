@@ -13,12 +13,18 @@ Public Function AT_CheckTitle(ByVal id As String) As String
         Case "NET.ADDRESS_TABLE": AT_CheckTitle = "Таблица адресов"
         Case "NET.ADDRESS_MATCH": AT_CheckTitle = "Соответствие адресов двух таблиц"
         Case "NET.POLICY": AT_CheckTitle = "Применение книги правил"
+        Case "NET.INITIATOR_ALLOWED": AT_CheckTitle = "Допустимый инициатор"
+        Case "NET.INITIATOR_APPROVAL_RULES": AT_CheckTitle = "Согласования по инициатору"
+        Case "NET.INITIATOR_IP_ACCESS": AT_CheckTitle = "Права инициатора на IP"
+        Case "NET.INITIATOR_POLICY": AT_CheckTitle = "Подготовка правил инициаторов"
         Case "NET.INPUT", "NET.TABLE_INPUT": AT_CheckTitle = "Подготовка заявки"
         Case Else: AT_CheckTitle = "Проверка заявки"
     End Select
 End Function
 Public Function AT_FieldTitle(ByVal id As String) As String
     Select Case id
+        Case "APPROVAL": AT_FieldTitle = "Дополнительное согласование"
+        Case "DB_ACCOUNT": AT_FieldTitle = "Учетная запись"
         Case "INITIATOR_FULL_NAME": AT_FieldTitle = "Фамилия Имя Отчество"
         Case "DEPARTMENT": AT_FieldTitle = "Подразделение"
         Case "POSITION": AT_FieldTitle = "Должность"

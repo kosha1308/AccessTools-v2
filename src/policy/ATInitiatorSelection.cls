@@ -23,6 +23,15 @@ End Property
 Public Property Get HasDirectionalRules() As Boolean
     RequireReady: HasDirectionalRules = mDirectional
 End Property
+Public Property Get NoPolicyAction() As String
+    RequireReady: NoPolicyAction = mAction
+End Property
+Public Function HasRegionPolicy(ByVal scope As String) As Boolean
+    Dim region As Variant
+    RequireReady
+    If Not mRegions.Exists(scope) Then Err.Raise vbObjectError + 2970, , "INITIATOR_SCOPE_INVALID"
+    region = mRegions(scope): HasRegionPolicy = CBool(region(2))
+End Function
 Public Function IdentityReport(ByVal ref As String) As ATCheckReport
     Dim issues As New Collection, checks As New Collection, report As New ATCheckReport, outcome As ATCheckOutcome
     Dim status As String, entry As Variant, message As String
@@ -53,6 +62,7 @@ Public Function Evaluate(ByVal expression As ATRuntimeValue, ByVal scope As Stri
         Set Evaluate = AT_RuntimeFailure(atEvalSkipped, "INITIATOR_EMAIL_UNAVAILABLE", Nothing): Exit Function
     End If
     If expression Is Nothing Then GoTo Invalid
+    expression.ValidateBudget budget
     If expression.DataType <> "IP_EXPRESSION" Or expression.ValueState <> atValuePresent Then GoTo Invalid
     If Not mRegions.Exists(scope) Then Err.Raise vbObjectError + 2970, , "INITIATOR_SCOPE_INVALID"
     region = mRegions(scope)

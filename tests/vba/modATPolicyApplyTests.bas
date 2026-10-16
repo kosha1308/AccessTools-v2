@@ -61,6 +61,7 @@ Public Sub AT_TestPolicyApply()
     Set result = runner.Run(source, loaded)
     AT_Assert result.AllReport.State = atEvalError And result.AllReport.Checks.Count = 1, "invalid policy publishes no partial successes"
     AT_Assert result.AllReport.Checks(1).CheckId = "NET.POLICY" And result.AllReport.Issues(1).Code = "POLICY_INPUT_INVALID", "invalid policy visible with stable reason"
+    AT_Assert result.UserErrorCount = 0, "Rulebook configuration failure is not a user-input error"
     Set result = runner.Run(source, Nothing)
     AT_Assert result.AllReport.State = atEvalError And result.UserIssues.Count = 1, "missing compiled policy visible"
     book.Close False: Set book = Nothing

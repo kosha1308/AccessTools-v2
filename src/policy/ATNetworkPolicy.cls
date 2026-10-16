@@ -8,7 +8,7 @@ Private mReady As Boolean, mProtocols As Collection, mProblems As Object, mRoute
 
 Friend Sub Initialize(ByVal protocols As ATEvalResult, ByVal problems As ATEvalResult, ByVal routing As ATEvalResult, ByVal commonText As ATEvalResult)
     Dim budget As New ATEvalBudget, limits As New ATEvalLimits, source As ATRuntimeValue, row As ATRuntimeRow
-    Dim seen As Object, i As Long, j As Long, key As String, text As String, values As Variant, ignored As String
+    Dim seen As Object, i As Long, j As Long, key As String, text As String, values As Variant, ignored As String, ch As String
     If mReady Then Err.Raise vbObjectError + 2960, , "POLICY_FROZEN"
     budget.Initialize limits
     Set mProtocols = New Collection: Set seen = CreateObject("Scripting.Dictionary")
@@ -20,9 +20,13 @@ Friend Sub Initialize(ByVal protocols As ATEvalResult, ByVal problems As ATEvalR
             text = AT_AsciiCase(Trim$(AT_PolicyCell(row, "PROTOCOL", budget)), True)
             If Len(text) = 0 Or Len(text) > 128 Then Err.Raise vbObjectError + 2960, , "POLICY_PROTOCOL_INVALID"
             For j = 1 To Len(text)
-                If AscW(Mid$(text, j, 1)) < 33 Or AscW(Mid$(text, j, 1)) > 126 Or InStr(",;|", Mid$(text, j, 1)) > 0 Then Err.Raise vbObjectError + 2960, , "POLICY_PROTOCOL_INVALID"
+                ch = Mid$(text, j, 1)
+                If Not ((ch >= "A" And ch <= "Z") Or (ch >= "0" And ch <= "9") Or InStr(1, "_-./+", ch, vbBinaryCompare) > 0) Then Err.Raise vbObjectError + 2960, , "POLICY_PROTOCOL_INVALID"
             Next j
-            If Not seen.Exists(text) Then seen.Add text, True: mProtocols.Add text
+            If Not seen.Exists(text) Then
+                If seen.Count >= 1000 Then Err.Raise vbObjectError + 2960, , "POLICY_PROTOCOL_LIMIT"
+                seen.Add text, True: mProtocols.Add text
+            End If
         End If
     Next i
     Set source = SourceRows(problems, "PROBLEMS", budget)

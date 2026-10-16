@@ -54,9 +54,7 @@ End Function
 Public Property Get UserErrorCount() As Long
     Dim item As ATNetworkPolicyDecision
     RequireReady
-    If mReport.State <> atEvalOK Then
-        UserErrorCount = mReport.ErrorCount
-    Else
+    If mReport.State = atEvalOK Then
         For Each item In mDecisions
             If item.InUserReport And item.UserError And item.Issue.Severity = "ERROR" Then UserErrorCount = UserErrorCount + 1
         Next item

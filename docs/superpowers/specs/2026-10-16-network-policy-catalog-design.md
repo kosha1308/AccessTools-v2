@@ -9,11 +9,15 @@ Compile immutable policy from four successful typed source snapshots. Active fla
 must be explicit Да/Нет, YES/NO, TRUE/FALSE or1/0; unknown/blank flags fail rather
 than imply permission. Inactive rows do not override behavior. Active duplicate
 problem/routing/common keys fail; duplicate canonical protocols deduplicate.
+Protocols match the existing checker contract: at most1000 unique entries,
+1–128 ASCII characters A–Z,0–9,_-./+ after canonicalization.
 Only scoped keys check|original severity|field are supported, no wildcard guessing.
 Keys resolve before severity changes. Header-normalized field tags are supported;
 check ID and severity components validated. Severity supports Russian/English labels.
 Errors in active used cells, absent fields, malformed types or >10000 rows/table
-fail closed. Shared compile budget200000 steps/65536 text; stored messages32767.
+fail closed. Shared compile budget200000 steps including consumed text lengths;
+65536 text per value; stored messages32767. Blocked/configuration failures remain
+visible but are not classified as user-input errors.
 
 Blank custom user/coordinator messages retain original computed issue text;
 coordinator falls back to selected user text. Builtin default-message text is not

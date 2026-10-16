@@ -5,7 +5,12 @@ Public Sub AT_TestPolicyCatalog()
     Dim compiler As New ATNetworkPolicyCompiler, loaded As ATNetworkPolicyResult, policy As ATNetworkPolicy
     Dim protocols As ATEvalResult, problems As ATEvalResult, routes As ATEvalResult, common As ATEvalResult
     Dim issue As New ATCheckIssue, decision As ATNetworkPolicyDecision, items As Collection, key As String, value As Variant
-    Dim caught As Boolean
+    Dim caught As Boolean, records() As Variant, i As Long
+    Set loaded = New ATNetworkPolicyResult
+    On Error Resume Next
+    Set items = loaded.Diagnostics: caught = Err.Description = "POLICY_ACCESS": Err.Clear
+    On Error GoTo 0
+    AT_Assert caught, "uninitialized policy diagnostics are not an empty successful result"
     key = "NET.REQUIRED_FIELDS|ERROR|Электронная почта"
     Set protocols = AT_TestPolicyRaw("PROTOCOLS", Array(Array("Да", " tcp "), Array("TRUE", "TCP"), Array("Нет", CVErr(xlErrNA))))
     Set problems = AT_TestPolicyRaw("PROBLEMS", Array(Array("Да", key, "Предупреждение", "Поле {field}: {message} / строка {row}", "", "Нет", "Да")))
@@ -37,9 +42,21 @@ Public Sub AT_TestPolicyCatalog()
     AT_Assert loaded.State = atEvalOK, "inactive draft row does not override policy"
     AT_TestPolicyCompileBad compiler, "PROTOCOLS", Array(Array("maybe", "TCP")), "POLICY_FLAG_INVALID"
     AT_TestPolicyCompileBad compiler, "PROTOCOLS", Array(Array("", "TCP")), "POLICY_FLAG_INVALID"
-    For Each value In Array("", "TCP UDP", "TCP;UDP", "TCP|UDP")
+    For Each value In Array("", "TCP UDP", "TCP;UDP", "TCP|UDP", "TCP:FOO", "TCP?", String$(129, "T"))
         AT_TestPolicyCompileBad compiler, "PROTOCOLS", Array(Array("Да", value)), "POLICY_PROTOCOL_INVALID"
     Next value
+    ReDim records(0 To 1000)
+    For i = 0 To 1000: records(i) = Array("Да", "P" & CStr(i)): Next i
+    AT_TestPolicyCompileBad compiler, "PROTOCOLS", records, "POLICY_PROTOCOL_LIMIT"
+    ReDim Preserve records(0 To 999)
+    Set loaded = compiler.Compile(AT_TestPolicyRaw("PROTOCOLS", records), AT_TestPolicyRaw("PROBLEMS", Array()), AT_TestPolicyRaw("ROUTING", Array()), AT_TestPolicyRaw("COMMON_TEXT", Array()))
+    AT_Assert loaded.State = atEvalOK And loaded.Policy.Protocols.Count = 1000, "exact thousand-protocol consumer boundary accepted"
+    ReDim records(0 To 10000)
+    For i = 0 To 10000: records(i) = Array("Нет", ""): Next i
+    AT_TestPolicyCompileBad compiler, "PROTOCOLS", records, "RUNTIME_LIMIT_LIST"
+    ReDim records(0 To 6)
+    For i = 0 To 6: records(i) = Array("K" & CStr(i), String$(30000, "x")): Next i
+    AT_TestPolicyCompileBad compiler, "COMMON_TEXT", records, "RUNTIME_LIMIT_STEPS"
     AT_TestPolicyCompileBad compiler, "PROTOCOLS", Array(Array("Да", CVErr(xlErrNA))), "POLICY_INPUT_INVALID"
     AT_TestPolicyCompileBad compiler, "PROTOCOLS", Array(Array("Да", String$(65537, "x"))), "RUNTIME_LIMIT_TEXT"
     AT_TestPolicyCompileBad compiler, "PROBLEMS", Array(Array("Да", key, "fatal", "", "", "Да", "Да")), "POLICY_SEVERITY_INVALID"
@@ -106,6 +123,7 @@ End Sub
 Private Sub AT_TestPolicyLoadFailure(ByVal loaded As ATNetworkPolicyResult, ByVal code As String)
     Dim partial As ATNetworkPolicy, number As Long
     AT_Assert loaded.State = atEvalError And loaded.Diagnostics.Count = 1, "policy fails closed " & code
+    If loaded.State <> atEvalError Then Exit Sub
     AT_Assert loaded.Diagnostics(1).Code = code, "policy stable error " & code
     On Error Resume Next
     Set partial = loaded.Policy: number = Err.Number

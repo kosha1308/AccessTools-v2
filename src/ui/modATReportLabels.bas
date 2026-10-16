@@ -12,6 +12,7 @@ Public Function AT_CheckTitle(ByVal id As String) As String
         Case "NET.PROTOCOLS": AT_CheckTitle = "Разрешённые протоколы"
         Case "NET.ADDRESS_TABLE": AT_CheckTitle = "Таблица адресов"
         Case "NET.ADDRESS_MATCH": AT_CheckTitle = "Соответствие адресов двух таблиц"
+        Case "NET.POLICY": AT_CheckTitle = "Применение книги правил"
         Case "NET.INPUT", "NET.TABLE_INPUT": AT_CheckTitle = "Подготовка заявки"
         Case Else: AT_CheckTitle = "Проверка заявки"
     End Select

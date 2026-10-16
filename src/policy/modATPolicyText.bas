@@ -52,6 +52,7 @@ Public Function AT_PolicyCell(ByVal row As ATRuntimeRow, ByVal id As String, ByV
         Case atValuePresent: AT_PolicyCell = CStr(value.Scalar)
         Case Else: GoTo Invalid
     End Select
+    budget.Step Len(AT_PolicyCell)
     Exit Function
 Invalid:
     Err.Raise vbObjectError + 2960, , "POLICY_INPUT_INVALID"

@@ -23,5 +23,6 @@ Public Property Get Policy() As ATNetworkPolicy
     Set Policy = mPolicy
 End Property
 Public Property Get Diagnostics() As Collection
+    If Not mReady Then Err.Raise vbObjectError + 2960, , "POLICY_ACCESS"
     Set Diagnostics = AT_CopyDiagnostics(mDiagnostics)
 End Property

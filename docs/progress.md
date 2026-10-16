@@ -441,3 +441,4 @@ nonempty directory retained. Original open outputs retain identity/path/state.
 Full Excel11303/0 compilePASS, static7/0; fresh review no blockers. UI dialog
 clicks and injected mid-write filesystem failure not tested; documented.
 Next XLAM/Ribbon profile-aware packaging, UI acceptance and clean installation.
+Clean cloneab49a80: compilePASS11303/0; gate9/0. DraftPR26 basePR25, sourcepush/PR CI success; no merge/release.

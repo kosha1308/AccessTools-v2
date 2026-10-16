@@ -2,6 +2,7 @@ Attribute VB_Name = "modATReportLabels"
 Option Explicit
 Public Function AT_CheckTitle(ByVal id As String) As String
     Select Case id
+        Case "NET.IP_EXCEPTIONS": AT_CheckTitle = "Правила и исключения"
         Case "NET.REQUIRED_FIELDS": AT_CheckTitle = "Обязательные поля инициатора"
         Case "NET.INITIATOR_EMAIL": AT_CheckTitle = "Формат электронной почты"
         Case "NET.REQUEST_TYPE": AT_CheckTitle = "Тип заявки"
@@ -23,6 +24,8 @@ Public Function AT_CheckTitle(ByVal id As String) As String
 End Function
 Public Function AT_FieldTitle(ByVal id As String) As String
     Select Case id
+        Case "RULE_RESULT": AT_FieldTitle = "Правило / исключение"
+        Case "RULE_CONFLICT": AT_FieldTitle = "Конфликт Rulebook"
         Case "APPROVAL": AT_FieldTitle = "Дополнительное согласование"
         Case "DB_ACCOUNT": AT_FieldTitle = "Учетная запись"
         Case "INITIATOR_FULL_NAME": AT_FieldTitle = "Фамилия Имя Отчество"

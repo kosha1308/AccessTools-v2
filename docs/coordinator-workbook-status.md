@@ -57,3 +57,8 @@ Hostname заполняется только при одном уникальн�
 Следующий этап: применение hostname/service-условий Rulebook и аннотаций к данным
 Superset/сводки, актуальность источника и несохранённых изменений, пользовательская
 команда/сохранение, сборка XLAM и приёмка полного рабочего сценария.
+
+Чистый отдельный clone source commit8d94f4b276d9a18417687ba8831cc2e35ad1214b:
+Compile VBAProject PASS,11205 PASS/0 FAIL, explicit90s. Excel gate9/0.
+Draft PR22, branch feat/coordinator-workbook, base feat/network-registry-plan (PR21).
+Слияние и пользовательский выпуск не выполнялись.

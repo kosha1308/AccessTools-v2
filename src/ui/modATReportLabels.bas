@@ -2,6 +2,7 @@ Attribute VB_Name = "modATReportLabels"
 Option Explicit
 Public Function AT_CheckTitle(ByVal id As String) As String
     Select Case id
+        Case "NET.RUN_CONTROL": AT_CheckTitle = "Запуск проверки"
         Case "NET.HOSTNAME_RULES": AT_CheckTitle = "Правила hostname и сервисов Superset"
         Case "NET.IP_REGISTRY": AT_CheckTitle = "IP в Superset"
         Case "NET.IP_EXCEPTIONS": AT_CheckTitle = "Правила и исключения"

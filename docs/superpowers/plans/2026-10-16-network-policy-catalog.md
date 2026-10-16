@@ -29,18 +29,18 @@ tests/vba/modATPolicyCatalogTests.bas and main invocation.
 Compile(protocols,problems,routing,commonText As ATEvalResult) As ATNetworkPolicyResult.
 Result.State/Policy/Diagnostics guarded. Policy.Protocols copied Collection;
 Decide(issue,key) As ATNetworkPolicyDecision; CommonText(key,fallback) As String.
-- [ ] RED tests valid/empty/inactive/duplicate/invalid/typed-budget, immutable,
+- [x] RED tests valid/empty/inactive/duplicate/invalid/typed-budget, immutable,
  explicit flags/severity, original-key routing, nonrecursive templates and limits.
-- [ ] Implement minimal code, full Excel GREEN and commit.
+- [x] Implement minimal code, full Excel GREEN and commit.
 
 ### Task2 — apply policy around completed checks
 
 Create ATNetworkPolicyChecks.cls, ATNetworkPolicyReport.cls, modATPolicyBindings.bas;
 tests/vba/modATPolicyApplyTests.bas. Run(source,loadedPolicy) AsATNetworkPolicyReport.
 Report exposes AllReport/Decisions/UserIssues/RequestIssues/SupersetIssues/UserErrorCount.
-- [ ] RED protocol membership, missing catalog skip, configured message/severity,
+- [x] RED protocol membership, missing catalog skip, configured message/severity,
  original source refs, hidden routing, recalculated outcomes, blocked bypass,
  invalid policy no partial result and collection immutability.
-- [ ] Implement wrapper, full Excel GREEN, commit. Do not change existing checkers.
+- [x] Implement wrapper, full Excel GREEN, commit. Do not change existing checkers.
 - [ ] Fresh review/fix, actual provided Rulebook read-only/hash, static7/7 gate9/9,
  clean-checkout default60s full suite; status/readiness, draft PR basePR15, attach/CI.

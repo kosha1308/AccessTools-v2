@@ -97,6 +97,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     ipStarted = Timer
     AT_TestRunController
     AT_TestTrace tracePath, "network-run-controller-seconds:" & Format$(Timer - ipStarted, "0.000")
+    AT_TestTrace tracePath, "network-command"
+    AT_TestNetworkCommand
     AT_TestTrace tracePath, "template-profile"
     AT_TestTemplateProfiles
     AT_TestTemplateRead

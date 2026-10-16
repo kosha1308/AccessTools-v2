@@ -48,6 +48,19 @@ Public Sub AT_TestExcelDates()
         Set result = adapter.Normalize(CDbl(i), True, "ISO")
         AT_Assert CDbl(result.Value.Scalar) = CDbl(i + 1462), "1904 serial offset"
     Next i
+    For Each item In Array(Array("до 30.12.2026", "2026-12-30"), Array("с 1/10/2026 до 31-12-2026", "2026-12-31"), Array("срок: 15-11-2027", "2027-11-15"), Array("2026-10-16", "2026-10-16"), Array("до 29.2.2024", "2024-02-29"), Array("1.2.2026; 3.4.2027", "2027-04-03"), Array("до 1.1.2026 затем 31.2.2027", "2026-01-01"), Array("31.2.2026 затем 1.1.2027", "2027-01-01"), Array("до 31/12-2026", "2026-12-31"))
+        Set result = adapter.Normalize(item(0), False, "DMY_TEXT")
+        AssertDateState result, atValuePresent, "explicit free text date"
+        If result.State = atEvalOK Then
+            If result.Value.ValueState = atValuePresent Then AT_Assert result.Value.Scalar = AT_GregorianDate(CStr(item(1))), "last valid free text date"
+        End If
+    Next item
+    For Each item In Array("до 31.02.2026", "до конца года", "130.12.2026", "30.123.2026", "30.12.20260", "01.01.1899", "46100", "0.1.2026", "1.0.2026", "29.2.1900", "1.1.10000")
+        AssertDateState adapter.Normalize(item, False, "DMY_TEXT"), atValueInvalid, "invalid free text date boundary " & CStr(item)
+    Next item
+    Set result = adapter.Normalize(String$(65537, "x"), False, "DMY_TEXT")
+    AT_Assert result.State = atEvalError, "date scanner bounded text"
+    If result.State = atEvalError Then AT_Assert result.Diagnostics(1).Code = "RUNTIME_LIMIT_TEXT", "date scanner text limit code"
 End Sub
 Private Sub AssertDateState(ByVal result As ATEvalResult, ByVal expected As ATValueState, ByVal label As String)
     AT_Assert result.State = atEvalOK, label & " eval state"

@@ -61,6 +61,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestDocumentFields
     AT_TestTrace tracePath, "superset-sets"
     AT_TestSupersetSets
+    AT_TestTrace tracePath, "superset-read"
+    AT_TestSupersetRead
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

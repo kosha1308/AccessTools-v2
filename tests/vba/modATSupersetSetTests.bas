@@ -10,6 +10,9 @@ Public Sub AT_TestSupersetSets()
     Set values = New ATSupersetTextSet
     values.AddLines "host.example": values.AddLines "HOST.EXAMPLE"
     AT_Assert values.Text(True) = "host.example", "one unique hostname preserved"
+    Set values = New ATSupersetTextSet
+    values.AddLines "Группа А" & vbLf & "группа а"
+    AT_Assert values.Count = 1 And values.Text = "Группа А", "Cyrillic values deduplicated without changing first spelling"
     On Error Resume Next
     values.AddLines String$(32768, "x")
     caught = Err.Number <> 0: Err.Clear

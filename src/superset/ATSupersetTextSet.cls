@@ -12,6 +12,7 @@ Private Sub Class_Initialize()
 End Sub
 Public Sub AddLines(ByVal text As String)
     Dim line As Variant, value As String, key As String, length As Long
+    If Len(text) > 32767 Then Err.Raise vbObjectError + 2820, , "SUPERSET_TEXT_LIMIT"
     text = Replace(Replace(text, vbCrLf, vbLf), vbCr, vbLf)
     For Each line In Split(text, vbLf)
         value = TrimValue(CStr(line))

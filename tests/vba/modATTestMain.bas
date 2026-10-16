@@ -84,6 +84,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestTrace tracePath, "shared-ip-source-seconds:" & Format$(Timer - ipStarted, "0.000")
     ipStarted = Timer
     AT_TestIPSourceCache
+    AT_TestTrace tracePath, "network-registry-plan"
+    AT_TestRegistryPlan
     AT_TestTrace tracePath, "shared-ip-cache-seconds:" & Format$(Timer - ipStarted, "0.000")
     AT_TestTrace tracePath, "template-profile"
     AT_TestTemplateProfiles

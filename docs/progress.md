@@ -368,3 +368,14 @@ Default60 remained unchanged, standard60 timed out. Final clean01715ca with expl
 90s CompilePASS11124/0, reportexcel-0ba0b31dd217478fabb675dd6a64e252; static7/7.
 No tests removed or production budgets weakened to fit timing.
 Excel gate integration9/9. No source changes after reviewed01715ca, only status docs.
+
+2026-10-16 — NETWORK_ACCESS registry plan, base PR20/2f2d1ab:
+ATNetworkRegistryPlanner/Entry/Result and modATRegistry implement effective upper/lower
+address dedup, all refs, bounded indexed lookup, singleton hostname refinement/fallback,
+explicit incomplete/not-found states. ApplyRegistry adds fifteenth check without
+reformatting previous14. Published NOT_FOUND warning routes to coordinator/Superset.
+TDD edges and independent review regression fixed request hostname error losing hits.
+Full explicit90s Excel11174 PASS/0 FAIL; compilePASS, static7/0, gate9/0.
+Provided ReadOnly request/Rulebook/Superset acceptance25/0, all hashes unchanged.
+Final Superset/coordinator writer, hostname/service rule integration, source freshness
+and user-facing package remain pending; see network-registry-plan-status.md.

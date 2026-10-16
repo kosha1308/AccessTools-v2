@@ -99,6 +99,10 @@ Public Function Decide(ByVal original As ATCheckIssue, ByVal key As String) As A
     If original Is Nothing Then Err.Raise vbObjectError + 2960, , "POLICY_INPUT_INVALID"
     message = original.Message: severity = original.Severity
     user = True: userError = (severity = "ERROR")
+    If original.CheckId = "NET.IP_REGISTRY" Then
+        userError = False: superset = True
+        If original.Code = "REGISTRY_NOT_FOUND" Then user = False
+    End If
     If original.CheckId = "NET.IP_EXCEPTIONS" Then
         userError = False
         If original.Code = "RULEBOOK_MATCH" Or original.Code = "RULEBOOK_CONFLICT" Then user = False: superset = True

@@ -4,6 +4,39 @@ BEGIN
 END
 Attribute VB_Name = "ATNetworkAccessChecks"
 Option Explicit
+Public Function ApplyRegistry(ByVal previous As ATNetworkPolicyReport, ByVal registry As ATNetworkRegistryResult, ByVal catalog As ATNetworkPolicyResult) As ATNetworkPolicyReport
+    Dim presenter As New ATNetworkPolicyChecks, added As ATNetworkPolicyReport, ready As New ATCheckReport
+    Dim raw As ATCheckReport, capacity As Long, code As String
+    On Error GoTo FailedRegistry
+    If previous Is Nothing Then Set ApplyRegistry = presenter.Apply(Nothing, catalog): Exit Function
+    If previous.AllReport.State <> atEvalOK Then Set ApplyRegistry = previous: Exit Function
+    capacity = 1000 - previous.AllReport.Issues.Count
+    If registry Is Nothing Then
+        Set added = BlockedRegistry(catalog, "REGISTRY_INPUT_INVALID", capacity)
+    Else
+        Set raw = registry.Report
+        If raw.Issues.Count > capacity Then
+            Set added = BlockedRegistry(catalog, "CHECK_REPORT_LIMIT", capacity)
+        Else
+            ready.Initialize atEvalOK, "NETWORK_REGISTRY", raw.Issues, raw.Checks
+            Set added = presenter.Apply(ready, catalog)
+            If added.AllReport.State <> atEvalOK Then Set added = BlockedRegistry(catalog, added.AllReport.Issues(1).Code, capacity)
+        End If
+    End If
+    Set ApplyRegistry = Combine(previous, added, "NETWORK_ACCESS_REGISTRY_POLICY"): Exit Function
+FailedRegistry:
+    code = AT_StableErrorCode(Err.Description, "REGISTRY_INPUT_INVALID")
+    If previous Is Nothing Then Set ApplyRegistry = presenter.Apply(Nothing, catalog): Exit Function
+    If previous.AllReport.State <> atEvalOK Then Set ApplyRegistry = previous: Exit Function
+    Set ApplyRegistry = Combine(previous, BlockedRegistry(catalog, code, 1000 - previous.AllReport.Issues.Count), "NETWORK_ACCESS_REGISTRY_POLICY")
+End Function
+Private Function BlockedRegistry(ByVal catalog As ATNetworkPolicyResult, ByVal code As String, ByVal capacity As Long) As ATNetworkPolicyReport
+    Dim raw As New ATCheckReport, issues As New Collection, checks As New Collection, outcome As New ATCheckOutcome
+    Dim presenter As New ATNetworkPolicyChecks
+    If capacity > 0 Then AT_RegistryIssue issues, code, "ERROR", "REGISTRY", "", "Не удалось подготовить результат проверки Superset. Предыдущие проверки сохранены."
+    outcome.Initialize "NET.IP_REGISTRY", "BLOCKED", "Проверка Superset не завершена.": checks.Add outcome
+    raw.Initialize atEvalOK, "NETWORK_REGISTRY", issues, checks: Set BlockedRegistry = presenter.Apply(raw, catalog)
+End Function
 Public Function RunWithRules(ByVal source As ATNetworkReadResult, ByVal catalog As ATNetworkPolicyResult, ByVal actor As ATInitiatorPolicyResult, ByVal rules As ATNetworkRulebookResult) As ATNetworkPolicyReport
     Dim ruleRunner As New ATNetworkRuleChecks, presenter As New ATNetworkPolicyChecks
     Dim previous As ATNetworkPolicyReport, added As ATNetworkPolicyReport, raw As ATCheckReport, ready As New ATCheckReport
@@ -37,7 +70,7 @@ Private Function BlockedRules(ByVal catalog As ATNetworkPolicyResult, ByVal code
     outcome.Initialize "NET.IP_EXCEPTIONS", "BLOCKED", "Общие правила не завершены. Предыдущие проверки сохранены.": checks.Add outcome
     raw.Initialize atEvalOK, "NETWORK_RULES", issues, checks: Set BlockedRules = presenter.Apply(raw, catalog)
 End Function
-Private Function Combine(ByVal previous As ATNetworkPolicyReport, ByVal added As ATNetworkPolicyReport) As ATNetworkPolicyReport
+Private Function Combine(ByVal previous As ATNetworkPolicyReport, ByVal added As ATNetworkPolicyReport, Optional ByVal scope As String = "NETWORK_ACCESS_PARTIAL_POLICY") As ATNetworkPolicyReport
     Dim report As New ATCheckReport, result As New ATNetworkPolicyReport, issues As New Collection, checks As New Collection
     Dim decisions As New Collection, issue As ATCheckIssue, outcome As ATCheckOutcome, decision As ATNetworkPolicyDecision
     For Each issue In previous.AllReport.Issues: issues.Add issue: Next issue
@@ -46,7 +79,7 @@ Private Function Combine(ByVal previous As ATNetworkPolicyReport, ByVal added As
     For Each outcome In added.AllReport.Checks: checks.Add outcome: Next outcome
     For Each decision In previous.Decisions: decisions.Add decision: Next decision
     For Each decision In added.Decisions: decisions.Add decision: Next decision
-    report.Initialize atEvalOK, "NETWORK_ACCESS_PARTIAL_POLICY", issues, checks
+    report.Initialize atEvalOK, scope, issues, checks
     result.Initialize report, decisions: Set Combine = result
 End Function
 Public Function Run(ByVal source As ATNetworkReadResult, ByVal catalog As ATNetworkPolicyResult, ByVal actor As ATInitiatorPolicyResult) As ATNetworkPolicyReport

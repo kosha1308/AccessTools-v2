@@ -25,14 +25,14 @@ Malformed hand-built contexts/config: stable fail-closed ERROR without partial C
 
 Files src/excel/ATExcelDateAdapter.cls, tests/vba/modATExcelDateTests.bas, main.
 Interface Normalize(raw As Variant,date1904 As Boolean,textFormat As String) As ATEvalResult.
-- [ ] RED tests: epochs/bounds/serial60/fractions/leaps/text formats/blank/null/errors/objects/policy.
-- [ ] Implement, full Excel GREEN, record and commit.
+- [x] RED tests: epochs/bounds/serial60/fractions/leaps/text formats/blank/null/errors/objects/policy.
+- [x] Implement, full Excel GREEN, record and commit.
 
 ### Task2 — typed NETWORK_ACCESS context
 
 Files src/templates/ATNetworkRequestNormalizer.cls, tests/vba/modATNetworkNormalizeTests.bas, main.
 Interface Normalize(source As ATNetworkReadResult,dateTextFormat As String,unlimitedKeyword As String) As ATNetworkReadResult.
-- [ ] RED reader-to-normalizer-to-DSL integration plus standalone invalid/config/error/limits cases from spec.
-- [ ] Implement raw copy/date classification/typed rows; full GREEN, commit.
-- [ ] Fresh independent review; fix Important with RED/GREEN. Static7/7 gate9/9, clean-checkout full tests.
-- [ ] Russian status/readiness/docs evidence; push dedicated branch, draft PR base feat/network-request-reader, attach and confirm latest-head CI. No merge/release.
+- [x] RED reader-to-normalizer-to-DSL integration plus standalone invalid/config/error/limits cases from spec.
+- [x] Implement raw copy/date classification/typed rows; full GREEN, commit.
+- [x] Fresh independent review; fix Important with RED/GREEN. Static7/7 gate9/9, clean-checkout full tests.
+- [x] Russian status/readiness/docs evidence; push dedicated branch, draft PR base feat/network-request-reader, attach and confirm latest-head CI. No merge/release.

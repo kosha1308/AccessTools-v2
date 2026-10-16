@@ -181,3 +181,4 @@ reportexcel-4fa40765b87a42ff9fc143bbc1224862. Static7/7, gate9/9.
 Ruling: clarified shared runtime budget200000steps/65536text,10000rows;1mcell limit
 belongs to reader. Date formats/keyword explicit; no EMAIL/enum/protocol allowlist
 or revoke/required-fields policy invented. Full release remains pending.
+Clean checkout133f603 cloned without hardlinks to AccessTools-v2-normalization-verify: CompilePASS10265/0, static7/7, reportexcel-85b8fe0081d94d5d9e5635473728e9c8. No private source file required for standard suite.

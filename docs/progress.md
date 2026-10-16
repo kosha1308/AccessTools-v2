@@ -379,3 +379,4 @@ Full explicit90s Excel11174 PASS/0 FAIL; compilePASS, static7/0, gate9/0.
 Provided ReadOnly request/Rulebook/Superset acceptance25/0, all hashes unchanged.
 Final Superset/coordinator writer, hostname/service rule integration, source freshness
 and user-facing package remain pending; see network-registry-plan-status.md.
+Clean clone46ed5d1: explicit VBA compilePASS,11174/0. Draft PR21 basePR20, no merge/release.

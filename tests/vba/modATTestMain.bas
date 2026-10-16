@@ -76,6 +76,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestNetworkNormalize
     AT_TestTrace tracePath, "document-checks"
     AT_TestDocumentChecks
+    AT_TestTrace tracePath, "table-checks"
+    AT_TestTableChecks
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

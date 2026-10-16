@@ -24,6 +24,8 @@ ATTemplateTableGate сначала проверяет профиль, затем
 
 Компиляция VBA и полный набор: **9889 PASS / 0 FAIL**, catalogmatch, отчёт
 `artifacts/excel-d04e7e2da1f34a0cba720e38d134f288`. Static7/7, Excel gate9/9.
+Чистая копия4693424: компиляция и9889/0 повторены без прежних артефактов,
+отчёт `artifacts/excel-afcbac1566b34cc487d141a78fdab562`, static7/7.
 На настоящем XLSX, открытом ReadOnly в отдельном supervised Excel:
 `True|TEMPLATE_MATCH|NETWORK_ACCESS@3.0-profile1`.
 SHA256 до/после совпадает:

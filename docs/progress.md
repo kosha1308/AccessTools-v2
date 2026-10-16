@@ -147,3 +147,7 @@ of new draft API; spec/plan/tests updated. Extended config/count/copied group/gu
 ->CompilePASS9889/0 plus actual XLSX MATCH, reportexcel-d04e7e2da1f34a0cba720e38d134f288.
 Static7/7, gate9/9, catalogmatch. No review correctness findings deferred. Full app dispatcher,
 normalization/checks/Admin publisher/IP matcher/cache/coordinator writer/XLAM remain pending.
+Clean-checkout template gate acceptance:4693424 cloned without hardlinks into AccessTools-v2-template-verify.
+CompilePASS9889/0, catalogmatch, static7/7; reportexcel-afcbac1566b34cc487d141a78fdab562.
+Normal test suite reproduces without original private XLSX; separate real-source read-only
+acceptance and unchanged hash are recorded above.

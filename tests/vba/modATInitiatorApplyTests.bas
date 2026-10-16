@@ -5,7 +5,7 @@ Public Sub AT_TestInitiatorApply()
     Dim actorCompiler As New ATInitiatorPolicyCompiler, actor As ATInitiatorPolicyResult, actorRunner As New ATNetworkInitiatorChecks
     Dim catalogCompiler As New ATNetworkPolicyCompiler, catalog As ATNetworkPolicyResult, runner As New ATNetworkAccessChecks
     Dim report As ATCheckReport, result As ATNetworkPolicyReport, identities As ATEvalResult, ip As ATEvalResult
-    Dim issue As ATCheckIssue, found As Boolean, check As ATCheckOutcome, number As Long, description As String
+    Dim issue As ATCheckIssue, found As Boolean, check As ATCheckOutcome, number As Long, description As String, bad As Variant
     On Error GoTo CleanupError
     Set book = Application.Workbooks.Add(xlWBATWorksheet): Set ws = book.Worksheets(1): ws.Name = "Лист1"
     AT_TestNetworkReferenceFixture ws
@@ -22,6 +22,12 @@ Public Sub AT_TestInitiatorApply()
     AT_Assert result.AllReport.State = atEvalOK And result.AllReport.Checks.Count = 13, "ten local plus three independent actor checks"
     AT_Assert result.AllReport.ErrorCount = 1 And result.UserErrorCount = 0 And result.UserIssues.Count = 0, "approval error not a user-input error by fallback"
     AT_Assert result.RequestIssues.Count = 1 And result.SupersetIssues.Count = 0, "approval fallback visible only in request channel"
+    For Each bad In Array("10.0.0.999", "group-alpha")
+        ws.Range("A15").Value2 = bad
+        Set report = actorRunner.Run(reader.Read(ws, "BAD_NO_POLICY", "2026-10-16", "UTC"), actor)
+        AT_Assert report.Checks(3).Status = "SKIPPED" And report.WarningCount > 0, "no personal restrictions never confirms malformed/group address " & bad
+    Next bad
+    ws.Range("A15").Value2 = "10.0.0.1"
     Set catalog = catalogCompiler.Compile(AT_TestPolicyRaw("PROTOCOLS", Array(Array("Да", "TCP"))), AT_TestPolicyRaw("PROBLEMS", Array(Array("Да", "NET.INITIATOR_APPROVAL_RULES|ERROR|Дополнительное согласование", "Ошибка", "Шаблон: {message}", "", "Нет", "Да"))), AT_TestPolicyRaw("ROUTING", Array()), AT_TestPolicyRaw("COMMON_TEXT", Array()))
     Set result = runner.Run(source, catalog, actor)
     AT_Assert InStr(result.AllReport.Issues(1).Message, "Шаблон: ") = 1 And InStr(2, result.AllReport.Issues(1).Message, "Шаблон: ") = 0, "presentation applied exactly once to merged checks"

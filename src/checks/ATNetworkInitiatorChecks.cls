@@ -92,9 +92,6 @@ Private Sub CheckCell(ByVal field As ATEvalResult, ByVal ref As String, ByVal fi
     If parsed.State <> atEvalOK Then Err.Raise vbObjectError + 2970, , parsed.Diagnostics(1).Code
     Set value = parsed.Value
     If value.ValueState <> atValuePresent Then
-        If Not selection.HasRegionPolicy(scope) And selection.NoPolicyAction = "ALLOW" Then
-            If Not lower Or Not selection.HasDirectionalRules Then Exit Sub
-        End If
         GoTo ManualCell
     End If
     If lower Then

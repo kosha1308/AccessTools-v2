@@ -66,6 +66,9 @@ Public Sub AT_TestInitiatorPolicy()
     For Each row In Array(Array("Да", "bad email", "Любой", "10.0.0.0/8", "", "", ""), Array("Да", "NOT:example.test", "Любой", "10.0.0.0/8", "", "", ""))
         AT_TestInitiatorBad compiler.Compile(identities, AT_TestInitiatorRaw("INITIATOR_IP", Array(row)), "ALLOW"), "INITIATOR_SELECTOR_INVALID"
     Next row
+    For Each value In Array("@user@example.test", "example.test; НЕ:@user@example.test", "example..test", "-example.test", "example-.test")
+        AT_TestInitiatorBad compiler.Compile(identities, AT_TestInitiatorRaw("INITIATOR_IP", Array(Array("Да", value, "Любой", "10.0.0.0/8", "", "", ""))), "ALLOW"), "INITIATOR_SELECTOR_INVALID"
+    Next value
     AT_TestInitiatorBad compiler.Compile(identities, AT_TestInitiatorRaw("INITIATOR_IP", Array(Array("Да", "example.test", "Other", "10.0.0.0/8", "", "", ""))), "ALLOW"), "INITIATOR_SCOPE_INVALID"
     AT_TestInitiatorBad compiler.Compile(identities, AT_TestInitiatorRaw("INITIATOR_IP", Array(Array("Да", "example.test", "Любой", "10.0.0.999tail", "", "", ""))), "ALLOW"), "INITIATOR_IP_INVALID"
     AT_TestInitiatorBad compiler.Compile(identities, AT_TestInitiatorRaw("INITIATOR_IP", Array(Array("Да", "example.test", "Любой", "10.0.0.0/8", "", "", "someone"))), "ALLOW"), "INITIATOR_DB_INVALID"

@@ -49,7 +49,7 @@ Private Sub CollectRows(ByVal context As ATEvaluationContext, ByVal id As String
     For i = 1 To rows.Count
         Set row = rows.Row(i): budget.Step
         For Each field In fields
-            Set value = row.ResolveField(CStr(field(0))): ref = row.CellRef(CStr(field(0)))
+            Set value = row.ResolveField(CStr(field(0)), budget): ref = row.CellRef(CStr(field(0)))
             If Len(ref) = 0 Then BadInput
             If value.State <> atEvalOK Then
                 If value.State <> atEvalError Or value.Diagnostics.Count <> 1 Then BadInput

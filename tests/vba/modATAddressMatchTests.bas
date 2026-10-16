@@ -49,6 +49,11 @@ Public Sub AT_TestAddressMatch()
     AT_Assert report.State = atEvalError And report.Issues(1).Code = "TEMPLATE_MISMATCH", "template rejection wins before declaration parsing"
     Set report = matcher.Run(Nothing)
     AT_Assert report.State = atEvalError And report.Checks.Count = 1, "missing matcher input controlled"
+    Set report = matcher.Run(AT_TestMatchTextInput(String$(65536, " ")))
+    AT_Assert report.State = atEvalOK And report.Checks(1).Status = "SKIPPED", "matcher accepts configured text boundary"
+    Set report = matcher.Run(AT_TestMatchTextInput(String$(65537, " ")))
+    AT_Assert report.State = atEvalError, "matcher rejects oversized typed text before tokenization"
+    If report.State = atEvalError Then AT_Assert report.Issues(1).Code = "RUNTIME_LIMIT_TEXT", "typed matcher text limit stable code"
     book.Close False: Set book = Nothing
     Set report = matcher.Run(saved)
     AT_Assert report.ErrorCount = 3, "exact matching snapshot detached from edits and closed source"
@@ -77,4 +82,17 @@ Private Function AT_TestDeclarationList(ByVal count As Long) As String
         If i > 1 Then AT_TestDeclarationList = AT_TestDeclarationList & ";"
         AT_TestDeclarationList = AT_TestDeclarationList & "10.1." & CStr(i \ 256) & "." & CStr(i Mod 256)
     Next i
+End Function
+Private Function AT_TestMatchTextInput(ByVal text As String) As ATNetworkReadResult
+    Dim context As New ATEvaluationContext, result As New ATNetworkReadResult, row As New ATRuntimeRow
+    Dim rows As New Collection, upper As New ATRuntimeValue, lower As New ATRuntimeValue
+    context.Initialize "TYPED_BOUNDARY", "2026-10-16", "UTC", "INVARIANT", "BINARY"
+    row.Initialize "TECHNICAL_TABLE_RAW", "15"
+    row.AddField "SOURCE_RAW", AT_RuntimeOK(AT_RuntimeScalar("TEXT", text)), "'Лист1'!A15"
+    row.AddField "DESTINATION_RAW", AT_RuntimeOK(AT_RuntimeState("TEXT", atValueEmpty)), "'Лист1'!B15"
+    rows.Add row: upper.InitializeRows "TECHNICAL_TABLE_RAW", rows
+    lower.InitializeRows "ADDRESS_TABLE_RAW", New Collection
+    context.AddField "TECHNICAL_ROWS_RAW", AT_RuntimeOK(upper)
+    context.AddField "ADDRESS_ROWS_RAW", AT_RuntimeOK(lower)
+    result.Initialize atEvalOK, context, Nothing: Set AT_TestMatchTextInput = result
 End Function

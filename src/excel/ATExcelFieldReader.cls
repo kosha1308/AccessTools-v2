@@ -51,6 +51,7 @@ Public Function Read(ByVal ws As Worksheet, ByVal spec As ATExcelFieldSpec) As A
         Set result = AT_RuntimeOK(AT_RuntimeScalar("TEXT", AT_ExcelText(raw)))
     End If
 BuildValue:
+    On Error GoTo 0
     value.Initialize id, found, sheetName, anchorRef, cellRef, result
     Set Read = value
     Exit Function

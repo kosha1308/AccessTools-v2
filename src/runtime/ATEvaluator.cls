@@ -105,6 +105,10 @@ Private Sub LogNode(ByVal node As ATAstNode, ByVal status As String, Optional By
         If Len(node.RowAlias) > 0 Then cellRef = rowContext.CellRef(node.FieldId)
         mBudget.CheckText Len(rowId): mBudget.CheckText Len(tableId): mBudget.CheckText Len(cellRef)
     End If
+    If node.Kind = "FIELD" And Len(node.RowAlias) = 0 Then
+        cellRef = mContext.CellRef(node.FieldId)
+        mBudget.CheckText Len(cellRef)
+    End If
     entry.Initialize node.SourceId, node.Start, node.Length, node.PrimitiveId, status, valueState, reason, mBudget.TraceCount + 1, rowId, tableId, node.FieldId, cellRef
     mBudget.AddTrace entry
 End Sub

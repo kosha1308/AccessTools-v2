@@ -80,6 +80,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestTableChecks
     AT_TestTrace tracePath, "report-writer"
     AT_TestReportWriter
+    AT_TestTrace tracePath, "address-match"
+    AT_TestAddressMatch
     AT_TestTrace tracePath, "complete"
 BuildReport:
     AT_RunTests = "{""passed"":" & mPassed & ",""failed"":" & mFailed & _

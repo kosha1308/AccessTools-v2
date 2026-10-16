@@ -26,10 +26,10 @@ Create src/sources/modATNetworkSourceSchema.bas, ATNetworkSourceReader.cls,
 tests/vba/modATNetworkSourceReadTests.bas; modify test main only.
 Interface AT_NetworkSourceSpec(sourceId) As ATExcelTableSpec;
 ATNetworkSourceReader.Read(ws,sourceId) As ATEvalResult, table sourceId & "_RAW".
-- [ ] RED: eight schemas, reordered whitespace headers, blank index-only rows,
+- [x] RED: eight schemas, reordered whitespace headers, blank index-only rows,
  10001 records, hidden rows, errors, fresh reads/closure, missing/duplicate/unknown,
  merged/bounds failure; observe compile/test failure.
-- [ ] Implement minimal schema/reader; full real Excel GREEN; commit.
-- [ ] Fresh independent review and reproduce/fix findings; static7/7 gate9/9.
+- [x] Implement minimal schema/reader; full real Excel GREEN; commit.
+- [x] Fresh independent review and reproduce/fix findings; static7/7 gate9/9.
 - [ ] Read actual two originals with hashes, clean-copy full standard60s suite.
 - [ ] Status/readiness, draft PR against feat/network-address-match, attach, CI.

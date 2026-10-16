@@ -5,7 +5,8 @@ END
 Attribute VB_Name = "ATNetworkRegistryResult"
 Option Explicit
 Private mReady As Boolean, mState As ATEvalState, mEntries As Collection, mReport As ATCheckReport, mSource As ATEvalResult
-Friend Sub Initialize(ByVal state As ATEvalState, ByVal entries As Collection, ByVal report As ATCheckReport, Optional ByVal sourceIssues As ATEvalResult = Nothing)
+Private mRequest As ATNetworkReadResult
+Friend Sub Initialize(ByVal state As ATEvalState, ByVal entries As Collection, ByVal report As ATCheckReport, Optional ByVal sourceIssues As ATEvalResult = Nothing, Optional ByVal request As ATNetworkReadResult = Nothing)
     Dim item As ATNetworkRegistryEntry, emptyRows As New Collection, emptyValue As New ATRuntimeValue
     If mReady Then Err.Raise vbObjectError + 3010, , "REGISTRY_FROZEN"
     If state <> atEvalOK And state <> atEvalError Then Err.Raise vbObjectError + 3010, , "REGISTRY_INPUT_INVALID"
@@ -18,7 +19,12 @@ Friend Sub Initialize(ByVal state As ATEvalState, ByVal entries As Collection, B
     Else
         Set mSource = sourceIssues.Clone
     End If
-    mState = state: Set mReport = report: mReady = True
+    mState = state: Set mReport = report: Set mRequest = request: mReady = True
+End Sub
+Friend Sub ValidateRequest(ByVal request As ATNetworkReadResult)
+    RequireReady
+    If request Is Nothing Or mRequest Is Nothing Then Err.Raise vbObjectError + 3160, , "COORDINATOR_NOTES_SOURCE"
+    If Not request Is mRequest Then Err.Raise vbObjectError + 3160, , "COORDINATOR_NOTES_SOURCE"
 End Sub
 Private Sub RequireReady()
     If Not mReady Then Err.Raise vbObjectError + 3010, , "REGISTRY_ACCESS"

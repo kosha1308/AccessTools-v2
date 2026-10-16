@@ -90,6 +90,8 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestCoordinatorView
     AT_TestTrace tracePath, "superset-rules"
     AT_TestSupersetRules
+    AT_TestTrace tracePath, "technical-notes"
+    AT_TestTechnicalNotes
     AT_TestTrace tracePath, "shared-ip-cache-seconds:" & Format$(Timer - ipStarted, "0.000")
     AT_TestTrace tracePath, "template-profile"
     AT_TestTemplateProfiles

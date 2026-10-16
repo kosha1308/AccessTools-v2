@@ -67,7 +67,7 @@ Public Function Run(ByVal source As ATNetworkReadResult, ByVal loaded As ATIPSou
     Next issue
     outcome.Initialize "NET.IP_REGISTRY", status, reason, manual: checks.Add outcome
     report.Initialize atEvalOK, "NETWORK_REGISTRY", issues, checks
-    result.Initialize atEvalOK, entries, report, sourceIssues: Set Run = result: Exit Function
+    result.Initialize atEvalOK, entries, report, sourceIssues, source: Set Run = result: Exit Function
 Failed:
     code = AT_StableErrorCode(Err.Description, "REGISTRY_INPUT_INVALID")
     Set entries = New Collection: Set issues = New Collection: Set checks = New Collection
@@ -75,7 +75,7 @@ Failed:
     AT_RegistryIssue issues, code, "ERROR", "REGISTRY", "", "Проверка Superset остановлена. Проверьте структуру заявки, источник и объём данных; частичные результаты не выданы."
     outcome.Initialize "NET.IP_REGISTRY", "BLOCKED", "IP-поиск не завершён.": checks.Add outcome
     report.Initialize atEvalError, "NETWORK_REGISTRY", issues, checks
-    result.Initialize atEvalError, entries, report: Set Run = result
+    result.Initialize atEvalError, entries, report, Nothing, source: Set Run = result
 End Function
 Private Sub Collect(ByVal context As ATEvaluationContext, ByVal lower As Boolean, ByVal builders As Object, ByVal ordered As Collection, ByVal issues As Collection, ByRef manual As Boolean, ByVal budget As ATEvalBudget)
     Dim rows As ATRuntimeValue, row As ATRuntimeRow, fields As Variant, field As Variant, text As String, host As String

@@ -129,3 +129,25 @@ measured, bounded work limit tested. No correctness findings deferred.
 Clean-checkout enrichment acceptance:69e03d2 cloned without hardlinks into AccessTools-v2-enrichment-verify.
 CompilePASS9845/0, catalogmatch, static7/7; reportexcel-e9a8f1184d4a4fc19e51b8fb91314262.
 No old artifacts or private runtime checkout required.
+
+## Template structural gate / confirmed reference 2026-10-16
+
+Branch feat/template-gate basedecdee21. Fresh baseline9845/0 reportexcel-55760ebc60da4cd596b472ea16bcea48.
+Profile/decision missing-class RED ->9869/0; guarded reader missing-class RED ->9874/0.
+User supplied reference location during execution: Drive work/Шаблоны заявок, XLSX
+1An-gcbJkeZl0u4KsvmIAnUgSA4b5jiF9 (16181bytes). Original kept outside repo. Inspected
+OOXML structure with bundled Python, then checked real XLSX ReadOnly in owned supervised Excel.
+Ruling: concrete profile mirrors unprotected reference; no invented locking requirement.
+Grouped anchors added to avoid treating user text as an isolated dynamic lower header.
+Concrete factory missing RED ->9880/0. Actual reference MATCH NETWORK_ACCESS@3.0-profile1;
+SHA256 unchanged21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7.
+Fresh independent review: stale absolute layout could expose moved header as data. Reproduced
+9881/2 RED ->9883/0 with guard accepting spec/re-locating after Verify. No external callers
+of new draft API; spec/plan/tests updated. Extended config/count/copied group/guard cases
+->CompilePASS9889/0 plus actual XLSX MATCH, reportexcel-d04e7e2da1f34a0cba720e38d134f288.
+Static7/7, gate9/9, catalogmatch. No review correctness findings deferred. Full app dispatcher,
+normalization/checks/Admin publisher/IP matcher/cache/coordinator writer/XLAM remain pending.
+Clean-checkout template gate acceptance:4693424 cloned without hardlinks into AccessTools-v2-template-verify.
+CompilePASS9889/0, catalogmatch, static7/7; reportexcel-afcbac1566b34cc487d141a78fdab562.
+Normal test suite reproduces without original private XLSX; separate real-source read-only
+acceptance and unchanged hash are recorded above.

@@ -69,3 +69,25 @@ Full-first-use scope remains NETWORK_ACCESS+Superset+coordinator, no technical a
 Six old unsupported-row negative fixtures now target row operators over unsupported SOURCE, because row operators themselves are supported. This preserves negative source behavior while adding positive row coverage; no parser/catalog reduction.
 Independent review found no concrete bug; three actionable coverage gaps closed with oversized unused fields, DOCUMENT default alias shadow, missing fields and evaluator reuse after nested error/skip. Full CompilePASS9679/0, reportexcel-c41f3ebcb1774df78b5ec28cc4ffb105; catalogmatch. Static7/7, gate9/9. No review findings deferred. Rows remain in-memory; Excel extraction/Superset/coordinator are next.
 Clean-checkout rows acceptance: 3ea739f cloned locally without hardlinks into AccessTools-v2-rows-verify. CompilePASS9679/0, catalogmatch, static7/7; reportexcel-75c1127ff3e74a6286bdabe92a0f6fc2. No old artifacts or private legacy checkout needed.
+
+## Excel table extraction 2026-10-16
+
+Branch feat/network-extraction based bf00172. Generic external header/usage descriptions,
+sheet-bound copied layout and bounded Value2 reader. Raw TEXT, immutable physical rows,
+merged-anchor cell references, CVErr fields, visual emptiness, DIRECT/INHERITED/NONE
+participation. Last-value scan ignores formatting/formula-empty; physical/cell/find limits.
+Locator missing-class RED ->9694/0; reader missing-class RED ->9721/0.
+Fresh read-only reviewer found two Important merge bugs: final vertical extent truncated,
+horizontal merge duplicated independent fields. Real-Excel repro9721/4 ->9728/0 after fixes.
+Additional boundary/owned-horizontal/closed-workbook coverage ->CompilePASS9733/0;
+reportexcel-ab3b8114e755480e8c9e6d33c9010241. Catalogmatch, static7/7, gate9/9.
+Gate initially lacked COM permission in ordinary sandbox; rerun with existing Excel
+authorization passed9/9. No Trust Center/settings changes.
+Review observation ruled: layout validity limited to one synchronous unchanged-structure
+read, documented. Full fingerprint belongs to published profile stage. Other declined
+items (full profile, single fields, rulebook, Superset/coordinator/UI) are explicit pending
+first-use requirements, not silently dropped. No review correctness findings deferred.
+Clean-checkout acceptance: e23614e cloned without hardlinks into AccessTools-v2-extraction-verify.
+CompilePASS9733/0, catalogmatch and static7/7; reportexcel-f960b4c08d56499285469391d3fd9660.
+Build uses only this repository, without old artifacts/private sources. Local clone required
+existing elevated process permission after ordinary sandbox blocked Git's helper process.

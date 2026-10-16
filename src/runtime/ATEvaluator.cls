@@ -45,6 +45,13 @@ Private Function Visit(ByVal node As ATAstNode, ByVal frame As Collection) As AT
     mBudget.EnterNode
     entered = True
     Set result = EvaluateNode(node, frame)
+    If result.State = atEvalOK And Len(node.ConversionNormalizerId) > 0 Then
+        If node.ConversionNormalizerId = "PORT_SET_V1" Then
+            Set result = AT_ConvertPortValue(result.Value, node, mBudget)
+        Else
+            Set result = AT_RuntimeFailure(atEvalError, "RUNTIME_UNSUPPORTED_NORMALIZER", node)
+        End If
+    End If
     LogNode node, AT_EvalStateName(result.State), result
     mBudget.LeaveNode
     Set Visit = result
@@ -146,7 +153,7 @@ Private Function EvaluateNode(ByVal node As ATAstNode, ByVal frame As Collection
             End If
             Set localFrame = New Collection
             For Each binding In node.ParameterBindings
-                If Len(binding.NormalizerId) > 0 Then
+                If Len(binding.NormalizerId) > 0 And binding.NormalizerId <> "PORT_SET_V1" Then
                     Set EvaluateNode = AT_RuntimeFailure(atEvalError, "RUNTIME_UNSUPPORTED_NORMALIZER", binding.Expression)
                     Exit Function
                 End If
@@ -155,6 +162,7 @@ Private Function EvaluateNode(ByVal node As ATAstNode, ByVal frame As Collection
                 Else
                     Set result = Visit(binding.Expression, frame)
                 End If
+                If result.State = atEvalOK And binding.NormalizerId = "PORT_SET_V1" Then Set result = AT_ConvertPortValue(result.Value, binding.Expression, mBudget)
                 If result.State <> atEvalOK Then
                     Set EvaluateNode = result
                     Exit Function

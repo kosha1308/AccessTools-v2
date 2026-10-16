@@ -25,9 +25,38 @@ Invalid:
     Set AT_ParseDecimal = AT_RuntimeInvalid("NUMBER", "RUNTIME_NUMBER_RANGE", node)
 End Function
 
+Private Function NormalizeNumericPort(ByVal typeName As String, ByVal raw As Variant, ByVal node As ATAstNode) As ATEvalResult
+    Dim number As ATEvalResult, converted As ATEvalResult, budget As New ATEvalBudget, limits As New ATEvalLimits, value As New ATRuntimeValue
+    If typeName <> "PORT" And typeName <> "PORT_SET" Then
+        Set NormalizeNumericPort = AT_RuntimeInvalid(typeName, "DOMAIN_INVALID_IPV4", node)
+        Exit Function
+    End If
+    Set number = AT_NormalizeScalar("NUMBER", raw, node)
+    If number.Value.ValueState <> atValuePresent Then
+        Set NormalizeNumericPort = AT_RuntimeInvalid(typeName, "DOMAIN_INVALID_PORT", node)
+        Exit Function
+    End If
+    budget.Initialize limits
+    Set converted = AT_ConvertPortValue(number.Value, node, budget)
+    If converted.State <> atEvalOK Then
+        Set NormalizeNumericPort = AT_RuntimeInvalid(typeName, "DOMAIN_INVALID_PORT", node)
+    Else
+        value.InitializeDomain typeName, converted.Value.Domain, converted.Value.DeclarationKeys
+        Set NormalizeNumericPort = AT_RuntimeOK(value)
+    End If
+End Function
+
 Public Function AT_NormalizeScalar(ByVal typeName As String, ByVal raw As Variant, ByVal node As ATAstNode) As ATEvalResult
     Dim value As Double, dateValue As Date
     On Error GoTo Invalid
+    If AT_RuntimeDomainType(typeName) Then
+        If VarType(raw) = vbString Then
+            Set AT_NormalizeScalar = AT_ParseDomain(typeName, CStr(raw), node)
+        Else
+            Set AT_NormalizeScalar = NormalizeNumericPort(typeName, raw, node)
+        End If
+        Exit Function
+    End If
     Select Case typeName
         Case "TEXT"
             If VarType(raw) <> vbString Then GoTo Invalid

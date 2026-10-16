@@ -6,7 +6,7 @@ Public Function AT_RuntimeVersionSupported(ByVal dslVersion As String, ByVal sch
 End Function
 Public Function AT_RuntimeSupports(ByVal node As ATAstNode) As Boolean
     Dim child As ATAstNode
-    If Len(node.ConversionNormalizerId) > 0 Then Exit Function
+    If Len(node.ConversionNormalizerId) > 0 And node.ConversionNormalizerId <> "PORT_SET_V1" Then Exit Function
     Select Case node.PrimitiveId
         Case "EMPTY", "NOT_EMPTY", "VALID", "INVALID", "IS_NULL", "IS_NOT_NULL"
             AT_RuntimeSupports = (node.Children.Count = 1)
@@ -15,17 +15,17 @@ Public Function AT_RuntimeSupports(ByVal node As ATAstNode) As Boolean
     If Not AT_RuntimeTypeSupported(node.DataType) Then Exit Function
     For Each child In node.Children
         If Not AT_RuntimeTypeSupported(child.DataType) Then Exit Function
-        If Len(child.ConversionNormalizerId) > 0 Then Exit Function
+        If Len(child.ConversionNormalizerId) > 0 And child.ConversionNormalizerId <> "PORT_SET_V1" Then Exit Function
     Next child
     Select Case node.PrimitiveId
         Case "AND", "OR", "NOT", "COALESCE", "ADD", "SUBTRACT", "MULTIPLY", "DIVIDE", "REMAINDER", "UNARY_PLUS", "UNARY_MINUS", "OP_EQUALS", "OP_NOT_EQUALS", "GREATER", "LESS", "GREATER_EQUAL", "LESS_EQUAL", "BETWEEN"
             AT_RuntimeSupports = True
-        Case "LOWER", "UPPER", "TRIM", "LEN", "STARTS_WITH", "ENDS_WITH", "CONTAINS", "ABS", "ROUND", "MIN", "MAX", "SUM", "AVG", "DATE_LITERAL", "TODAY", "DATE_DIFF", "IN", "ANY", "NONE", "COVER", "EXACT", "OVERLAPS"
+        Case "LOWER", "UPPER", "TRIM", "LEN", "STARTS_WITH", "ENDS_WITH", "CONTAINS", "ABS", "ROUND", "MIN", "MAX", "SUM", "AVG", "DATE_LITERAL", "TODAY", "DATE_DIFF", "IN", "ANY", "NONE", "COVER", "EXACT", "OVERLAPS", "INTERSECTS", "CONTAINED_BY"
             AT_RuntimeSupports = True
     End Select
 End Function
 Public Function AT_RuntimeTypeSupported(ByVal typeName As String) As Boolean
-    If AT_RuntimeScalarType(typeName) Then
+    If AT_RuntimeScalarType(typeName) Or AT_RuntimeDomainType(typeName) Then
         AT_RuntimeTypeSupported = True
     ElseIf Left$(typeName, 5) = "LIST<" And Right$(typeName, 1) = ">" Then
         AT_RuntimeTypeSupported = AT_RuntimeScalarType(Mid$(typeName, 6, Len(typeName) - 6))

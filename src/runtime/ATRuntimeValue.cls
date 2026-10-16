@@ -10,6 +10,8 @@ Private mState As ATValueState
 Private mScalar As Variant
 Private mItems As Collection
 Private mInitialized As Boolean
+Private mDomain As ATIntervalSet
+Private mDeclarations As Collection
 
 Public Sub InitializeScalar(ByVal typeName As String, ByVal state As ATValueState, ByVal payload As Variant)
     If mInitialized Then Err.Raise vbObjectError + 2500, , "RUNTIME_VALUE_FROZEN"
@@ -58,6 +60,7 @@ Public Property Get ValueState() As ATValueState
 End Property
 Public Property Get Scalar() As Variant
     If Not mInitialized Or mState <> atValuePresent Or Not mItems Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
+    If Not mDomain Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
     Scalar = mScalar
 End Property
 Public Property Get Count() As Long
@@ -71,7 +74,9 @@ End Function
 Public Function Clone() As ATRuntimeValue
     Dim result As New ATRuntimeValue
     If Not mInitialized Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
-    If mItems Is Nothing Then
+    If Not mDomain Is Nothing Then
+        result.InitializeDomain mType, mDomain, mDeclarations
+    ElseIf mItems Is Nothing Then
         result.InitializeScalar mType, mState, mScalar
     Else
         result.InitializeList Mid$(mType, 6, Len(mType) - 6), mItems
@@ -83,6 +88,11 @@ Public Sub ValidateBudget(ByVal budget As ATEvalBudget)
     Dim item As ATRuntimeValue
     If mState <> atValuePresent Then Exit Sub
     If mType = "TEXT" Then budget.CheckText Len(mScalar)
+    If Not mDomain Is Nothing Then
+        budget.CheckList mDomain.Count
+        budget.CheckList mDeclarations.Count
+        budget.Step mDomain.Count + mDeclarations.Count
+    End If
     If Not mItems Is Nothing Then
         budget.CheckList mItems.Count
         For Each item In mItems
@@ -91,3 +101,36 @@ Public Sub ValidateBudget(ByVal budget As ATEvalBudget)
         Next item
     End If
 End Sub
+
+Public Sub InitializeDomain(ByVal typeName As String, ByVal intervals As ATIntervalSet, ByVal declarations As Collection)
+    Dim key As Variant, expectedMaximum As Double
+    If mInitialized Then Err.Raise vbObjectError + 2500, , "RUNTIME_VALUE_FROZEN"
+    If Not AT_RuntimeDomainType(typeName) Then BadType
+    If intervals Is Nothing Then BadType
+    If Not intervals.Frozen Then BadType
+    expectedMaximum = 4294967295#
+    If typeName = "PORT" Or typeName = "PORT_SET" Then expectedMaximum = 65535#
+    If intervals.Maximum <> expectedMaximum Then BadType
+    If typeName = "IP" Or typeName = "PORT" Then
+        If intervals.Count <> 1 Then BadType
+        If intervals.Item(1).Low <> intervals.Item(1).High Then BadType
+    End If
+    Set mDomain = intervals
+    Set mDeclarations = New Collection
+    For Each key In declarations
+        mDeclarations.Add CStr(key), CStr(key)
+    Next key
+    mType = typeName: mState = atValuePresent: mInitialized = True
+End Sub
+Public Property Get Domain() As ATIntervalSet
+    If mDomain Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
+    Set Domain = mDomain
+End Property
+Public Property Get DeclarationKeys() As Collection
+    Dim copy As New Collection, key As Variant
+    If mDeclarations Is Nothing Then Err.Raise vbObjectError + 2502, , "RUNTIME_VALUE_ACCESS"
+    For Each key In mDeclarations
+        copy.Add CStr(key), CStr(key)
+    Next key
+    Set DeclarationKeys = copy
+End Property

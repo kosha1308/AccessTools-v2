@@ -292,3 +292,25 @@ CHECKS13/ERRORS6/WARNINGS2/ACTOR_SKIPPED3; both SHA256 unchanged; reportexcel-
 Skipped actor reasons now explicit Russian strings. General IP/hostname/port/service
 rules, Superset index/matcher, coordinator UI/outputs/instructions and package pending.
 Clean checkoutbd41767: CompilePASS10746/0 default60s static7/7; reportexcel-80ac01f7972e468e835ce26997bb7035. ExcelGate9/9; standard suite no private sources.
+
+## Compiled general Rulebook engine 2026-10-16
+
+Base9027ece/PR17. New immutable RULES compiler/policy and Technical/Superset
+evaluators, no changes to existing13 checks. Scoped IP overlap trigger, full
+port coverage per individual rule, exact protocol/service conditions, hostname
+specificity exact>prefix>contains then length among base-eligible rules.
+Equal best ties plus hostname-free rules retained; conflicting service/group
+outputs explicitly flagged. All seven outputs and source refs preserved.
+No partial result on error/limits/incomplete context. Instruction-only output valid.
+BlankACTIVE inactive per actual header, blankseverityINFO per legacy.
+Current legacy semantic reference d9aa9b8 only; no legacy implementation copied.
+RED10746/1 ->10780/0, extra budget edge RED10801/2 ->10803/0.
+Fresh review unknownprotocol/malformedhostname plus current strict pipe-separator
+regressions RED10803/11 ->10814/0, explicit Excel compilePASS. Closed both Important
+findings; no findings deferred. Private reference RulebookReadOnly3/0 unchangedhash
+52372F64E26ED59E06684F8A3CAE17E41131DED95F0EC4254B22E46BD4EFE920.
+Static7/7, ExcelGate9/9. Runner integration, Superset shared matcher/cache and
+final coordinator workbook/UI/package remain pending; this is not user-ready v2.
+Clean checkout b2d1ca4: CompilePASS10814/0 default60s, static7/7, reportexcel-
+de731ec2b8af4906a633ecc338e528e5. Final actual RulebookReadOnly3/0 reportexcel-
+516ef4a7ca904ceb8f8e275943470410, SHA256unchanged.

@@ -341,3 +341,30 @@ Final clean checkouta098fea: CompilePASS10845/0 default60s, static7/7,
 reportexcel-8dee5743a93d46bf8db0066fce7a05e7. ExcelGate9/9.
 Final actual ReadOnly6/0 reportexcel-8c3ca339d69b48d0a836d9152853f633,
 bothSHA256unchanged. Standard suite no private inputs.
+
+## Shared IP source index and session cache 2026-10-16
+
+Base91a079a/PR19. New generic ATIPSourceCompiler/Index/Result/MatchResult,
+modATIPSource and bounded4-entry sessionCache. Caller supplies SourceId/address
+metadata/fingerprint, no file I/O or startup source work. Existing14checks unchanged.
+Interval merge/sort+prefix maxima query, original rows/refs/payload retained,
+row dedup/source order, no network expansion. Invalid nonempty cells rejected whole
+and recorded DataIssues; valid cells still indexed with query SourceCompleteFalse.
+Invalid query ManualReview without partial matches; schema/budget failures noindex.
+Source100000rows/200000intervals/20mwork; caller budget bounds query/results.
+Same SourceId/schema/signature yields one frozen object across consumers;
+changedsignature removes old before compile, invalid replacement cannot fallback.
+RED10846/2 ->10890/0; finite brute-force corpus, mask, actualSupersetSchema,
+source-schema cache tests ->11124/0 explicit compilePASS. Source10001 rows tail
+lookup under1000work demonstrates indexed search. Fresh review: no unresolved
+Important/Critical/minor findings. Actual empty SupersetReadOnly3/0,
+SHA256unchanged2462F1CC10CD802BC24C5F49A440BAF0514D4A6FE9A4808B98FB7158F5BD6023.
+Scope is shared source service, not NET.IP_REGISTRY completion. Network effective
+addresses, hostname refinement, actual-file freshness, Superset view/coordinator
+book and full package still pending.
+Verification timing: current Windowshost slowed old unchangeda098fea to77.22s/
+10845/0 (previously32.87s); newsource/cache groups measured0.297s/5.414s.
+Default60 remained unchanged, standard60 timed out. Final clean01715ca with explicit
+90s CompilePASS11124/0, reportexcel-0ba0b31dd217478fabb675dd6a64e252; static7/7.
+No tests removed or production budgets weakened to fit timing.
+Excel gate integration9/9. No source changes after reviewed01715ca, only status docs.

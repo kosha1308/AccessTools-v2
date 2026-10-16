@@ -55,3 +55,11 @@ bad cells cannot disappear; empty/invalid query never successful no-match; same
 signature reuse versus changed/bad source invalidation; all output work bounded.
 Network effective-address collection, hostname refinement, registry check,
 Superset copy and coordinator summary remain next composition step.
+
+## Verification ruling
+
+Default60 не меняется. В текущей среде полный набор с60s остановился по времени.
+Контрольная предыдущая a098fea без нового индекса тоже заняла77.22s (10845/0),
+тогда как раньше32.87s. Новые source/cache группы измерены отдельно:0.297s/5.414s.
+Финальная чистая проверка запускается с явным90s; тесты не удаляются, схема
+и production budget не ослабляются. Ограничение60s фиксируется в статусе.

@@ -39,10 +39,11 @@ Public Function Apply(ByVal localReport As ATCheckReport, ByVal loaded As ATNetw
         status = outcome.Status
         If status = "PASS" Or status = "FAIL" Then
             status = "PASS"
+            If outcome.Incomplete Then status = "SKIPPED"
             If errors.Exists(outcome.CheckId) Then status = "FAIL"
         End If
         Set updated = New ATCheckOutcome
-        updated.Initialize outcome.CheckId, status, outcome.Reason: checks.Add updated
+        updated.Initialize outcome.CheckId, status, outcome.Reason, outcome.Incomplete: checks.Add updated
     Next outcome
     status = "NETWORK_LOCAL_POLICY"
     If localReport.ScopeId = "NETWORK_ACCESS_PARTIAL" Then status = "NETWORK_ACCESS_PARTIAL_POLICY"

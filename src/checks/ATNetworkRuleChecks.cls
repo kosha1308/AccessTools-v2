@@ -57,7 +57,7 @@ Finish:
     For Each issue In issues
         If issue.Severity = "ERROR" Then status = "FAIL"
     Next issue
-    outcome.Initialize "NET.IP_EXCEPTIONS", status, reason: checks.Add outcome
+    outcome.Initialize "NET.IP_EXCEPTIONS", status, reason, manual: checks.Add outcome
     report.Initialize atEvalOK, "NETWORK_RULES", issues, checks: Set Run = report: Exit Function
 Failed:
     code = AT_StableErrorCode(Err.Description, "RULEBOOK_INPUT_INVALID")

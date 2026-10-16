@@ -4,7 +4,7 @@ Public Sub AT_TestRuleChecks()
     Dim book As Workbook, ws As Worksheet, output As Workbook, reader As New ATNetworkRequestReader, source As ATNetworkReadResult
     Dim compiler As New ATNetworkRulebookCompiler, loaded As ATNetworkRulebookResult, checker As New ATNetworkRuleChecks
     Dim catalogCompiler As New ATNetworkPolicyCompiler, catalog As ATNetworkPolicyResult, actorCompiler As New ATInitiatorPolicyCompiler
-    Dim actor As ATInitiatorPolicyResult, runner As New ATNetworkAccessChecks, result As ATNetworkPolicyReport, report As ATCheckReport
+    Dim actor As ATInitiatorPolicyResult, runner As New ATNetworkAccessChecks, result As ATNetworkPolicyReport, report As ATCheckReport, overflowCatalog As ATNetworkPolicyResult
     Dim writer As New ATExcelReportWriter, raw As Variant, issue As ATCheckIssue, matched As Boolean, original As String
     Dim n As Long, description As String, value As Variant, bigRule As Variant
     On Error GoTo Failed
@@ -53,6 +53,8 @@ Public Sub AT_TestRuleChecks()
     ws.Range("C15").Value2 = "TCP BOGUS"
     Set report = checker.Run(reader.Read(ws, "UNKNOWN", "2026-10-16", "UTC"), loaded)
     AT_Assert report.Checks(1).Status = "FAIL" And report.WarningCount = 1 And report.ErrorCount = 1, "unknown protocol does not hide confirmed rule hit or incomplete warning"
+    Set result = runner.RunWithRules(reader.Read(ws, "DOWNGRADE_INCOMPLETE", "2026-10-16", "UTC"), catalog, actor, loaded)
+    AT_Assert result.AllReport.Checks(14).Status = "SKIPPED", "downgraded error cannot turn incomplete rule evaluation into PASS"
     ws.Range("C15").Value2 = "TCP"
     For Each value In Array("group A", CVErr(xlErrValue))
         ws.Range("A15").Value2 = value
@@ -71,6 +73,12 @@ Public Sub AT_TestRuleChecks()
     AT_Assert result.AllReport.Checks.Count = 14 And result.AllReport.Checks(14).Status = "BLOCKED" And result.UserErrorCount = 0, "bad new rules do not erase completed thirteen or blame input"
     Set result = runner.RunWithRules(source, catalog, actor, Nothing)
     AT_Assert result.AllReport.Checks.Count = 14 And result.AllReport.Checks(14).Status = "SKIPPED", "missing new rulebook explicit skipped, thirteen preserved"
+    bigRule = raw: bigRule(12) = String$(17000, "c")
+    Set loaded = compiler.Compile(AT_TestRulesRaw(Array(bigRule)), AT_TestRuleProtocols())
+    Set overflowCatalog = catalogCompiler.Compile(AT_TestPolicyRaw("PROTOCOLS", Array(Array("Да", "TCP"), Array("Да", "UDP"))), AT_TestPolicyRaw("PROBLEMS", Array(Array("Да", "NET.IP_EXCEPTIONS|ERROR|Правило / исключение", "Ошибка", "{message}{message}", "", "Нет", "Нет"))), AT_TestPolicyRaw("ROUTING", Array()), AT_TestPolicyRaw("COMMON_TEXT", Array()))
+    Set result = runner.RunWithRules(source, overflowCatalog, actor, loaded)
+    AT_Assert result.AllReport.Checks.Count = 14 And result.AllReport.State = atEvalOK, "rule presentation overflow preserves thirteen completed outcomes"
+    If result.AllReport.Checks.Count = 14 Then AT_Assert result.AllReport.Checks(14).Status = "BLOCKED", "rule presentation overflow explicitly blocked"
     bigRule = raw: bigRule(12) = String$(17000, "c"): bigRule(14) = String$(17000, "i")
     Set loaded = compiler.Compile(AT_TestRulesRaw(Array(raw, bigRule)), AT_TestRuleProtocols())
     AT_Assert loaded.State = atEvalOK, "individual fields within bounds compile before combined message limit"

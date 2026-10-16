@@ -19,8 +19,9 @@ Public Function Normalize(ByVal source As ATNetworkReadResult, ByVal dateTextFor
         result.Initialize atEvalError, Nothing, check.Diagnostics: Set Normalize = result: Exit Function
     End If
     If Len(unlimitedKeyword) > 1024 Then Err.Raise vbObjectError + 2930, , "CONFIG_UNLIMITED_KEYWORD"
-    If Len(AT_ExcelHeader(unlimitedKeyword)) = 0 Then Err.Raise vbObjectError + 2930, , "CONFIG_UNLIMITED_KEYWORD"
-    If AT_Digits(Trim$(unlimitedKeyword), Len(unlimitedKeyword)) Then Err.Raise vbObjectError + 2930, , "CONFIG_UNLIMITED_KEYWORD"
+    unlimitedKeyword = AT_ExcelHeader(unlimitedKeyword)
+    If Len(unlimitedKeyword) = 0 Then Err.Raise vbObjectError + 2930, , "CONFIG_UNLIMITED_KEYWORD"
+    If AT_Digits(unlimitedKeyword, Len(unlimitedKeyword)) Then Err.Raise vbObjectError + 2930, , "CONFIG_UNLIMITED_KEYWORD"
     Set check = dates.Normalize(unlimitedKeyword, False, dateTextFormat)
     If check.Value.ValueState = atValuePresent Then Err.Raise vbObjectError + 2930, , "CONFIG_UNLIMITED_KEYWORD"
     Set sourceContext = source.Context: sourceContext.Validate: budget.Initialize limits
@@ -75,9 +76,10 @@ Private Sub ValidateRaw(ByVal value As ATEvalResult, ByVal expectedType As Strin
         If value.Value.DataType <> expectedType Then BadInput
         value.ValidateBudget budget
     Else
-        For Each diagnostic In value.Diagnostics
-            If diagnostic.Code = "RUNTIME_FIELD_MISSING" Or diagnostic.Code = "RUNTIME_ROW_FIELD_MISSING" Then BadInput
-        Next diagnostic
+        If value.State <> atEvalError Then BadInput
+        If value.Diagnostics.Count <> 1 Then BadInput
+        Set diagnostic = value.Diagnostics(1)
+        If diagnostic.Code <> "EXCEL_CELL_ERROR" Then BadInput
     End If
 End Sub
 Private Function TechnicalFields() As Variant

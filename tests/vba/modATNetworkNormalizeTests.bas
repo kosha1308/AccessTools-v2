@@ -64,9 +64,10 @@ Public Sub AT_TestNetworkNormalize()
         AT_Assert context.ResolveField("TECHNICAL_ROWS").Value.Row(1).ResolveField("TECH_DEST_PORT").Value.ValueState = atValueEmpty, "typed blank port retained"
         AT_Assert context.ResolveField("TECHNICAL_ROWS").Value.Row(1).ResolveField("TECH_PROTOCOL").Value.Scalar = "NEW-PROTOCOL", "unregistered protocol not invented as invalid"
     Next item
-    For Each item In Array(Array("AUTO", "Бессрочно", "CONFIG_DATE_FORMAT"), Array("ISO", "", "CONFIG_UNLIMITED_KEYWORD"), Array("ISO", "46100", "CONFIG_UNLIMITED_KEYWORD"), Array("ISO", "2026-10-16", "CONFIG_UNLIMITED_KEYWORD"))
+    For Each item In Array(Array("AUTO", "Бессрочно", "CONFIG_DATE_FORMAT"), Array("ISO", "", "CONFIG_UNLIMITED_KEYWORD"), Array("ISO", "46100", "CONFIG_UNLIMITED_KEYWORD"), Array("ISO", "2026-10-16", "CONFIG_UNLIMITED_KEYWORD"), Array("ISO", ChrW(160) & "2026-10-16", "CONFIG_UNLIMITED_KEYWORD"), Array("ISO", "46100" & ChrW(&H200B), "CONFIG_UNLIMITED_KEYWORD"), Array("DMY_DOT", ChrW(160) & "16.10.2026", "CONFIG_UNLIMITED_KEYWORD"))
         Set result = adapter.Normalize(source, CStr(item(0)), CStr(item(1)))
-        AT_Assert result.State = atEvalError And result.Diagnostics(1).Code = CStr(item(2)), "normalization config fail closed"
+        AT_Assert result.State = atEvalError, "normalization config fail closed"
+        If result.State = atEvalError Then AT_Assert result.Diagnostics(1).Code = CStr(item(2)), "normalization config error code"
         On Error Resume Next
         Set context = result.Context
         caught = Err.Number <> 0: Err.Clear
@@ -92,6 +93,17 @@ CleanupError:
 End Sub
 Private Function NormalizeDetails(ByVal result As ATNetworkReadResult) As String
     If result.State <> atEvalOK Then NormalizeDetails = " " & result.Diagnostics(1).Code
+End Function
+Public Function AT_VerifyNetworkNormalizationReference(ByVal workbookName As String) As String
+    Dim reader As New ATNetworkRequestReader, adapter As New ATNetworkRequestNormalizer
+    Dim result As ATNetworkReadResult, context As ATEvaluationContext
+    Set result = adapter.Normalize(reader.Read(Application.Workbooks(workbookName).Worksheets(1), "REFERENCE", "2026-10-16", "Europe/Moscow"), "DMY_DOT", "Бессрочно")
+    If result.State <> atEvalOK Then
+        AT_VerifyNetworkNormalizationReference = "ERROR|" & result.Diagnostics(1).Code
+    Else
+        Set context = result.Context
+        AT_VerifyNetworkNormalizationReference = "OK|TECH=" & CStr(context.ResolveField("TECHNICAL_ROWS").Value.Count) & "|ADDR=" & CStr(context.ResolveField("ADDRESS_ROWS").Value.Count) & "|UNLIMITED=" & CStr(context.ResolveField("VALIDITY_IS_UNLIMITED").Value.Scalar)
+    End If
 End Function
 Private Sub AT_TestNormalizedDSL(ByVal context As ATEvaluationContext)
     Dim schema As New ATCompileContext, compiler As New ATCompiler, evaluator As New ATEvaluator
@@ -129,6 +141,20 @@ Private Sub AT_TestMalformedNormalization(ByVal original As ATNetworkReadResult)
     Set malformed = AT_OverrideNormalizationInput(original.Context, "VALIDITY_VALUE2_KIND", AT_RuntimeOK(AT_RuntimeScalar("TEXT", "UNKNOWN")))
     Set result = adapter.Normalize(malformed, "ISO", "Бессрочно")
     AT_Assert result.State = atEvalError And result.Diagnostics(1).Code = "NETWORK_INPUT_INVALID", "unknown native metadata rejected"
+    Set malformed = AT_OverrideNormalizationInput(original.Context, "DB_ACCOUNT_RAW", AT_RuntimeFailure(atEvalError, "CONFIG_TEST", Nothing))
+    Set result = adapter.Normalize(malformed, "ISO", "Бессрочно")
+    AT_Assert result.State = atEvalError, "raw document system failure rejects whole snapshot"
+    Set row = New ATRuntimeRow: row.Initialize "TECHNICAL_TABLE_RAW", "15"
+    row.AddField "SOURCE_RAW", AT_RuntimeFailure(atEvalError, "CONFIG_TEST", Nothing)
+    row.AddField "DESTINATION_RAW", AT_RuntimeOK(AT_RuntimeScalar("TEXT", "198.51.100.1"))
+    row.AddField "PROTOCOL_RAW", AT_RuntimeOK(AT_RuntimeScalar("TEXT", "TCP"))
+    row.AddField "PORT_RAW", AT_RuntimeOK(AT_RuntimeScalar("TEXT", "443"))
+    row.AddField "REASON_RAW", AT_RuntimeOK(AT_RuntimeScalar("TEXT", "reason"))
+    Set rows = New Collection: rows.Add row: Set value = New ATRuntimeValue
+    value.InitializeRows "TECHNICAL_TABLE_RAW", rows
+    Set malformed = AT_OverrideNormalizationInput(original.Context, "TECHNICAL_ROWS_RAW", AT_RuntimeOK(value))
+    Set result = adapter.Normalize(malformed, "ISO", "Бессрочно")
+    AT_Assert result.State = atEvalError, "raw row system failure rejects whole snapshot"
 End Sub
 Private Function AT_OverrideNormalizationInput(ByVal source As ATEvaluationContext, ByVal id As String, ByVal replacement As ATEvalResult) As ATNetworkReadResult
     Dim context As New ATEvaluationContext, spec As ATExcelFieldSpec, specs As Collection
@@ -136,7 +162,9 @@ Private Function AT_OverrideNormalizationInput(ByVal source As ATEvaluationConte
     context.Initialize source.RunId, source.RunDate, source.TimezoneId, source.LocaleId, source.ComparisonMode
     Set specs = AT_NetworkDocumentFieldsV3()
     For Each spec In specs
-        context.AddField spec.FieldId, source.ResolveField(spec.FieldId), source.CellRef(spec.FieldId)
+        Set value = source.ResolveField(spec.FieldId)
+        If spec.FieldId = id Then Set value = replacement
+        context.AddField spec.FieldId, value, source.CellRef(spec.FieldId)
     Next spec
     For Each fieldId In Array("TECHNICAL_ROWS_RAW", "ADDRESS_ROWS_RAW", "WORKBOOK_DATE1904", "VALIDITY_VALUE2_KIND", "VALIDITY_SERIAL")
         Set value = source.ResolveField(CStr(fieldId))

@@ -55,7 +55,8 @@ HOSTNAME, ROLE TEXT без изменений, ADDRESS_IP IP_EXPRESSION. RowId/�
 Никаких сопоставлений между таблицами, Superset или бизнес-решений здесь нет.
 
 Снимок frozen, независим от исходника. Source не мутируется. Лимиты: максимум
-10000 строк на коллекцию и штатный 1million-cell/value budget из runtime;
+10000 строк на коллекцию, 200000 общих шагов и 65536 символов на значение
+из штатного runtime budget (лимит чтения 1million cells остаётся в reader);
 чужой malformed snapshot даёт NETWORK_INPUT_INVALID, не частичные данные.
 
 ## Приёмка

@@ -164,3 +164,20 @@ full9941/0 reportexcel-a914b7b0fcb94b6fb4e9d5efd3e5495b. Source SHA256 unchanged
 21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7.
 Static tooling7/7. Raw snapshot only; normalization/business checks/full release remain pending.
 Clean checkout e2bbfd1 cloned without hardlinks to AccessTools-v2-request-verify: CompilePASS9941/0, static7/7, reportexcel-a484ff4fc4364d4790d4966d64a23980. Excel gate integration9/9. No private reference required for normal tests.
+
+## Network normalization 2026-10-16
+
+Base7ccdd27. Date adapter missing-class RED ->CompilePASS10169/0
+reportexcel-7e960182ceec4ef794d1aabd2ec5ebd7. Typed adapter missing-class RED,
+reserved VBA identifier/test fixture merge and unregistered test function fixed;
+no core behavior changed ->CompilePASS10250/0 reportexcel-b9fd26b171464bd0867a5af224555902.
+Fresh independent review found inconsistent keyword canonicalization and acceptance
+of raw system failures. Added reproductions10254/8 ->canonical validation + raw
+failure allowlist(EXCEL_CELL_ERROR only) ->CompilePASS10265/0
+reportexcel-df9d5f08c31f40e2bb6117ba1293b271. Both findings resolved, none deferred.
+Actual source ReadOnly full pipeline OK|TECH=0|ADDR=0|UNLIMITED=True; unchangedSHA256
+21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7,
+reportexcel-4fa40765b87a42ff9fc143bbc1224862. Static7/7, gate9/9.
+Ruling: clarified shared runtime budget200000steps/65536text,10000rows;1mcell limit
+belongs to reader. Date formats/keyword explicit; no EMAIL/enum/protocol allowlist
+or revoke/required-fields policy invented. Full release remains pending.

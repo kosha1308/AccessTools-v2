@@ -235,3 +235,19 @@ Reportexcel-9bb89ef98b3f47a7a50cfa641641ee1d. Static7/7, Excel gate9/9.
 User can provide empty Superset/Rulebook schema files; no real business data
 required. Source readers, matching/coordinator and full user package remain pending.
 Clean checkout0daf296: CompilePASS10488/0 under standard60s; static7/7, reportexcel-3ee05fd0e294460794d08605fa60d578.
+
+## Published source schemas / read-only reader 2026-10-16
+
+Base86e2f29. Supplied empty Superset +7 Rulebook data sheets mapped by real headers.
+Source reader snapshots TEXT/EMPTY/EXCEL_CELL_ERROR with row IDs/refs, including
+hidden and filtered rows. Unnamed export index ignored; no active/policy inference.
+Limits100000body rows/1m rectangular cells/100000discovery work. Source-only changes.
+TDD missing class RED; hidden-row omission reproduced, filter regression10550/1.
+Disposable Excel probe confirmed Find/End ignore filtered row while SpecialCells
+constants/formulas include it. Bounded area scan ->CompilePASS10551/0.
+Actual two books ReadOnly counts0/3/0/0/48/3/48/0 and SHA256 unchanged;
+reportexcel-96064cbbf3414ee0b6e3c3c6e8a5a508. Static7/7, Excel gate9/9.
+Fresh independent review86e2f29..ea5ae65: no actionable Critical/Important findings.
+RAW source readers complete; policy/catalog/messages/routing application,
+Superset matcher/hostname refinement, coordinator output and full package pending.
+Clean checkoutea5ae65: CompilePASS10551/0 default60s, static7/7; reportexcel-e17a3d029c6f4ccba6f12807a971ae5e. Standard suite requires no private source books.

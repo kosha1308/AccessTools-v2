@@ -6,7 +6,7 @@ Public Sub AT_TestRuleChecks()
     Dim catalogCompiler As New ATNetworkPolicyCompiler, catalog As ATNetworkPolicyResult, actorCompiler As New ATInitiatorPolicyCompiler
     Dim actor As ATInitiatorPolicyResult, runner As New ATNetworkAccessChecks, result As ATNetworkPolicyReport, report As ATCheckReport, overflowCatalog As ATNetworkPolicyResult
     Dim writer As New ATExcelReportWriter, raw As Variant, issue As ATCheckIssue, matched As Boolean, original As String
-    Dim n As Long, description As String, value As Variant, bigRule As Variant
+    Dim n As Long, description As String, value As Variant, bigRule As Variant, warningRule As Variant, upgradeCatalog As ATNetworkPolicyResult
     On Error GoTo Failed
     Set book = Application.Workbooks.Add(xlWBATWorksheet): Set ws = book.Worksheets(1): ws.Name = "Лист1"
     AT_TestNetworkReferenceFixture ws
@@ -55,6 +55,12 @@ Public Sub AT_TestRuleChecks()
     AT_Assert report.Checks(1).Status = "FAIL" And report.WarningCount = 1 And report.ErrorCount = 1, "unknown protocol does not hide confirmed rule hit or incomplete warning"
     Set result = runner.RunWithRules(reader.Read(ws, "DOWNGRADE_INCOMPLETE", "2026-10-16", "UTC"), catalog, actor, loaded)
     AT_Assert result.AllReport.Checks(14).Status = "SKIPPED", "downgraded error cannot turn incomplete rule evaluation into PASS"
+    warningRule = raw: warningRule(13) = "Предупреждение"
+    Set loaded = compiler.Compile(AT_TestRulesRaw(Array(warningRule)), AT_TestRuleProtocols())
+    Set upgradeCatalog = catalogCompiler.Compile(AT_TestPolicyRaw("PROTOCOLS", Array(Array("Да", "TCP"), Array("Да", "UDP"))), AT_TestPolicyRaw("PROBLEMS", Array(Array("Да", "NET.IP_EXCEPTIONS|WARNING|Правило / исключение", "Ошибка", "", "", "Нет", "Нет"))), AT_TestPolicyRaw("ROUTING", Array()), AT_TestPolicyRaw("COMMON_TEXT", Array()))
+    Set result = runner.RunWithRules(reader.Read(ws, "UPGRADE_INCOMPLETE", "2026-10-16", "UTC"), upgradeCatalog, actor, loaded)
+    AT_Assert result.AllReport.Checks(14).Status = "FAIL", "upgraded error takes priority over incomplete evaluation"
+    Set loaded = compiler.Compile(AT_TestRulesRaw(Array(raw)), AT_TestRuleProtocols())
     ws.Range("C15").Value2 = "TCP"
     For Each value In Array("group A", CVErr(xlErrValue))
         ws.Range("A15").Value2 = value

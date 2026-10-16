@@ -37,7 +37,7 @@ Public Function Apply(ByVal localReport As ATCheckReport, ByVal loaded As ATNetw
     Next issue
     For Each outcome In localReport.Checks
         status = outcome.Status
-        If status = "PASS" Or status = "FAIL" Then
+        If status = "PASS" Or status = "FAIL" Or (status = "SKIPPED" And outcome.Incomplete) Then
             status = "PASS"
             If outcome.Incomplete Then status = "SKIPPED"
             If errors.Exists(outcome.CheckId) Then status = "FAIL"

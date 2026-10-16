@@ -196,3 +196,4 @@ Actual original XLSX opened ReadOnly: STATE=0|CHECKS=6|ERRORS=4|WARNINGS=1,
 full10381/0 reportexcel-c1e999ffef3b42cb904c8eece4f1bc47. Source SHA256 unchanged
 21684A4A985FD2057193B557E9D09C817C0899CE09DF7C697EF45025BC6714A7. Static7/7.
 Full table checks, source lookups, dispatcher/Rulebook UI, Superset and coordinator writer/package remain pending.
+Clean checkoutbec2fd4 cloned without hardlinks into AccessTools-v2-document-checks-verify: CompilePASS10381/0, static7/7, reportexcel-d8ed8e2ee472479eb1e5b3f26b17009c. Standard suite needs no private original. Excel gate integration9/9.

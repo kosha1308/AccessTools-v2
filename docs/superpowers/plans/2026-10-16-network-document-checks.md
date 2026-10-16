@@ -25,16 +25,16 @@ Frozen report collections and data values: source edits/closure cannot alter cou
 
 Files src/excel/ATExcelDateAdapter.cls; tests/vba/modATExcelDateTests.bas.
 Interface existing Normalize gains explicit DMY_TEXT format, otherwise unchanged.
-- [ ] RED dates in words/multiple candidates/digit boundaries/invalids/ISO/length.
-- [ ] Implement bounded scanner; full Excel GREEN; commit.
+- [x] RED dates in words/multiple candidates/digit boundaries/invalids/ISO/length.
+- [x] Implement bounded scanner; full Excel GREEN; commit.
 
 ### Task2: checks and report
 
 Files src/checks/ATCheckIssue.cls, ATCheckOutcome.cls, ATCheckReport.cls,
 ATNetworkDocumentChecks.cls, modATEmailSyntax.bas; tests/vba/modATDocumentCheckTests.bas, main.
 Interface Run(source As ATNetworkReadResult) As ATCheckReport; immutable properties per spec.
-- [ ] RED full reader pipeline blank/valid/multiple issues, email corpus, request/date/revoke/unknown,
+- [x] RED full reader pipeline blank/valid/multiple issues, email corpus, request/date/revoke/unknown,
   cell errors, source rejection/malformed schema, report freezing/counts and stable refs after close.
-- [ ] Implement six checks and generic immutable values; full GREEN, commit.
-- [ ] Fresh review, Important RED/GREEN fixes; static7/7 gate9/9, real reference ReadOnly/hash, clean checkout.
-- [ ] Russian status/readiness, push draft PR base feat/network-normalization, attach, latest-head CI. No merge/release.
+- [x] Implement six checks and generic immutable values; full GREEN, commit.
+- [x] Fresh review, Important RED/GREEN fixes; static7/7 gate9/9, real reference ReadOnly/hash, clean checkout.
+- [x] Russian status/readiness, push draft PR base feat/network-normalization, attach, latest-head CI. No merge/release.

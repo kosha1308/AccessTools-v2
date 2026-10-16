@@ -417,3 +417,14 @@ FullExcel11265/0, compilePASS, static7/0; ReadOnly references28/0, allSHAunchang
 same-run contract remains controller responsibility. Demo XLSX/PDF visually reviewed.
 Next freshness/unsavedchanges/controller/save/XLAM fullscenarioacceptance.
 Clean clonec19d558: explicitcompilePASS11265/0, gate9/0; sourcepush+PR CI success. DraftPR24 basePR23, no merge/release.
+
+2026-10-17 — Network run controller, basePR24/8e627c6:
+ATNetworkRunController composes request + freshly read/compiled XLSX sources,
+16 checks, report and coordinator with same-run provenance. Closed-source mode,
+metadata stamps before/after, no stale cache or fallback. Unsaved request allowed;
+existing sourcebook rejected; owned inputs/failed outputs closed, application
+settings restored. IsComplete and AllChecksPassed have separate meanings.
+Full Excel11286/0, compilePASS, static7/0, gate9/0. Actual reference6/0,
+all3SHAunchanged; synthetic two-output example generated and PDF reviewed.
+Fresh review no blocking findings. Next: Russian command/file selection/save/XLAM.
+Clean clone6369dc9: compilePASS11286/0. DraftPR25 basePR24; sourcepush and PR CI success. No merge/release.

@@ -41,8 +41,29 @@ public static class ATPilotExcelProcess {
     $demo = Join-Path $install 'Пример'
     $request = $excel.Workbooks.Open((Join-Path $demo 'Заявка-пример.xlsx'), 0, $true)
     $before = $excel.Workbooks.Count
-    [void]$excel.Run($macro + 'AT_CommandExecute', $request.Worksheets.Item(1), (Join-Path $demo '01_Правила_NETWORK_ACCESS.xlsx'), (Join-Path $demo 'Выгрузка-Superset.xlsx'), 'PILOT_SMOKE', '2026-10-17', 'Europe/Moscow')
-    $saved = [string]$excel.Run($macro + 'AT_CommandSave', $RunDirectory)
+    # Excel cannot marshal private VBA class results through Application.Run.
+    # A temporary in-memory probe keeps the result inside this same VBA project.
+    # ReadOnly addin is never saved; packaged modules were checked before injection.
+    Write-Output '[SMOKE] injecting same-project probe'
+    $probe = $addin.VBProject.VBComponents.Add(1)
+    $probe.Name = 'modATPilotProbe'
+    $probe.CodeModule.AddFromString(@"
+Option Explicit
+Public Function AT_PilotExecute(ByVal request As Worksheet, ByVal rulePath As String, ByVal sourcePath As String, ByVal outputParent As String) As String
+    On Error GoTo FailedRun
+    Dim result As ATNetworkRunResult
+    Set result = AT_CommandExecute(request, rulePath, sourcePath, "PILOT_SMOKE", "2026-10-17", "Europe/Moscow")
+    If Not result.IsComplete Then Err.Raise vbObjectError + 3190, , result.ErrorCode
+    AT_PilotExecute = AT_CommandSave(outputParent)
+    Exit Function
+FailedRun:
+    AT_PilotExecute = "FAILED: " & Err.Description
+End Function
+"@)
+    Write-Output '[SMOKE] running same-project workflow'
+    $saved = [string]$excel.Run($macro + 'AT_PilotExecute', $request.Worksheets.Item(1), (Join-Path $demo '01_Правила_NETWORK_ACCESS.xlsx'), (Join-Path $demo 'Выгрузка-Superset.xlsx'), $RunDirectory)
+    Write-Output ("[SMOKE] workflow returned: {0}" -f $saved)
+    if ($saved.StartsWith('FAILED:')) { throw $saved }
     if (-not (Test-Path -LiteralPath (Join-Path $saved 'Отчёт-проверок.xlsx')) -or -not (Test-Path -LiteralPath (Join-Path $saved 'Сводка-координатора.xlsx'))) { throw 'PILOT_OUTPUTS_MISSING' }; $passed++
     if ($excel.Workbooks.Count -ne $before + 2 -or -not $request.ReadOnly -or -not $request.Saved) { throw 'PILOT_BOOK_OWNERSHIP' }; $passed++
     $copy = $excel.Workbooks.Open((Join-Path $saved 'Сводка-координатора.xlsx'), 0, $true)

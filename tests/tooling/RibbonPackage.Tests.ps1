@@ -41,3 +41,6 @@ $ErrorActionPreference = 'Stop'
 if ($exitCode -eq 0 -or (Get-FileHash -LiteralPath $book).Hash -ne $hash) { throw "FAIL duplicate must reject without modification: $output" }
 'PASS duplicate rejects without mutation'
 'Ribbon tooling: 2 PASS / 0 FAIL'
+
+# The expected rejected native command must not become GitHub's step exit code.
+exit 0

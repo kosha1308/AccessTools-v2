@@ -11,3 +11,6 @@ jobs:
       - name: Exercise validator on malformed fixtures
         shell: powershell
         run: ./tests/tooling/StaticValidate.Tests.ps1
+      - name: Exercise Ribbon package injection
+        shell: powershell
+        run: ./tests/tooling/RibbonPackage.Tests.ps1

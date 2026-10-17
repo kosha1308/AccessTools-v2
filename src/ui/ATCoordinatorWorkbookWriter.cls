@@ -136,7 +136,10 @@ Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal
     view.Columns("A").ColumnWidth = 15
     book.Names.Add Name:="ATVIEW_SUPERSET", RefersTo:="='Сводка координатора'!$A$1"
     summary.Activate: book.Windows(1).DisplayGridlines = False
-    book.Windows(1).SplitRow = 5: book.Windows(1).FreezePanes = True
+    ' Hidden automation has no display context for FreezePanes in a loaded add-in.
+    If Application.Visible Then
+        book.Windows(1).SplitRow = 5: book.Windows(1).FreezePanes = True
+    End If
     summary.Range("A1").Select
     Application.EnableEvents = previousEvents
     Set Create = book: Exit Function

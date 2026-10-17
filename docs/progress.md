@@ -442,3 +442,19 @@ Full Excel11303/0 compilePASS, static7/0; fresh review no blockers. UI dialog
 clicks and injected mid-write filesystem failure not tested; documented.
 Next XLAM/Ribbon profile-aware packaging, UI acceptance and clean installation.
 Clean cloneab49a80: compilePASS11303/0; gate9/0. DraftPR26 basePR25, sourcepush/PR CI success; no merge/release.
+
+2026-10-17 — Coordinator pilot addin, basePR26/e2c35f7:
+BuildPilot imports src only, embeds version/release/profile/commit, compiles,
+saves/reloads actual XLAM, injects Russian Ribbon and builds manifested ZIP after
+installed-copy smoke gate. UI package metadata mismatch blocks commands; no startup
+source load or global installation/security changes. Artificial demo inputs only.
+Observed first SaveAs leaves original object's Path empty: reload persisted file.
+In-memory probe avoids private VBA result marshaling Error98; never persisted.
+Actual addin hidden automation exposed FreezePanes1004: skip decoration only when
+Application.VisibleFalse; visible flow unchanged. No check semantics rewritten.
+Full/root+clean-build11308/0 compilePASS; static7/0 gate9/0 Ribbon2/0. Package11/0
+then extracted-ZIP11/0, allSHAunchanged. Fresh review clean. Pilot source08422b5,
+version2.0.0-pilot.1, local ZIP ready; draftPR27 basePR26, no merge/release.
+Ribbon negative-test expected exit needed explicit success for GitHub wrapper;
+d04e85b changes only tooling exit, not built XLAM. Next manual installation/Ribbon/
+dialog acceptance and real-data trial; official FIRST_LINE/Admin release pending.

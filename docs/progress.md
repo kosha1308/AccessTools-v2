@@ -482,3 +482,5 @@ User settings tests inject tempfolder, clipboard untouched; ShowPopup/copy click
 manual acceptance pending. DraftPR29 basePR28, sourceCI success, no merge/release.
 
 2026-10-18 — Familiar Excel workflow: approved v1-style modeless results, owned red/yellow/blue conditional highlights, full Superset working copy plus computed tabs, task-grouped Ribbon/template search, explicit diagnostics only. No check engine changes. Excel11353/0 compilePASS; focused83/0; Ribbon2/0 static7/0. Review findings reproduced RED60/2, fixed, re-review no blockers. Package pilot.4 pending build; see familiar-excel-workflow-status.md.
+
+Verified pilot.4-r2 sourcebd7efe5: full/build11353/0 compilePASS; installed15/0 extractedZIP15/0 allSHAunchanged; syntax9/0 gate9/0. ZIP91C9A27111D9BCCE959E39B4298AC9C394B18808FFA01D89A75BC30F054726D1. DraftPR30 basePR29, source210d6be CI success. No merge/release/install. Manual form/copy interaction pending.

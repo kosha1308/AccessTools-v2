@@ -69,6 +69,32 @@ Public Function AT_PilotExecute(ByVal request As Worksheet, ByVal rulePath As St
 FailedRun:
     AT_PilotExecute = "FAILED: " & Err.Description
 End Function
+Public Function AT_PilotFeedback(ByVal request As Worksheet, ByVal rulePath As String, ByVal sourcePath As String, ByVal workFolder As String) As String
+    On Error GoTo FailedFeedback
+    Dim result As ATNetworkRunResult, feedback As New ATNetworkUserFeedback
+    Dim settings As New ATNetworkSourceSettings, reloaded As New ATNetworkSourceSettings, menu As Object
+    Dim originalName As String, originalMail As String, originalAction As String
+    originalName = CStr(request.Range("A5").Value2): originalMail = CStr(request.Range("F5").Value2): originalAction = CStr(request.Range("C7").Value2)
+    settings.Save rulePath, sourcePath, workFolder
+    If Not reloaded.Load(workFolder) Or Not reloaded.Available Or reloaded.RulebookPath <> rulePath Or reloaded.SupersetPath <> sourcePath Then Err.Raise vbObjectError + 3210, , "PILOT_SETTINGS_FAILED"
+    Set result = AT_CommandExecute(request, rulePath, sourcePath, "PILOT_ERRORS", "2026-10-18", "Europe/Moscow")
+    If Not result.IsComplete Then Err.Raise vbObjectError + 3210, , result.ErrorCode
+    feedback.Prepare result.PolicyReport
+    If feedback.ErrorCount < 3 Or feedback.ErrorCount <> result.PolicyReport.UserErrorCount Or InStr(feedback.UserErrorsText, "F5") = 0 Then Err.Raise vbObjectError + 3210, , "PILOT_USER_ERRORS_FAILED"
+    AT_CommandFeedback request, result, "PILOT_ERRORS"
+    If request.Comments.Count < 3 Or request.Range("F5").Comment Is Nothing Then Err.Raise vbObjectError + 3210, , "PILOT_NOTES_FAILED"
+    If CStr(request.Range("A5").Value2) <> originalName Or CStr(request.Range("F5").Value2) <> originalMail Or CStr(request.Range("C7").Value2) <> originalAction Then Err.Raise vbObjectError + 3210, , "PILOT_VALUES_CHANGED"
+    Set menu = AT_BuildFeedbackMenu(feedback.ErrorCount, False)
+    If Not menu.Controls(2).Enabled Or InStr(menu.Controls(2).OnAction, ThisWorkbook.Name) = 0 Then Err.Raise vbObjectError + 3210, , "PILOT_POPUP_FAILED"
+    menu.Delete: Set menu = Nothing
+    feedback.ClearNotes request
+    If request.Comments.Count <> 0 Then Err.Raise vbObjectError + 3210, , "PILOT_NOTE_CLEANUP_FAILED"
+    AT_PilotFeedback = "OK": Exit Function
+FailedFeedback:
+    AT_PilotFeedback = "FAILED: " & Err.Description
+    On Error Resume Next
+    If Not menu Is Nothing Then menu.Delete
+End Function
 "@)
     Write-Output '[SMOKE] running same-project workflow'
     $saved = [string]$excel.Run($macro + 'AT_PilotExecute', $request.Worksheets.Item(1), (Join-Path $demo '01_Правила_NETWORK_ACCESS.xlsx'), (Join-Path $demo 'Выгрузка-Superset.xlsx'), $RunDirectory)
@@ -83,6 +109,13 @@ End Function
         if ((Get-FileHash -LiteralPath (Join-Path $install $item.Path)).Hash -cne $item.SHA256) { throw 'PILOT_INPUT_CHANGED' }
     }; $passed++
     if ($addin.Name -cne 'AccessToolsv2.xlam' -or $legacy.Name -cne 'AccessTools.xlam' -or -not $legacy.IsAddin -or -not $legacy.ReadOnly -or -not $legacy.Saved -or (Get-FileHash -LiteralPath $legacyPath).Hash -cne $legacyHash) { throw 'PILOT_LEGACY_COEXISTENCE_FAILED' }; $passed++
+    $errorRequest = $excel.Workbooks.Open((Join-Path $demo 'Заявка-с-ошибками.xlsx'),0,$true)
+    $feedbackStatus = [string]$excel.Run($macro + 'AT_PilotFeedback', $errorRequest.Worksheets.Item(1), (Join-Path $demo '01_Правила_NETWORK_ACCESS.xlsx'), (Join-Path $demo 'Выгрузка-Superset.xlsx'), $RunDirectory)
+    if ($feedbackStatus -cne 'OK') { throw $feedbackStatus }; $passed++
+    $errorRequest.Close($false)
+    foreach ($item in $manifest.Files) {
+        if ((Get-FileHash -LiteralPath (Join-Path $install $item.Path)).Hash -cne $item.SHA256) { throw 'PILOT_FEEDBACK_FILE_CHANGED' }
+    }; $passed++
     @{Passed=$passed;Failed=0;Identity=$identity;Saved=$saved;Modules=$names} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $RunDirectory 'smoke.json') -Encoding UTF8
     "Pilot installed XLAM: $passed PASS / 0 FAIL"
     $exitCode = 0

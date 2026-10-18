@@ -128,6 +128,6 @@ Public Function Decide(ByVal original As ATCheckIssue, ByVal key As String) As A
     If Len(coordinatorText) = 0 Then coordinatorText = message
     issue.Initialize original.CheckId, original.Code, severity, original.FieldId, original.CellRef, message
     coordinator.Initialize original.CheckId, original.Code, severity, original.FieldId, original.CellRef, coordinatorText
-    result.Initialize issue, coordinator, key, user, request, superset, userError
+    result.Initialize issue, coordinator, key, user, request, superset, userError, (mProblems.Exists(key) Or mRoutes.Exists(key))
     Set Decide = result
 End Function

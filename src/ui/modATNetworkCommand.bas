@@ -1,6 +1,8 @@
 Attribute VB_Name = "modATNetworkCommand"
 Option Explicit
 Private mResult As ATNetworkRunResult, mBusy As Boolean
+Private mFeedback As ATNetworkUserFeedback, mRequest As Worksheet, mFeedbackWarning As String
+Private mRulePath As String, mSupersetPath As String, mSettingsWarning As String
 Private Type ATCommandSystemTime
     year As Integer
     month As Integer
@@ -27,6 +29,7 @@ Private Declare Function GetTimeZoneInformation Lib "kernel32" (ByRef informatio
 #End If
 Public Sub AT_CommandReset()
     Set mResult = Nothing
+    Set mFeedback = Nothing: Set mRequest = Nothing: mFeedbackWarning = ""
 End Sub
 Public Function AT_CommandExecute(ByVal request As Worksheet, ByVal rulebookPath As String, ByVal supersetPath As String, ByVal runId As String, ByVal runDate As String, ByVal timezoneId As String) As ATNetworkRunResult
     Dim controller As New ATNetworkRunController
@@ -71,29 +74,23 @@ Public Sub ПроверитьСвязанности()
     If Not decision.Allowed Then
         MsgBox decision.Message & vbCrLf & "Откройте лист актуальной заявки на сетевую связность.", vbExclamation, "AccessTools": GoTo Cleanup
     End If
-    rulePath = ChooseSource("Выберите книгу правил NETWORK_ACCESS (XLSX)")
-    If Len(rulePath) = 0 Then GoTo Cleanup
-    supersetPath = ChooseSource("Выберите выгрузку Superset (XLSX)")
-    If Len(supersetPath) = 0 Then GoTo Cleanup
+    If Not ResolveSources(False, rulePath, supersetPath) Then GoTo Cleanup
     Application.StatusBar = "AccessTools: проверка заявки, правил и Superset..."
     Application.ScreenUpdating = False
     runId = AT_CommandTimestamp(runDate, timezoneId)
+    Dim oldNotes As New ATNetworkUserFeedback
+    oldNotes.ClearNotes request
     Set result = AT_CommandExecute(request, rulePath, supersetPath, runId, runDate, timezoneId)
     Application.ScreenUpdating = previousScreen: Application.StatusBar = previousStatus
     If Not result.IsComplete Then
         message = "Запуск не завершён. Этап: " & result.Phase & "." & vbCrLf & "Код: " & result.ErrorCode
+        If oldNotes.NoteFailures > 0 Then message = message & vbCrLf & "Старые примечания не удалось обновить; они могут относиться к предыдущей проверке."
         If Not result.ReportBook Is Nothing Then result.ReportBook.Activate
         MsgBox message & vbCrLf & "Сводка не сформирована. Подробности — в отчёте, если он создан.", vbExclamation, "AccessTools": GoTo Cleanup
     End If
     result.CoordinatorBook.Activate
-    message = "Обработка завершена. Открыты отчёт проверок и сводка координатора."
-    If result.AllChecksPassed Then
-        message = message & vbCrLf & "Все 16 проверок пройдены."
-    Else
-        message = message & vbCrLf & "Есть замечания или неполные проверки. Изучите обе книги."
-    End If
-    If result.RequestUnsaved Then message = message & vbCrLf & "Использованы текущие несохранённые значения заявки."
-    If MsgBox(message & vbCrLf & vbCrLf & "Сохранить отдельные копии результатов?", vbYesNo + vbQuestion, "AccessTools") = vbYes Then SaveCurrent
+    AT_CommandFeedback request, result, runId
+    ShowCurrentResults
 Cleanup:
     On Error Resume Next
     Application.ScreenUpdating = previousScreen: Application.StatusBar = previousStatus: mBusy = False
@@ -117,6 +114,129 @@ Public Sub AT_RibbonCheck(ByVal control As Object)
 End Sub
 Public Sub AT_RibbonSave(ByVal control As Object)
     СохранитьРезультатыСвязанностей
+End Sub
+Public Sub AT_RibbonResults(ByVal control As Object)
+    РезультатыПроверкиСвязанностей
+End Sub
+Public Sub AT_RibbonSources(ByVal control As Object)
+    ВыбратьИсточникиСвязанностей
+End Sub
+Public Sub ВыбратьИсточникиСвязанностей()
+    Dim rulePath As String, supersetPath As String
+    If mBusy Then Exit Sub
+    If Not AT_PackageAllowCommand() Then Exit Sub
+    On Error GoTo Failed
+    mBusy = True
+    If ResolveSources(True, rulePath, supersetPath) Then
+        AT_CommandReset
+        MsgBox "Источники выбраны. Следующие проверки будут использовать их без повторного выбора." & vbCrLf & mSettingsWarning, vbInformation, "AccessTools"
+    End If
+    mBusy = False: Exit Sub
+Failed:
+    mBusy = False: MsgBox "Не удалось выбрать источники. " & Err.Description, vbExclamation, "AccessTools"
+End Sub
+Private Function ResolveSources(ByVal force As Boolean, ByRef rulePath As String, ByRef supersetPath As String) As Boolean
+    Dim settings As New ATNetworkSourceSettings, fs As Object, changed As Boolean
+    Set fs = CreateObject("Scripting.FileSystemObject")
+    If Len(mRulePath) = 0 Or Len(mSupersetPath) = 0 Then
+        If settings.Load Then mRulePath = settings.RulebookPath: mSupersetPath = settings.SupersetPath
+    End If
+    rulePath = mRulePath: supersetPath = mSupersetPath
+    If force Or Not fs.FileExists(rulePath) Then
+        rulePath = ChooseSource("Выберите книгу правил NETWORK_ACCESS (XLSX)"): changed = True
+        If Len(rulePath) = 0 Then Exit Function
+    End If
+    If force Or Not fs.FileExists(supersetPath) Then
+        supersetPath = ChooseSource("Выберите выгрузку Superset (XLSX)"): changed = True
+        If Len(supersetPath) = 0 Then Exit Function
+    End If
+    If StrComp(fs.GetAbsolutePathName(rulePath), fs.GetAbsolutePathName(supersetPath), vbTextCompare) = 0 Then
+        MsgBox "Выбран один и тот же файл. Для правил и Superset нужны разные XLSX.", vbExclamation, "AccessTools": Exit Function
+    End If
+    mRulePath = rulePath: mSupersetPath = supersetPath
+    If changed Then
+        mSettingsWarning = ""
+        On Error Resume Next
+        Err.Clear
+        settings.Save rulePath, supersetPath
+        If Err.Number <> 0 Then mSettingsWarning = "Пути запомнены только до закрытия Excel: не удалось сохранить настройки."
+        Err.Clear: On Error GoTo 0
+    End If
+    ResolveSources = True
+End Function
+Public Sub AT_CommandFeedback(ByVal request As Worksheet, ByVal result As ATNetworkRunResult, ByVal runId As String)
+    On Error GoTo Failed
+    Set mFeedback = Nothing: Set mRequest = request: mFeedbackWarning = ""
+    If result Is Nothing Then Exit Sub
+    If Not result.IsComplete Then Exit Sub
+    Set mFeedback = New ATNetworkUserFeedback
+    mFeedback.Prepare result.PolicyReport
+    mFeedback.ApplyNotes request, runId
+    result.ReportBook.Worksheets(1).Range("A2").Value2 = "Отдельный отчёт: значения заявки не менялись. Примечания обновлены в открытой книге без автоматического сохранения."
+    If mFeedback.NoteFailures > 0 Then mFeedbackWarning = "Часть примечаний не добавлена или не обновлена. Проверьте защиту листа и отчёт; данные проверки доступны в отдельных книгах."
+    Exit Sub
+Failed:
+    mFeedbackWarning = "Не удалось полностью подготовить список ошибок или примечания. Используйте отчёт проверок. Код: " & AT_StableErrorCode(Err.Description, "FEEDBACK_FAILED")
+    Set mFeedback = Nothing
+End Sub
+Public Sub РезультатыПроверкиСвязанностей()
+    If mBusy Then Exit Sub
+    If Not AT_PackageAllowCommand() Then Exit Sub
+    mBusy = True: ShowCurrentResults: mBusy = False
+End Sub
+Private Sub ShowCurrentResults()
+    Dim bar As Object, count As Long, message As String
+    On Error GoTo Failed
+    If mResult Is Nothing Then GoTo NoResult
+    If Not mResult.IsComplete Then GoTo NoResult
+    If Not mFeedback Is Nothing Then count = mFeedback.ErrorCount
+    message = mFeedbackWarning
+    If Len(mSettingsWarning) > 0 Then message = message & vbCrLf & mSettingsWarning
+    If Len(Trim$(message)) > 0 Then MsgBox message, vbExclamation, "AccessTools"
+    Set bar = AT_BuildFeedbackMenu(count, Len(Trim$(message)) > 0)
+    bar.ShowPopup
+Cleanup:
+    On Error Resume Next
+    If Not bar Is Nothing Then bar.Delete
+    On Error GoTo 0
+    Exit Sub
+NoResult:
+    MsgBox "Сначала выполните проверку связанностей. Готового результата последнего запуска нет.", vbInformation, "AccessTools": GoTo Cleanup
+Failed:
+    MsgBox "Не удалось открыть меню. Отчёт и сводка остаются открытыми.", vbExclamation, "AccessTools": Resume Cleanup
+End Sub
+Public Sub AT_ResultCopy()
+    On Error GoTo Failed
+    If mFeedback Is Nothing Then Exit Sub
+    If mFeedback.ErrorCount = 0 Then Exit Sub
+    AT_CopyUnicodeClipboard mFeedback.UserErrorsText
+    MsgBox "Все ошибки пользователя скопированы. Вставьте текст сочетанием Ctrl+V.", vbInformation, "AccessTools": Exit Sub
+Failed:
+    MsgBox "Не удалось скопировать ошибки. Буфер может быть занят: повторите из меню «Результаты проверки». Код: " & AT_StableErrorCode(Err.Description, "CLIPBOARD_WRITE_FAILED"), vbExclamation, "AccessTools"
+End Sub
+Public Sub AT_ResultReport()
+    On Error GoTo Failed
+    If Not mResult Is Nothing Then mResult.ReportBook.Activate
+    Exit Sub
+Failed:
+    MsgBox "Книга отчёта уже закрыта. Повторите проверку.", vbInformation, "AccessTools"
+End Sub
+Public Sub AT_ResultCoordinator()
+    On Error GoTo Failed
+    If Not mResult Is Nothing Then mResult.CoordinatorBook.Activate
+    Exit Sub
+Failed:
+    MsgBox "Книга сводки уже закрыта. Повторите проверку.", vbInformation, "AccessTools"
+End Sub
+Public Sub AT_ResultRequest()
+    On Error GoTo Failed
+    If Not mRequest Is Nothing Then mRequest.Activate
+    Exit Sub
+Failed:
+    MsgBox "Заявка уже закрыта.", vbInformation, "AccessTools"
+End Sub
+Public Sub AT_ResultSave()
+    SaveCurrent
 End Sub
 Private Function ChooseSource(ByVal title As String) As String
     Dim choice As Variant

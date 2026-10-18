@@ -30,9 +30,9 @@ try {
     if ($rels.Relationships.Relationship.Count -ne 2) { throw 'FAIL relationship preservation' }
     $reader = [IO.StreamReader]::new($archive.GetEntry('customUI/customUI.xml').Open())
     try { [xml]$xml = $reader.ReadToEnd() } finally { $reader.Dispose() }
-    if ($xml.customUI.ribbon.tabs.tab.group.button.Count -ne 2) { throw 'FAIL buttons' }
+    if ($xml.customUI.ribbon.tabs.tab.group.button.Count -ne 4) { throw 'FAIL buttons' }
 } finally { $archive.Dispose() }
-'PASS Ribbon part, relationships, existing binary and two controls'
+'PASS Ribbon part, relationships, existing binary and four controls'
 $hash = (Get-FileHash -LiteralPath $book).Hash
 $ErrorActionPreference = 'Continue'
 $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tool -Path $book -RibbonPath (Join-Path $repo 'resources/ribbon/customUI.xml') 2>&1

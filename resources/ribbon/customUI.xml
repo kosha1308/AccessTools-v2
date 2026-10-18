@@ -6,6 +6,8 @@
         <group id="atNetworkAccess" label="Связанности · координатор">
           <button id="atCheckNetwork" label="Проверить связанности" onAction="AT_RibbonCheck" screentip="Проверить открытую заявку" supertip="Выберите книгу правил и выгрузку Superset. Откроются отчёт проверок и сводка координатора." />
           <button id="atSaveNetwork" label="Сохранить результаты" onAction="AT_RibbonSave" screentip="Сохранить отчёт и сводку" supertip="Копии обеих книг сохраняются в новую подпапку. Прежние результаты не перезаписываются." />
+          <button id="atNetworkResults" label="Результаты проверки" onAction="AT_RibbonResults" screentip="Открыть меню последней проверки" supertip="Скопировать все ошибки пользователя, открыть отчёт, сводку или заявку с примечаниями." />
+          <button id="atNetworkSources" label="Выбрать источники" onAction="AT_RibbonSources" screentip="Изменить правила или выгрузку Superset" supertip="Пути запоминаются. Повторно выбирать файлы при каждой проверке не требуется." />
         </group>
       </tab>
     </tabs>

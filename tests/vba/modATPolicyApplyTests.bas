@@ -27,6 +27,7 @@ Public Sub AT_TestPolicyApply()
     AT_Assert result.AllReport.Issues.Count = 1 And result.AllReport.ErrorCount = 0, "configured protocol severity applied"
     AT_Assert result.UserIssues.Count = 0 And result.UserErrorCount = 0, "hidden informational issue not a user error"
     AT_Assert result.RequestIssues.Count = 1 And result.SupersetIssues.Count = 1, "explicit routing channels retained"
+    AT_Assert result.Decisions(1).RequestConfigured, "feedback can distinguish explicit Rulebook request configuration"
     AT_Assert result.RequestIssues(1).Message = "Нужен иной протокол" And result.SupersetIssues(1).Message = "Проверить координатору", "separate user/coordinator messages"
     AT_Assert result.AllReport.Issues(1).CheckId = "NET.PROTOCOLS" And result.AllReport.Issues(1).CellRef = "'Лист1'!C15", "binding keeps original identity and ref"
     For Each check In result.AllReport.Checks
@@ -44,6 +45,7 @@ Public Sub AT_TestPolicyApply()
     Set r = AT_TestPolicyRaw("ROUTING", Array())
     Set loaded = compiler.Compile(p, m, r, c): Set result = runner.Run(source, loaded)
     AT_Assert result.UserErrorCount = 1 And result.AllReport.ErrorCount = 1, "unconfigured issue preserves builtin behavior"
+    AT_Assert Not result.Decisions(1).RequestConfigured, "default note feedback can identify absent routing without changing policy outcomes"
     Set loaded = compiler.Compile(AT_TestPolicyRaw("PROTOCOLS", Array()), m, r, c)
     Set result = runner.Run(source, loaded): found = False
     For Each check In result.AllReport.Checks

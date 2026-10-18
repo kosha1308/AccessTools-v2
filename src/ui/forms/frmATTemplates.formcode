@@ -1,0 +1,29 @@
+Option Explicit
+Private Sub UserForm_Initialize()
+    RefreshTemplates
+End Sub
+Private Sub txtSearch_Change()
+    RefreshTemplates
+End Sub
+Private Sub RefreshTemplates()
+    Dim items As Collection, item As Variant
+    Set items = AT_AvailableTemplates(CStr(txtSearch.Value))
+    lstTemplates.Clear
+    For Each item In items: lstTemplates.AddItem CStr(item(1)): Next item
+    btnCheck.Enabled = items.Count > 0: btnRules.Enabled = items.Count > 0: btnSources.Enabled = items.Count > 0
+    If items.Count > 0 Then lstTemplates.ListIndex = 0
+End Sub
+Private Sub btnCheck_Click()
+    If lstTemplates.ListIndex < 0 Then Exit Sub
+    Me.Hide
+    ПроверитьСвязанности
+End Sub
+Private Sub btnRules_Click()
+    If lstTemplates.ListIndex >= 0 Then AT_OpenNetworkRules
+End Sub
+Private Sub btnSources_Click()
+    If lstTemplates.ListIndex >= 0 Then ВыбратьИсточникиСвязанностей
+End Sub
+Private Sub btnClose_Click()
+    Unload Me
+End Sub

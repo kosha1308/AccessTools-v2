@@ -4,6 +4,45 @@ BEGIN
 END
 Attribute VB_Name = "ATCoordinatorWorkbookWriter"
 Option Explicit
+Public Function CreateWorkingCopy(ByVal source As Workbook, ByVal calculated As Workbook) As Workbook
+    Dim book As Workbook, sheet As Worksheet, previous As New Collection, item As Workbook, candidateBook As Workbook
+    Dim events As Boolean, armed As Boolean, code As String, reserved As Object, suffix As Long, candidate As String
+    On Error GoTo Failed
+    If source Is Nothing Or calculated Is Nothing Then Err.Raise vbObjectError + 3240, , "WORKSPACE_INPUT_REQUIRED"
+    If source Is calculated Then Err.Raise vbObjectError + 3240, , "WORKSPACE_INPUT_COLLISION"
+    For Each item In Application.Workbooks: previous.Add item: Next item
+    events = Application.EnableEvents: armed = True: Application.EnableEvents = False
+    source.Worksheets.Copy
+    Set candidateBook = Application.ActiveWorkbook: AT_RunAssertNew candidateBook, previous: Set book = candidateBook
+    Set reserved = CreateObject("Scripting.Dictionary"): reserved.CompareMode = vbTextCompare
+    For Each sheet In calculated.Worksheets: reserved.Add sheet.Name, True: Next sheet
+    ' Names are changed only in the new copy; originals and their formulas stay intact.
+    For Each sheet In book.Worksheets
+        If reserved.Exists(sheet.Name) Then
+            Do
+                suffix = suffix + 1: candidate = "Исходные данные " & CStr(suffix)
+            Loop While SheetExists(book, candidate) Or reserved.Exists(candidate)
+            sheet.Name = candidate
+        End If
+    Next sheet
+    calculated.Worksheets.Copy After:=book.Worksheets(book.Worksheets.Count)
+    book.Worksheets(calculated.Worksheets(1).Name).Activate
+    Application.EnableEvents = events: armed = False
+    Set CreateWorkingCopy = book: Exit Function
+Failed:
+    code = AT_StableErrorCode(Err.Description, "WORKSPACE_COPY_FAILED")
+    On Error Resume Next
+    If Not book Is Nothing Then book.Close False
+    If armed Then Application.EnableEvents = events
+    On Error GoTo 0
+    Err.Raise vbObjectError + 3240, "CreateWorkingCopy", code
+End Function
+Private Function SheetExists(ByVal book As Workbook, ByVal name As String) As Boolean
+    Dim sheet As Object
+    For Each sheet In book.Sheets
+        If StrComp(sheet.Name, name, vbTextCompare) = 0 Then SheetExists = True: Exit Function
+    Next sheet
+End Function
 Public Function Create(ByVal registry As ATNetworkRegistryResult, Optional ByVal annotations As ATNetworkSupersetResult = Nothing, Optional ByVal technicalNotes As ATCoordinatorNotesResult = Nothing) As Workbook
     Dim book As Workbook, summary As Worksheet, view As Worksheet, entries As Collection, entry As ATNetworkRegistryEntry
     Dim ids As New Collection, data As Variant, count As Long, spec As ATExcelTableSpec, enrichment As ATEvalResult

@@ -30,9 +30,12 @@ try {
     if ($rels.Relationships.Relationship.Count -ne 2) { throw 'FAIL relationship preservation' }
     $reader = [IO.StreamReader]::new($archive.GetEntry('customUI/customUI.xml').Open())
     try { [xml]$xml = $reader.ReadToEnd() } finally { $reader.Dispose() }
-    if ($xml.customUI.ribbon.tabs.tab.group.button.Count -ne 4) { throw 'FAIL buttons' }
+    $buttons = @($xml.SelectNodes('//*[local-name()="button"]'))
+    if ($buttons.Count -ne 9) { throw 'FAIL buttons' }
+    if (@($buttons | Where-Object { $_.onAction -eq 'AT_RibbonDiagnostic' }).Count -ne 1) { throw 'FAIL diagnostic action' }
+    if (@($xml.SelectNodes('//*[local-name()="group"]')).Count -ne 3) { throw 'FAIL task groups' }
 } finally { $archive.Dispose() }
-'PASS Ribbon part, relationships, existing binary and four controls'
+'PASS Ribbon part, relationships, existing binary and grouped template/result/diagnostic controls'
 $hash = (Get-FileHash -LiteralPath $book).Hash
 $ErrorActionPreference = 'Continue'
 $output = & powershell.exe -NoProfile -ExecutionPolicy Bypass -File $tool -Path $book -RibbonPath (Join-Path $repo 'resources/ribbon/customUI.xml') 2>&1

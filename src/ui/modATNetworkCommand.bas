@@ -3,6 +3,9 @@ Option Explicit
 Private mResult As ATNetworkRunResult, mBusy As Boolean
 Private mFeedback As ATNetworkUserFeedback, mRequest As Worksheet, mFeedbackWarning As String
 Private mRulePath As String, mSupersetPath As String, mSettingsWarning As String
+Private mWindow As Object, mWorkingBook As Workbook
+Private mOwnHidden As Boolean
+Private mUserRun As Boolean
 Private Type ATCommandSystemTime
     year As Integer
     month As Integer
@@ -28,8 +31,26 @@ Private Declare PtrSafe Function GetTimeZoneInformation Lib "kernel32" (ByRef in
 Private Declare Function GetTimeZoneInformation Lib "kernel32" (ByRef information As ATCommandTimeZone) As Long
 #End If
 Public Sub AT_CommandReset()
+    On Error Resume Next
+    If Not mWindow Is Nothing Then Unload mWindow
+    Set mWindow = Nothing
+    If mOwnHidden And Not mResult Is Nothing Then
+        CloseHidden mResult.ReportBook
+        CloseHidden mResult.CoordinatorBook
+    End If
+    mOwnHidden = False
+    mUserRun = False
+    Set mWorkingBook = Nothing
+    On Error GoTo 0
     Set mResult = Nothing
     Set mFeedback = Nothing: Set mRequest = Nothing: mFeedbackWarning = ""
+End Sub
+Private Sub CloseHidden(ByVal book As Workbook)
+    On Error Resume Next
+    If Not book Is Nothing Then
+        If Not book.Windows(1).Visible Then book.Close False
+    End If
+    On Error GoTo 0
 End Sub
 Public Function AT_CommandExecute(ByVal request As Worksheet, ByVal rulebookPath As String, ByVal supersetPath As String, ByVal runId As String, ByVal runDate As String, ByVal timezoneId As String) As ATNetworkRunResult
     Dim controller As New ATNetworkRunController
@@ -41,7 +62,12 @@ Public Function AT_CommandSave(ByVal parentFolder As String) As String
     Dim saver As New ATNetworkOutputSaver
     If mResult Is Nothing Then Err.Raise vbObjectError + 3190, , "COMMAND_NO_COMPLETE_RUN"
     If Not mResult.IsComplete Then Err.Raise vbObjectError + 3190, , "COMMAND_NO_COMPLETE_RUN"
-    AT_CommandSave = saver.Save(mResult.ReportBook, mResult.CoordinatorBook, parentFolder)
+    If mUserRun And mWorkingBook Is Nothing Then Err.Raise vbObjectError + 3240, , "WORKSPACE_NOT_READY"
+    If Not mWorkingBook Is Nothing Then
+        AT_CommandSave = saver.Save(Nothing, mWorkingBook, parentFolder, False)
+    Else
+        AT_CommandSave = saver.Save(mResult.ReportBook, mResult.CoordinatorBook, parentFolder)
+    End If
 End Function
 Public Function AT_CommandTimestamp(ByRef runDate As String, ByRef timezoneId As String) As String
     Dim information As ATCommandTimeZone, state As Long, offset As Long, captured As Date, sign As String
@@ -81,15 +107,16 @@ Public Sub ПроверитьСвязанности()
     Dim oldNotes As New ATNetworkUserFeedback
     oldNotes.ClearNotes request
     Set result = AT_CommandExecute(request, rulePath, supersetPath, runId, runDate, timezoneId)
-    Application.ScreenUpdating = previousScreen: Application.StatusBar = previousStatus
+    mUserRun = True
     If Not result.IsComplete Then
         message = "Запуск не завершён. Этап: " & result.Phase & "." & vbCrLf & "Код: " & result.ErrorCode
         If oldNotes.NoteFailures > 0 Then message = message & vbCrLf & "Старые примечания не удалось обновить; они могут относиться к предыдущей проверке."
-        If Not result.ReportBook Is Nothing Then result.ReportBook.Activate
-        MsgBox message & vbCrLf & "Сводка не сформирована. Подробности — в отчёте, если он создан.", vbExclamation, "AccessTools": GoTo Cleanup
+        request.Activate
+        If Not result.ReportBook Is Nothing Then result.ReportBook.Windows(1).Visible = False: mOwnHidden = True
+        MsgBox message & vbCrLf & "Сводка не сформирована. Подробности — по кнопке «Диагностика».", vbExclamation, "AccessTools": GoTo Cleanup
     End If
-    result.CoordinatorBook.Activate
-    AT_CommandFeedback request, result, runId
+    AT_CommandPresent request, result, supersetPath, runId
+    Application.ScreenUpdating = previousScreen: Application.StatusBar = previousStatus
     ShowCurrentResults
 Cleanup:
     On Error Resume Next
@@ -101,6 +128,19 @@ Failed:
     MsgBox "Не удалось выполнить команду. " & message & vbCrLf & "Открытые книги не закрывались.", vbExclamation, "AccessTools"
     Resume Cleanup
 End Sub
+Public Function AT_CommandPresent(ByVal request As Worksheet, ByVal result As ATNetworkRunResult, ByVal supersetPath As String, ByVal runId As String) As Workbook
+    If mResult Is Nothing Or result Is Nothing Then Err.Raise vbObjectError + 3240, , "WORKSPACE_NO_CURRENT_RUN"
+    If Not result Is mResult Then Err.Raise vbObjectError + 3240, , "WORKSPACE_STALE_RUN"
+    mUserRun = True: mOwnHidden = True: Set mRequest = request
+    request.Activate
+    result.ReportBook.Windows(1).Visible = False
+    result.CoordinatorBook.Windows(1).Visible = False
+    Set mWorkingBook = Nothing
+    Set mWorkingBook = AT_CommandWorkingCopy(result, supersetPath)
+    AT_CommandFeedback request, result, runId
+    request.Activate
+    Set AT_CommandPresent = mWorkingBook
+End Function
 
 Public Sub СохранитьРезультатыСвязанностей()
     If mBusy Then Exit Sub
@@ -185,25 +225,22 @@ Public Sub РезультатыПроверкиСвязанностей()
     mBusy = True: ShowCurrentResults: mBusy = False
 End Sub
 Private Sub ShowCurrentResults()
-    Dim bar As Object, count As Long, message As String
+    Dim message As String
     On Error GoTo Failed
     If mResult Is Nothing Then GoTo NoResult
     If Not mResult.IsComplete Then GoTo NoResult
-    If Not mFeedback Is Nothing Then count = mFeedback.ErrorCount
     message = mFeedbackWarning
     If Len(mSettingsWarning) > 0 Then message = message & vbCrLf & mSettingsWarning
-    If Len(Trim$(message)) > 0 Then MsgBox message, vbExclamation, "AccessTools"
-    Set bar = AT_BuildFeedbackMenu(count, Len(Trim$(message)) > 0)
-    bar.ShowPopup
+    If Not mWindow Is Nothing Then Unload mWindow
+    Set mWindow = VBA.UserForms.Add("frmATResults")
+    mWindow.LoadData mFeedback, mRequest, message
+    mWindow.Show 0
 Cleanup:
-    On Error Resume Next
-    If Not bar Is Nothing Then bar.Delete
-    On Error GoTo 0
     Exit Sub
 NoResult:
     MsgBox "Сначала выполните проверку связанностей. Готового результата последнего запуска нет.", vbInformation, "AccessTools": GoTo Cleanup
 Failed:
-    MsgBox "Не удалось открыть меню. Отчёт и сводка остаются открытыми.", vbExclamation, "AccessTools": Resume Cleanup
+    MsgBox "Не удалось открыть окно результатов. Используйте кнопки «Диагностика» или «Сводка и Superset».", vbExclamation, "AccessTools": Resume Cleanup
 End Sub
 Public Sub AT_ResultCopy()
     On Error GoTo Failed
@@ -216,18 +253,86 @@ Failed:
 End Sub
 Public Sub AT_ResultReport()
     On Error GoTo Failed
-    If Not mResult Is Nothing Then mResult.ReportBook.Activate
+    If mResult Is Nothing Then MsgBox "Сначала выполните проверку заявки.", vbInformation, "AccessTools 2.0": Exit Sub
+    mResult.ReportBook.Windows(1).Visible = True
+    mResult.ReportBook.Activate
     Exit Sub
 Failed:
     MsgBox "Книга отчёта уже закрыта. Повторите проверку.", vbInformation, "AccessTools"
 End Sub
 Public Sub AT_ResultCoordinator()
     On Error GoTo Failed
-    If Not mResult Is Nothing Then mResult.CoordinatorBook.Activate
+    If Not mWorkingBook Is Nothing Then
+        mWorkingBook.Windows(1).Visible = True: mWorkingBook.Activate
+    ElseIf mUserRun Then
+        MsgBox "Рабочая копия Superset не сформирована. Повторите проверку. Подробности — по кнопке «Диагностика».", vbExclamation, "AccessTools 2.0"
+    ElseIf Not mResult Is Nothing Then
+        If mResult.IsComplete Then mResult.CoordinatorBook.Windows(1).Visible = True: mResult.CoordinatorBook.Activate
+    End If
     Exit Sub
 Failed:
     MsgBox "Книга сводки уже закрыта. Повторите проверку.", vbInformation, "AccessTools"
 End Sub
+Public Sub AT_ResultRepeat()
+    If mBusy Then Exit Sub
+    On Error GoTo Failed
+    If mRequest Is Nothing Then Exit Sub
+    mRequest.Activate
+    ПроверитьСвязанности
+    Exit Sub
+Failed:
+    MsgBox "Заявка уже закрыта. Откройте её и запустите проверку.", vbInformation, "AccessTools 2.0"
+End Sub
+Public Sub AT_ResultClear()
+    If mBusy Then Exit Sub
+    On Error GoTo Failed
+    If mRequest Is Nothing Then Exit Sub
+    Dim feedback As New ATNetworkUserFeedback
+    If feedback.ClearNotes(mRequest) Then
+        MsgBox "Отметки AccessTools 2.0 удалены. Значения заявки не менялись.", vbInformation, "AccessTools 2.0"
+    Else
+        MsgBox "Часть отметок не удалось удалить. Проверьте защиту листа.", vbExclamation, "AccessTools 2.0"
+    End If
+    Exit Sub
+Failed:
+    MsgBox "Не удалось очистить отметки. Возможно, заявка закрыта.", vbInformation, "AccessTools 2.0"
+End Sub
+Public Sub AT_OpenNetworkRules()
+    Dim rulePath As String, supersetPath As String
+    If mBusy Or Not AT_PackageAllowCommand() Then Exit Sub
+    On Error GoTo Failed
+    If Not ResolveSources(False, rulePath, supersetPath) Then Exit Sub
+    Application.Workbooks.Open Filename:=rulePath, UpdateLinks:=0, AddToMru:=False
+    Exit Sub
+Failed:
+    MsgBox "Не удалось открыть книгу правил. " & Err.Description, vbExclamation, "AccessTools 2.0"
+End Sub
+Public Function AT_CommandWorkingCopy(ByVal result As ATNetworkRunResult, ByVal supersetPath As String) As Workbook
+    Dim stamp As New ATRunSourceStamp, source As Workbook, writer As New ATCoordinatorWorkbookWriter, book As Workbook
+    Dim events As Boolean, security As Long, armed As Boolean, code As String
+    On Error GoTo Failed
+    If result Is Nothing Then Err.Raise vbObjectError + 3240, , "WORKSPACE_NO_RESULT"
+    If Not result.IsComplete Then Err.Raise vbObjectError + 3240, , "WORKSPACE_NO_RESULT"
+    stamp.Initialize supersetPath
+    If stamp.Fingerprint <> result.SupersetFingerprint Then Err.Raise vbObjectError + 3240, , "WORKSPACE_SOURCE_CHANGED"
+    events = Application.EnableEvents: security = Application.AutomationSecurity: armed = True
+    Application.EnableEvents = False: Application.AutomationSecurity = 3
+    Set source = AT_RunOpenOwned(supersetPath)
+    Set book = writer.CreateWorkingCopy(source, result.CoordinatorBook)
+    stamp.VerifyCurrent
+    source.Close False: Set source = Nothing
+    stamp.VerifyCurrent
+    Application.EnableEvents = events: Application.AutomationSecurity = security: armed = False
+    Set AT_CommandWorkingCopy = book: Exit Function
+Failed:
+    code = AT_StableErrorCode(Err.Description, "WORKSPACE_FAILED")
+    On Error Resume Next
+    If Not source Is Nothing Then source.Close False
+    If Not book Is Nothing Then book.Close False
+    If armed Then Application.EnableEvents = events: Application.AutomationSecurity = security
+    On Error GoTo 0
+    Err.Raise vbObjectError + 3240, "AT_CommandWorkingCopy", code
+End Function
 Public Sub AT_ResultRequest()
     On Error GoTo Failed
     If Not mRequest Is Nothing Then mRequest.Activate
@@ -254,7 +359,7 @@ Private Sub SaveCurrent()
     If dialog.Show <> -1 Then Exit Sub
     folder = dialog.SelectedItems(1)
     output = AT_CommandSave(folder)
-    MsgBox "Обе книги сохранены в новую папку:" & vbCrLf & output, vbInformation, "AccessTools"
+    MsgBox "Результаты сохранены в новую папку:" & vbCrLf & output, vbInformation, "AccessTools"
     Exit Sub
 NoResult:
     MsgBox "Сначала выполните команду «ПроверитьСвязанности». Последний запуск должен завершиться формированием обеих книг.", vbExclamation, "AccessTools"

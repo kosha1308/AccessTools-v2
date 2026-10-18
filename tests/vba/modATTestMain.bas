@@ -102,6 +102,9 @@ Public Function AT_RunTests(Optional ByVal tracePath As String = "") As String
     AT_TestPackage
     AT_TestTrace tracePath, "network-command"
     AT_TestNetworkCommand
+    AT_TestTrace tracePath, "familiar-workflow"
+    AT_TestFamiliarWorkflow
+    AT_TestFamiliarForms
     AT_TestTrace tracePath, "template-profile"
     AT_TestTemplateProfiles
     AT_TestTemplateRead

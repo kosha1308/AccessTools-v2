@@ -5,6 +5,7 @@ Public Sub AT_TestNetworkCommand()
     Dim saver As New ATNetworkOutputSaver, caught As Boolean, previousEvents As Boolean, message As String
     Dim result As ATNetworkRunResult, rulePath As String, supersetPath As String, ws As Worksheet
     Dim runId As String, runDate As String, timezoneId As String
+    Dim working As Workbook, count As Long
     On Error GoTo Failed
     Set fs = CreateObject("Scripting.FileSystemObject")
     parent = fs.BuildPath(fs.GetSpecialFolder(2), "AccessTools-command-" & fs.GetTempName): fs.CreateFolder parent
@@ -65,16 +66,36 @@ Public Sub AT_TestNetworkCommand()
     AT_Assert result.IsComplete And Not result.AllChecksPassed, "command completes pipeline without claiming all business checks passed"
     second = AT_CommandSave(parent)
     AT_Assert fs.FileExists(second & "\Отчёт-проверок.xlsx") And fs.FileExists(second & "\Сводка-координатора.xlsx"), "command saves both actual pipeline results"
+    caught = False
+    On Error Resume Next
+    Set working = AT_CommandPresent(ws, result, rulePath, runId): caught = Err.Number <> 0: Err.Clear
+    On Error GoTo Failed
+    AT_Assert caught And Not result.ReportBook.Windows(1).Visible And Not result.CoordinatorBook.Windows(1).Visible, "presentation failure still hides owned diagnostics before fallible source copying"
+    caught = False
+    On Error Resume Next
+    AT_CommandSave parent: caught = Err.Number <> 0: Err.Clear
+    On Error GoTo Failed
+    AT_Assert caught, "failed presentation cannot silently save diagnostic books instead of full Superset"
+    Set working = AT_CommandPresent(ws, result, supersetPath, runId)
+    AT_Assert Not result.ReportBook.Windows(1).Visible And Not result.CoordinatorBook.Windows(1).Visible, "interactive presentation keeps diagnostics and internal output hidden"
+    AT_Assert Application.ActiveSheet Is ws, "interactive presentation leaves request active for modeless result window"
+    AT_Assert working.Worksheets.Count = 3, "interactive output combines full export and two calculated tabs"
+    second = AT_CommandSave(parent)
+    AT_Assert fs.FileExists(second & "\Superset-с-результатами.xlsx") And Not fs.FileExists(second & "\Отчёт-проверок.xlsx"), "normal save exports only working Superset without diagnostic workbook"
+    AT_ResultReport
+    AT_Assert result.ReportBook.Windows(1).Visible, "diagnostic action reveals hidden report on demand"
+    working.Close False: Set working = Nothing
     AT_CommandReset
     caught = False
     On Error Resume Next
     AT_CommandSave parent: caught = Err.Number <> 0: Err.Clear
     On Error GoTo Failed
-    AT_Assert caught And Not result.CoordinatorBook Is Nothing, "cancel/reset removes save target but preserves open user results"
-    AT_TestCloseRun result: Set result = Nothing
+    AT_Assert caught And result.ReportBook.Windows(1).Visible, "reset removes save target but preserves explicitly opened diagnostic report"
+    result.ReportBook.Close False: Set result = Nothing
 Cleanup:
     On Error Resume Next
     If Not copy Is Nothing Then copy.Close False
+    If Not working Is Nothing Then working.Close False
     If Not book Is Nothing Then book.Close False
     If Not other Is Nothing Then other.Close False
     AT_TestCloseRun result

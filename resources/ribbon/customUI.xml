@@ -2,12 +2,23 @@
 <customUI xmlns="http://schemas.microsoft.com/office/2006/01/customui">
   <ribbon>
     <tabs>
-      <tab id="atCoordinatorPilot" label="AccessTools 2.0 — пилот">
-        <group id="atNetworkAccess" label="Связанности · координатор">
-          <button id="atCheckNetwork" label="Проверить связанности" onAction="AT_RibbonCheck" screentip="Проверить открытую заявку" supertip="Выберите книгу правил и выгрузку Superset. Откроются отчёт проверок и сводка координатора." />
-          <button id="atSaveNetwork" label="Сохранить результаты" onAction="AT_RibbonSave" screentip="Сохранить отчёт и сводку" supertip="Копии обеих книг сохраняются в новую подпапку. Прежние результаты не перезаписываются." />
-          <button id="atNetworkResults" label="Результаты проверки" onAction="AT_RibbonResults" screentip="Открыть меню последней проверки" supertip="Скопировать все ошибки пользователя, открыть отчёт, сводку или заявку с примечаниями." />
-          <button id="atNetworkSources" label="Выбрать источники" onAction="AT_RibbonSources" screentip="Изменить правила или выгрузку Superset" supertip="Пути запоминаются. Повторно выбирать файлы при каждой проверке не требуется." />
+      <tab id="atCoordinatorPilot" label="AccessTools 2.0">
+        <group id="atNetworkAccess" label="Проверка заявки">
+          <menu id="atRunMenu" label="Проверить заявку" size="large">
+            <button id="atCheckNetwork" label="Сетевая связанность" onAction="AT_RibbonCheck" supertip="Проверить открытую заявку. Источники запоминаются; ошибки появятся в окне результатов и в самой заявке." />
+            <button id="atSelectTemplate" label="Найти шаблон..." onAction="AT_RibbonTemplates" />
+          </menu>
+          <button id="atNetworkResults" label="Результаты проверки" onAction="AT_RibbonResults" supertip="Открыть окно ошибок, скопировать замечания или перейти к ячейке." />
+          <button id="atClearNetwork" label="Очистить отметки" onAction="AT_RibbonClear" />
+          <button id="atSaveNetwork" label="Сохранить результаты" onAction="AT_RibbonSave" supertip="Сохранить рабочую копию Superset со сводкой и результатами IP в новую папку." />
+        </group>
+        <group id="atTemplateSettings" label="Шаблоны и правила">
+          <button id="atTemplates" label="Найти шаблон и настроить" onAction="AT_RibbonTemplates" size="large" />
+          <button id="atRules" label="Открыть правила связанностей" onAction="AT_RibbonRules" />
+          <button id="atNetworkSources" label="Выбрать источники связанностей" onAction="AT_RibbonSources" supertip="Изменить книгу правил и выгрузку Superset. Пути запоминаются между запусками Excel." />
+        </group>
+        <group id="atTechnical" label="Диагностика">
+          <button id="atDiagnostic" label="Диагностика" onAction="AT_RibbonDiagnostic" supertip="Подробный отчёт и статусы проверок последнего запуска. Автоматически не открывается." />
         </group>
       </tab>
     </tabs>

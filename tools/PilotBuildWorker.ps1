@@ -58,6 +58,7 @@ public static class ATExcelProcess {
         $component = $project.VBComponents.Import($staged)
         [void][Runtime.InteropServices.Marshal]::ReleaseComObject($component)
     }
+    & (Join-Path $Root 'tools/ImportForms.ps1') -Project $project -Root $Root
     $book.Activate()
     $excel.VBE.ActiveVBProject = $project
     # VBE command 578 is Compile VBAProject. A syntax error opens a modal dialog;

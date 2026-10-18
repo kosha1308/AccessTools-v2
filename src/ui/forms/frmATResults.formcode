@@ -1,0 +1,68 @@
+Option Explicit
+Private mFeedback As ATNetworkUserFeedback, mRequest As Worksheet, mIssues As Collection
+Public Sub LoadData(ByVal feedback As ATNetworkUserFeedback, ByVal request As Worksheet, ByVal warning As String)
+    Dim issue As ATCheckIssue
+    Set mFeedback = feedback: Set mRequest = request
+    lstIssues.Clear: txtDetails.Value = ""
+    btnCopy.Enabled = False: btnGo.Enabled = False
+    If feedback Is Nothing Then
+        lblSummary.Caption = "Список замечаний недоступен. Используйте «Диагностика». " & warning
+        Exit Sub
+    End If
+    Set mIssues = feedback.UserIssues
+    lblSummary.Caption = "Ошибок пользователя: " & CStr(feedback.ErrorCount) & ". " & warning
+    For Each issue In mIssues
+        lstIssues.AddItem AT_SeverityTitle(issue.Severity) & " | " & issue.CellRef & " | " & issue.Message
+    Next issue
+    btnCopy.Enabled = feedback.ErrorCount > 0
+    If lstIssues.ListCount > 0 Then lstIssues.ListIndex = 0
+    If lstIssues.ListCount = 0 Then txtDetails.Value = "Ошибок пользователя нет. Сводка и Superset доступны отдельной кнопкой."
+End Sub
+Private Sub lstIssues_Change()
+    Dim issue As ATCheckIssue, target As Range
+    btnGo.Enabled = False
+    If mIssues Is Nothing Then Exit Sub
+    If lstIssues.ListIndex < 0 Then Exit Sub
+    Set issue = mIssues(lstIssues.ListIndex + 1)
+    txtDetails.Value = issue.Message & vbCrLf & vbCrLf & "Ячейка: " & issue.CellRef
+    Set target = mFeedback.TargetCell(mRequest, issue.CellRef)
+    btnGo.Enabled = Not target Is Nothing
+End Sub
+Private Sub lstIssues_DblClick(ByVal Cancel As MSForms.ReturnBoolean)
+    btnGo_Click
+End Sub
+Private Sub btnAll_Click()
+    If Not mFeedback Is Nothing Then txtDetails.Value = mFeedback.UserErrorsText
+End Sub
+Private Sub btnCopy_Click()
+    AT_ResultCopy
+End Sub
+Private Sub btnGo_Click()
+    Dim target As Range
+    On Error GoTo Failed
+    If mFeedback Is Nothing Or mIssues Is Nothing Then Exit Sub
+    If lstIssues.ListIndex < 0 Then Exit Sub
+    Set target = mFeedback.TargetCell(mRequest, mIssues(lstIssues.ListIndex + 1).CellRef)
+    If Not target Is Nothing Then Application.Goto target, True
+    Exit Sub
+Failed:
+    MsgBox "Не удалось перейти к ячейке. Возможно, заявка уже закрыта.", vbInformation, "AccessTools 2.0"
+End Sub
+Private Sub btnRepeat_Click()
+    AT_ResultRepeat
+End Sub
+Private Sub btnClear_Click()
+    AT_ResultClear
+End Sub
+Private Sub btnAction_Click()
+    AT_ResultCoordinator
+End Sub
+Private Sub btnDiagnostic_Click()
+    AT_ResultReport
+End Sub
+Private Sub btnSave_Click()
+    AT_ResultSave
+End Sub
+Private Sub btnClose_Click()
+    Unload Me
+End Sub

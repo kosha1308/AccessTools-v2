@@ -41,6 +41,7 @@ public static class ATPilotExcelProcess {
     foreach ($book in $excel.Workbooks) { if ($book.Name -ne $addin.Name -and $book.Name -ne $legacy.Name) { throw 'PILOT_STARTUP_OPENED_BOOKS' } }; $passed++
     $names = @($addin.VBProject.VBComponents | ForEach-Object { $_.Name })
     if (@($names | Where-Object { $_ -like '*Test*' }).Count -gt 0) { throw 'PILOT_TEST_MODULE_LEAK' }; $passed++
+    if ('frmATResults' -notin $names -or 'frmATTemplates' -notin $names) { throw 'PILOT_FORMS_MISSING' }; $passed++
     $code = $addin.VBProject.VBComponents.Item('modATNetworkCommand').CodeModule
     $text = $code.Lines(1, $code.CountOfLines)
     if ($text -notmatch 'Public Sub AT_RibbonCheck' -or $text -notmatch 'Public Sub AT_RibbonSave') { throw 'PILOT_CALLBACK_MISSING' }; $passed++
@@ -72,7 +73,8 @@ End Function
 Public Function AT_PilotFeedback(ByVal request As Worksheet, ByVal rulePath As String, ByVal sourcePath As String, ByVal workFolder As String) As String
     On Error GoTo FailedFeedback
     Dim result As ATNetworkRunResult, feedback As New ATNetworkUserFeedback
-    Dim settings As New ATNetworkSourceSettings, reloaded As New ATNetworkSourceSettings, menu As Object
+    Dim settings As New ATNetworkSourceSettings, reloaded As New ATNetworkSourceSettings, window As Object, picker As Object
+    Dim working As Workbook, reopened As Workbook, outputFolder As String
     Dim originalName As String, originalMail As String, originalAction As String
     originalName = CStr(request.Range("A5").Value2): originalMail = CStr(request.Range("F5").Value2): originalAction = CStr(request.Range("C7").Value2)
     settings.Save rulePath, sourcePath, workFolder
@@ -81,19 +83,36 @@ Public Function AT_PilotFeedback(ByVal request As Worksheet, ByVal rulePath As S
     If Not result.IsComplete Then Err.Raise vbObjectError + 3210, , result.ErrorCode
     feedback.Prepare result.PolicyReport
     If feedback.ErrorCount < 3 Or feedback.ErrorCount <> result.PolicyReport.UserErrorCount Or InStr(feedback.UserErrorsText, "F5") = 0 Then Err.Raise vbObjectError + 3210, , "PILOT_USER_ERRORS_FAILED"
-    AT_CommandFeedback request, result, "PILOT_ERRORS"
+    Set working = AT_CommandPresent(request, result, sourcePath, "PILOT_ERRORS")
+    If result.ReportBook.Windows(1).Visible Or result.CoordinatorBook.Windows(1).Visible Then Err.Raise vbObjectError + 3210, , "PILOT_DIAGNOSTIC_VISIBLE"
+    If working.Worksheets.Count <> 3 Then Err.Raise vbObjectError + 3210, , "PILOT_WORKING_COPY_FAILED"
     If request.Comments.Count < 3 Or request.Range("F5").Comment Is Nothing Then Err.Raise vbObjectError + 3210, , "PILOT_NOTES_FAILED"
     If CStr(request.Range("A5").Value2) <> originalName Or CStr(request.Range("F5").Value2) <> originalMail Or CStr(request.Range("C7").Value2) <> originalAction Then Err.Raise vbObjectError + 3210, , "PILOT_VALUES_CHANGED"
-    Set menu = AT_BuildFeedbackMenu(feedback.ErrorCount, False)
-    If Not menu.Controls(2).Enabled Or InStr(menu.Controls(2).OnAction, ThisWorkbook.Name) = 0 Then Err.Raise vbObjectError + 3210, , "PILOT_POPUP_FAILED"
-    menu.Delete: Set menu = Nothing
+    If request.Range("F5").FormatConditions.Count < 1 Then Err.Raise vbObjectError + 3210, , "PILOT_HIGHLIGHT_FAILED"
+    Set window = VBA.UserForms.Add("frmATResults"): window.LoadData feedback, request, ""
+    If Not window.Controls("btnCopy").Enabled Or window.Controls("lstIssues").ListCount <> feedback.UserIssues.Count Then Err.Raise vbObjectError + 3210, , "PILOT_RESULT_FORM_FAILED"
+    Unload window: Set window = Nothing
+    Set picker = VBA.UserForms.Add("frmATTemplates")
+    picker.Controls("txtSearch").Value = "связан"
+    If picker.Controls("lstTemplates").ListCount <> 1 Then Err.Raise vbObjectError + 3210, , "PILOT_TEMPLATE_SEARCH_FAILED"
+    Unload picker: Set picker = Nothing
+    outputFolder = AT_CommandSave(workFolder)
+    If Len(Dir$(outputFolder & "\Отчёт-проверок.xlsx")) > 0 Then Err.Raise vbObjectError + 3210, , "PILOT_DIAGNOSTIC_SAVED_AUTOMATICALLY"
+    Set reopened = Application.Workbooks.Open(outputFolder & "\Superset-с-результатами.xlsx", 0, True)
+    If reopened.Worksheets.Count <> 3 Or reopened.Worksheets("Сводка координатора").Cells(6, 5).Value2 <> "Сервис из правил" Then Err.Raise vbObjectError + 3210, , "PILOT_SAVED_WORKING_COPY_FAILED"
+    reopened.Close False: Set reopened = Nothing
     feedback.ClearNotes request
     If request.Comments.Count <> 0 Then Err.Raise vbObjectError + 3210, , "PILOT_NOTE_CLEANUP_FAILED"
+    working.Close False: Set working = Nothing
+    AT_CommandReset
     AT_PilotFeedback = "OK": Exit Function
 FailedFeedback:
     AT_PilotFeedback = "FAILED: " & Err.Description
     On Error Resume Next
-    If Not menu Is Nothing Then menu.Delete
+    If Not window Is Nothing Then Unload window
+    If Not picker Is Nothing Then Unload picker
+    If Not reopened Is Nothing Then reopened.Close False
+    If Not working Is Nothing Then working.Close False
 End Function
 "@)
     Write-Output '[SMOKE] running same-project workflow'

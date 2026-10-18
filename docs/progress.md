@@ -480,3 +480,5 @@ Source d808d2f pilot.3 full/build11330/0 compilePASS, static7/0 names2/0 Ribbon2
 Installed14/0 then extractedZIP14/0, allfileSHA unchanged, synthetic error demo included.
 User settings tests inject tempfolder, clipboard untouched; ShowPopup/copy clicks
 manual acceptance pending. DraftPR29 basePR28, sourceCI success, no merge/release.
+
+2026-10-18 — Familiar Excel workflow: approved v1-style modeless results, owned red/yellow/blue conditional highlights, full Superset working copy plus computed tabs, task-grouped Ribbon/template search, explicit diagnostics only. No check engine changes. Excel11353/0 compilePASS; focused83/0; Ribbon2/0 static7/0. Review findings reproduced RED60/2, fixed, re-review no blockers. Package pilot.4 pending build; see familiar-excel-workflow-status.md.

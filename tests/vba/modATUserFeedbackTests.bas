@@ -26,6 +26,8 @@ Public Sub AT_TestUserFeedback()
     Set book = Application.Workbooks.Add(xlWBATWorksheet): Set ws = book.Worksheets(1): ws.Name = "Лист1"
     ws.Range("A1").Value2 = "unchanged": ws.Range("A1").AddComment "Чужое примечание"
     ws.Range("E15:G15").Merge
+    ws.Range("A1").Interior.Color = RGB(10, 20, 30)
+    ws.Range("A1").FormatConditions.Add Type:=xlExpression, Formula1:="=1=2"
     AddFeedbackDecision issues, decisions, "A1", "Исправьте имя", True, False, True, "ERROR", False
     AddFeedbackDecision issues, decisions, "G15", "Заполните обоснование", True, False, True, "ERROR", False
     AddFeedbackDecision issues, decisions, "B2", "Только координатору", False, False, False, "ERROR", False
@@ -37,9 +39,12 @@ Public Sub AT_TestUserFeedback()
     AT_Assert feedback.ErrorCount = 3 And InStr(feedback.UserErrorsText, "A1") > 0 And InStr(feedback.UserErrorsText, "G15") > 0, "copy payload includes all user errors with exact references"
     AT_Assert InStr(feedback.UserErrorsText, "Только координатору") = 0 And InStr(feedback.UserErrorsText, "Предупреждение") = 0, "coordinator errors and warnings excluded from user-error clipboard payload"
     AT_Assert feedback.ApplyNotes(ws, "RUN1") = 2, "unconfigured user input errors get notes at merged anchors"
+    AT_Assert ws.Range("A1").FormatConditions.Count = 2, "error highlight overlays rather than replacing original formatting"
+    If ws.Range("A1").FormatConditions.Count = 2 Then AT_Assert ws.Range("A1").FormatConditions(1).Interior.Color = RGB(255, 199, 206), "legacy red used for errors"
     If Not ws.Range("A1").Comment Is Nothing Then AT_Assert InStr(ws.Range("A1").Comment.Text, "Чужое примечание") > 0 And InStr(ws.Range("A1").Comment.Text, "Исправьте имя") > 0, "foreign note text retained alongside owned block"
     AT_Assert Not ws.Range("E15").Comment Is Nothing And ws.Range("D4").Comment Is Nothing, "merged target resolved and explicit no-annotation respected"
     feedback.ApplyNotes ws, "RUN2"
+    AT_Assert ws.Range("A1").FormatConditions.Count = 2, "repeat replaces own highlight without accumulating rules"
     If Not ws.Range("A1").Comment Is Nothing Then AT_Assert InStr(ws.Range("A1").Comment.Text, "RUN1") = 0 And InStr(ws.Range("A1").Comment.Text, "RUN2") > 0, "repeat replaces only owned note block"
     AT_Assert ws.Range("A1").Value2 = "unchanged", "request cell values never edited"
     Set menu = AT_BuildFeedbackMenu(feedback.ErrorCount, False)
@@ -61,6 +66,7 @@ Public Sub AT_TestUserFeedback()
     report.Initialize atEvalOK, "NETWORK_ACCESS_SUPERSET_POLICY", issues, checks
     Set policy = New ATNetworkPolicyReport: policy.Initialize report, decisions: feedback.Prepare policy
     feedback.ApplyNotes ws, "CLEAN"
+    AT_Assert ws.Range("A1").FormatConditions.Count = 1 And ws.Range("A1").Interior.Color = RGB(10, 20, 30), "clear removes only own highlights and restores original fill and conditional rule"
     AT_Assert ws.Range("A1").Comment.Text = "Чужое примечание" And ws.Range("E15").Comment Is Nothing, "fixed issues clear own notes and retain original foreign text"
     Set issues = New Collection: Set decisions = New Collection: Set checks = New Collection: Set report = New ATCheckReport
     AddFeedbackDecision issues, decisions, "A1:A2", "Неточный адрес", True, False, True, "ERROR", False

@@ -1,5 +1,5 @@
 ﻿param([string]$Root = '', [Parameter(Mandatory=$true)][string]$OutputDirectory,
-    [ValidatePattern('^[0-9A-Za-z.-]{1,50}$')][string]$Version = '2.0.0-pilot.3', [ValidateRange(30,300)][int]$TimeoutSeconds = 90)
+    [ValidatePattern('^[0-9A-Za-z.-]{1,50}$')][string]$Version = '2.0.0-pilot.4', [ValidateRange(30,300)][int]$TimeoutSeconds = 90)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $worker = $null; $runDirectory = $null

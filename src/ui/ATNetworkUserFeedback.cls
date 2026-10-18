@@ -6,6 +6,7 @@ Attribute VB_Name = "ATNetworkUserFeedback"
 Option Explicit
 Private Const FIRST_MARKER As String = "[AccessToolsv2]"
 Private Const LAST_MARKER As String = "[/AccessToolsv2]"
+Private Const FILL_MARKER As String = "AccessToolsv2:annotation"
 Private mPolicy As ATNetworkPolicyReport, mText As String, mErrors As Long, mFailures As Long
 Public Sub Prepare(ByVal policy As ATNetworkPolicyReport)
     Dim item As ATNetworkPolicyDecision, text As String, errors As Long, entry As String
@@ -33,6 +34,18 @@ End Property
 Public Property Get NoteFailures() As Long
     NoteFailures = mFailures
 End Property
+Public Property Get UserIssues() As Collection
+    Dim items As New Collection, item As ATNetworkPolicyDecision
+    If Not mPolicy Is Nothing Then
+        For Each item In mPolicy.Decisions
+            If item.InUserReport Then items.Add item.Issue
+        Next item
+    End If
+    Set UserIssues = items
+End Property
+Public Function TargetCell(ByVal request As Worksheet, ByVal reference As String) As Range
+    Set TargetCell = TrustedCell(request, reference)
+End Function
 Public Function ClearNotes(ByVal request As Worksheet) As Boolean
     Dim i As Long, note As Comment, original As String, clean As String, previousEvents As Boolean, armed As Boolean
     On Error GoTo Failed
@@ -40,6 +53,14 @@ Public Function ClearNotes(ByVal request As Worksheet) As Boolean
     If request Is Nothing Then Exit Function
     If request.ProtectContents Or request.Comments.Count > 10000 Then GoTo Failed
     previousEvents = Application.EnableEvents: armed = True: Application.EnableEvents = False
+    Dim rules As FormatConditions
+    Set rules = request.UsedRange.FormatConditions
+    If rules.Count > 10000 Then GoTo Failed
+    For i = rules.Count To 1 Step -1
+        If rules(i).Type = xlExpression Then
+            If rules(i).Formula1 = "=N(""" & FILL_MARKER & """)=0" Then rules(i).Delete
+        End If
+    Next i
     For i = request.Comments.Count To 1 Step -1
         Set note = request.Comments(i): original = note.Text: clean = WithoutOwned(original)
         If clean <> original Then
@@ -54,13 +75,14 @@ Failed:
 End Function
 Public Function ApplyNotes(ByVal request As Worksheet, ByVal runId As String) As Long
     Dim notes As Object, item As ATNetworkPolicyDecision, target As Range, address As Variant, text As String
-    Dim missing As Long, previousEvents As Boolean, armed As Boolean
+    Dim missing As Long, previousEvents As Boolean, armed As Boolean, severities As Object, rank As Long
     On Error GoTo Failed
     mFailures = 0
     If mPolicy Is Nothing Or request Is Nothing Then Err.Raise vbObjectError + 3210, , "FEEDBACK_NOT_READY"
     If request.ProtectContents Then mFailures = 1: Exit Function
     If request.Comments.Count > 10000 Then mFailures = 1: Exit Function
     Set notes = CreateObject("Scripting.Dictionary")
+    Set severities = CreateObject("Scripting.Dictionary")
     For Each item In mPolicy.Decisions
         If item.InRequest Or (Not item.RequestConfigured And item.InUserReport And item.UserError And item.Issue.Severity = "ERROR") Then
             Set target = TrustedCell(request, item.Issue.CellRef)
@@ -72,6 +94,9 @@ Public Function ApplyNotes(ByVal request As Worksheet, ByVal runId As String) As
                 text = notes(address)
                 If Len(text) > 0 Then text = text & vbLf & vbLf
                 notes(address) = text & item.Issue.Message
+                rank = SeverityRank(item.Issue.Severity)
+                If Not severities.Exists(address) Then severities.Add address, rank
+                If rank > severities(address) Then severities(address) = rank
             End If
         End If
     Next item
@@ -82,12 +107,31 @@ Public Function ApplyNotes(ByVal request As Worksheet, ByVal runId As String) As
     For Each address In notes.Keys
         Set target = request.Range(CStr(address))
         If WriteNote(target, CStr(notes(address)), runId) Then ApplyNotes = ApplyNotes + 1 Else mFailures = mFailures + 1
+        If Not Highlight(target, CLng(severities(address))) Then mFailures = mFailures + 1
     Next address
     Application.EnableEvents = previousEvents: Exit Function
 Failed:
     mFailures = mFailures + 1
     On Error Resume Next
     If armed Then Application.EnableEvents = previousEvents
+End Function
+Private Function SeverityRank(ByVal severity As String) As Long
+    Select Case severity
+        Case "ERROR": SeverityRank = 3
+        Case "WARNING": SeverityRank = 2
+        Case Else: SeverityRank = 1
+    End Select
+End Function
+Private Function Highlight(ByVal target As Range, ByVal rank As Long) As Boolean
+    Dim rule As FormatCondition, color As Long
+    On Error GoTo Failed
+    color = RGB(221, 235, 247)
+    If rank = 2 Then color = RGB(255, 235, 156)
+    If rank = 3 Then color = RGB(255, 199, 206)
+    Set rule = target.MergeArea.FormatConditions.Add(Type:=xlExpression, Formula1:="=N(""" & FILL_MARKER & """)=0")
+    rule.Interior.Color = color: rule.SetFirstPriority: rule.StopIfTrue = True
+    Highlight = True
+Failed:
 End Function
 Private Function WriteNote(ByVal target As Range, ByVal message As String, ByVal runId As String) As Boolean
     Dim original As String, text As String

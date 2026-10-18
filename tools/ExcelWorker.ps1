@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$Root, [Parameter(Mandatory=$true)][string]$RunDirectory, [switch]$UpdateCatalog)
+﻿param([Parameter(Mandatory=$true)][string]$Root, [Parameter(Mandatory=$true)][string]$RunDirectory, [switch]$UpdateCatalog)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $excel = $null
@@ -47,6 +47,9 @@ public static class ATExcelProcess {
         Write-Output "[IMPORT] $($file.Name)"
         $component = $project.VBComponents.Import($staged)
         [void][Runtime.InteropServices.Marshal]::ReleaseComObject($component)
+    }
+    if (Test-Path -LiteralPath (Join-Path $Root 'src/ui/forms')) {
+        & (Join-Path $Root 'tools/ImportForms.ps1') -Project $project -Root $Root
     }
     $book.Activate()
     $excel.VBE.ActiveVBProject = $project

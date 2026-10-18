@@ -4,12 +4,15 @@ BEGIN
 END
 Attribute VB_Name = "ATNetworkOutputSaver"
 Option Explicit
-Public Function Save(ByVal reportBook As Workbook, ByVal coordinatorBook As Workbook, ByVal parentFolder As String) As String
+Public Function Save(ByVal reportBook As Workbook, ByVal coordinatorBook As Workbook, ByVal parentFolder As String, Optional ByVal includeReport As Boolean = True) As String
     Dim fs As Object, folder As String, prefix As String, reportPath As String, coordinatorPath As String
     Dim attempt As Long, owned As Boolean, previousEvents As Boolean, armed As Boolean, code As String
     On Error GoTo Failed
-    RequireOutput reportBook: RequireOutput coordinatorBook
-    If reportBook Is coordinatorBook Then Err.Raise vbObjectError + 3190, , "OUTPUT_BOOK_COLLISION"
+    If includeReport Then RequireOutput reportBook
+    RequireOutput coordinatorBook
+    If includeReport Then
+        If reportBook Is coordinatorBook Then Err.Raise vbObjectError + 3190, , "OUTPUT_BOOK_COLLISION"
+    End If
     Set fs = CreateObject("Scripting.FileSystemObject")
     If Len(Trim$(parentFolder)) = 0 Or InStr(parentFolder, "://") > 0 Then Err.Raise vbObjectError + 3190, , "OUTPUT_FOLDER_REQUIRED"
     parentFolder = fs.GetAbsolutePathName(parentFolder)
@@ -24,10 +27,14 @@ Public Function Save(ByVal reportBook As Workbook, ByVal coordinatorBook As Work
     fs.CreateFolder folder: owned = True
     reportPath = fs.BuildPath(folder, "Отчёт-проверок.xlsx")
     coordinatorPath = fs.BuildPath(folder, "Сводка-координатора.xlsx")
+    If Not includeReport Then coordinatorPath = fs.BuildPath(folder, "Superset-с-результатами.xlsx")
     previousEvents = Application.EnableEvents: armed = True: Application.EnableEvents = False
-    reportBook.SaveCopyAs reportPath
+    If includeReport Then reportBook.SaveCopyAs reportPath
     coordinatorBook.SaveCopyAs coordinatorPath
-    If Not fs.FileExists(reportPath) Or Not fs.FileExists(coordinatorPath) Then Err.Raise vbObjectError + 3190, , "OUTPUT_COPY_MISSING"
+    If includeReport Then
+        If Not fs.FileExists(reportPath) Then Err.Raise vbObjectError + 3190, , "OUTPUT_COPY_MISSING"
+    End If
+    If Not fs.FileExists(coordinatorPath) Then Err.Raise vbObjectError + 3190, , "OUTPUT_COPY_MISSING"
     Application.EnableEvents = previousEvents: armed = False
     Save = folder: Exit Function
 Failed:

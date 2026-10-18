@@ -458,3 +458,12 @@ version2.0.0-pilot.1, local ZIP ready; draftPR27 basePR26, no merge/release.
 Ribbon negative-test expected exit needed explicit success for GitHub wrapper;
 d04e85b changes only tooling exit, not built XLAM. Next manual installation/Ribbon/
 dialog acceptance and real-data trial; official FIRST_LINE/Admin release pending.
+
+2026-10-18 — User-requested v2 addin filename, basePR27/0f3b9a4:
+AccessToolsv2.xlam replaces v2 build/save/reload/Ribbon-injection/smoke paths;
+legacy AccessTools.xlam retained only for first-version documentation/test fixture.
+Guide permits first version to remain loaded; prior same-name v2 pilot should be
+disconnected. Direct user requirement overrides old common-filename spec.
+Source030d5a9 pilot.2: full11308/0 compilePASS, name2/0 Ribbon2/0, installed12/0
+and extractedZIP12/0. Synthetic legacy addin co-loaded and unchanged; actual v1
+functionality not tested/modified. DraftPR28 basePR27; CI source success, no merge/release.

@@ -1,5 +1,5 @@
 ﻿param([string]$Root = '', [Parameter(Mandatory=$true)][string]$OutputDirectory,
-    [ValidatePattern('^[0-9A-Za-z.-]{1,50}$')][string]$Version = '2.0.0-pilot.1', [ValidateRange(30,300)][int]$TimeoutSeconds = 90)
+    [ValidatePattern('^[0-9A-Za-z.-]{1,50}$')][string]$Version = '2.0.0-pilot.2', [ValidateRange(30,300)][int]$TimeoutSeconds = 90)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
 $worker = $null; $runDirectory = $null
@@ -36,7 +36,7 @@ try {
     Get-Content -LiteralPath (Join-Path $runDirectory 'stderr.log')
     if (-not $finished) { throw 'PILOT_BUILD_TIMEOUT' }
     if ($worker.ExitCode -ne 0) { throw 'PILOT_BUILD_FAILED' }
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tools/AddRibbon.ps1') -Path (Join-Path $package 'AccessTools.xlam') -RibbonPath (Join-Path $Root 'resources/ribbon/customUI.xml')
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $Root 'tools/AddRibbon.ps1') -Path (Join-Path $package 'AccessToolsv2.xlam') -RibbonPath (Join-Path $Root 'resources/ribbon/customUI.xml')
     if ($LASTEXITCODE -ne 0) { throw 'PILOT_RIBBON_FAILED' }
     $files = @(Get-ChildItem -LiteralPath $package -Recurse -File | Sort-Object FullName | ForEach-Object {
         @{ Path=$_.FullName.Substring($package.Length+1).Replace('\','/'); SHA256=(Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash }

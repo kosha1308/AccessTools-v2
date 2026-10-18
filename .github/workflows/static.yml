@@ -14,3 +14,6 @@ jobs:
       - name: Exercise Ribbon package injection
         shell: powershell
         run: ./tests/tooling/RibbonPackage.Tests.ps1
+      - name: Validate v2 addin filename
+        shell: powershell
+        run: ./tests/tooling/AddinName.Tests.ps1

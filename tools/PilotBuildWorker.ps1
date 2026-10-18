@@ -81,13 +81,13 @@ public static class ATExcelProcess {
     $identity = [string]$excel.Run("'$($book.Name)'!AT_PackageIdentity")
     if ($identity -cne "$Version|$ReleaseId|COORDINATOR|$Commit") { throw 'PILOT_EMBEDDED_IDENTITY_INVALID' }
     $book.IsAddin = $true
-    $book.SaveAs((Join-Path $PackageDirectory 'AccessTools.xlam'), 55)
+    $book.SaveAs((Join-Path $PackageDirectory 'AccessToolsv2.xlam'), 55)
     if ($book.FileFormat -ne 55 -or -not $book.IsAddin) { throw 'PILOT_FORMAT_INVALID' }
     # Excel can leave the in-memory add-in at an empty Path after first SaveAs.
     # Validate the persisted artifact, not that transient workbook object.
     $book.Close($false)
     [void][Runtime.InteropServices.Marshal]::ReleaseComObject($book)
-    $book = $excel.Workbooks.Open((Join-Path $PackageDirectory 'AccessTools.xlam'), 0, $true)
+    $book = $excel.Workbooks.Open((Join-Path $PackageDirectory 'AccessToolsv2.xlam'), 0, $true)
     if (-not $book.IsAddin -or $book.FileFormat -ne 55 -or $book.Path -ne $PackageDirectory) { throw 'PILOT_RELOADED_FORMAT_INVALID' }
     $installedCode = [string]$excel.Run("'$($book.Name)'!AT_PackageInstalledCode")
     Write-Output ("[METADATA] Path={0}; Code={1}" -f $book.Path, $installedCode)

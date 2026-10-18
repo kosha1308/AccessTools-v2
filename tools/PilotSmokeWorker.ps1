@@ -1,7 +1,7 @@
 ﻿param([Parameter(Mandatory=$true)][string]$PackageDirectory, [Parameter(Mandatory=$true)][string]$RunDirectory)
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
-$excel = $null; $addin = $null; $request = $null; $copy = $null; $exitCode = 1; $passed = 0
+$excel = $null; $addin = $null; $request = $null; $copy = $null; $legacy = $null; $exitCode = 1; $passed = 0
 try {
     Add-Type -TypeDefinition @'
 using System;
@@ -22,13 +22,23 @@ public static class ATPilotExcelProcess {
     if ($ownedId -eq 0) { throw 'PILOT_OWNERSHIP' }
     $owned = Get-Process -Id $ownedId
     @{Id=$ownedId;StartTicks=$owned.StartTime.ToUniversalTime().Ticks} | ConvertTo-Json | Set-Content -LiteralPath (Join-Path $RunDirectory 'excel-process.json')
-    $addin = $excel.Workbooks.Open((Join-Path $install 'AccessTools.xlam'), 0, $true)
+    # A synthetic first-version filename fixture, never the user's real add-in.
+    $legacyFolder = Join-Path $RunDirectory 'legacy-fixture'
+    New-Item -ItemType Directory -Path $legacyFolder | Out-Null
+    $legacyPath = Join-Path $legacyFolder 'AccessTools.xlam'
+    $legacy = $excel.Workbooks.Add(-4167)
+    $legacy.IsAddin = $true
+    $legacy.SaveAs($legacyPath,55)
+    $legacy.Close($false)
+    $legacy = $excel.Workbooks.Open($legacyPath,0,$true)
+    $legacyHash = (Get-FileHash -LiteralPath $legacyPath).Hash
+    $addin = $excel.Workbooks.Open((Join-Path $install 'AccessToolsv2.xlam'), 0, $true)
     if (-not $addin.IsAddin -or $addin.FileFormat -ne 55) { throw 'PILOT_LOADED_FORMAT' }; $passed++
     $macro = "'$($addin.Name)'!"
     $identity = [string]$excel.Run($macro + 'AT_PackageIdentity')
     if ($identity -cne "$($manifest.Version)|$($manifest.ReleaseId)|COORDINATOR|$($manifest.Commit)" -or $identity -match 'DEV') { throw 'PILOT_LOADED_IDENTITY' }; $passed++
     if ([string]$excel.Run($macro + 'AT_PackageInstalledCode') -ne '') { throw 'PILOT_LOADED_METADATA' }; $passed++
-    foreach ($book in $excel.Workbooks) { if ($book.Name -ne $addin.Name) { throw 'PILOT_STARTUP_OPENED_BOOKS' } }; $passed++
+    foreach ($book in $excel.Workbooks) { if ($book.Name -ne $addin.Name -and $book.Name -ne $legacy.Name) { throw 'PILOT_STARTUP_OPENED_BOOKS' } }; $passed++
     $names = @($addin.VBProject.VBComponents | ForEach-Object { $_.Name })
     if (@($names | Where-Object { $_ -like '*Test*' }).Count -gt 0) { throw 'PILOT_TEST_MODULE_LEAK' }; $passed++
     $code = $addin.VBProject.VBComponents.Item('modATNetworkCommand').CodeModule
@@ -72,6 +82,7 @@ End Function
     foreach ($item in $manifest.Files) {
         if ((Get-FileHash -LiteralPath (Join-Path $install $item.Path)).Hash -cne $item.SHA256) { throw 'PILOT_INPUT_CHANGED' }
     }; $passed++
+    if ($addin.Name -cne 'AccessToolsv2.xlam' -or $legacy.Name -cne 'AccessTools.xlam' -or -not $legacy.IsAddin -or -not $legacy.ReadOnly -or -not $legacy.Saved -or (Get-FileHash -LiteralPath $legacyPath).Hash -cne $legacyHash) { throw 'PILOT_LEGACY_COEXISTENCE_FAILED' }; $passed++
     @{Passed=$passed;Failed=0;Identity=$identity;Saved=$saved;Modules=$names} | ConvertTo-Json -Depth 3 | Set-Content -LiteralPath (Join-Path $RunDirectory 'smoke.json') -Encoding UTF8
     "Pilot installed XLAM: $passed PASS / 0 FAIL"
     $exitCode = 0
@@ -83,8 +94,9 @@ finally {
         try { for ($i=$excel.Workbooks.Count; $i -ge 1; $i--) { $excel.Workbooks.Item($i).Close($false) } } catch {}
     }
     if ($addin) { try { $addin.Close($false) } catch {} }
+    if ($legacy) { try { $legacy.Close($false) } catch {} }
     if ($excel) { try { $excel.Quit() } catch {} }
-    foreach ($obj in @($copy,$request,$addin,$excel)) {
+    foreach ($obj in @($copy,$request,$addin,$legacy,$excel)) {
         if ($null -ne $obj -and [Runtime.InteropServices.Marshal]::IsComObject($obj)) { [void][Runtime.InteropServices.Marshal]::ReleaseComObject($obj) }
     }
     [GC]::Collect(); [GC]::WaitForPendingFinalizers()

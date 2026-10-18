@@ -212,6 +212,7 @@ Public Sub AT_CommandFeedback(ByVal request As Worksheet, ByVal result As ATNetw
     Set mFeedback = New ATNetworkUserFeedback
     mFeedback.Prepare result.PolicyReport
     mFeedback.ApplyNotes request, runId
+    Application.DisplayCommentIndicator = xlCommentIndicatorOnly
     result.ReportBook.Worksheets(1).Range("A2").Value2 = "Отдельный отчёт: значения заявки не менялись. Примечания обновлены в открытой книге без автоматического сохранения."
     If mFeedback.NoteFailures > 0 Then mFeedbackWarning = "Часть примечаний не добавлена или не обновлена. Проверьте защиту листа и отчёт; данные проверки доступны в отдельных книгах."
     Exit Sub

@@ -89,6 +89,10 @@ Public Function AT_PilotFeedback(ByVal request As Worksheet, ByVal rulePath As S
     If request.Comments.Count < 3 Or request.Range("F5").Comment Is Nothing Then Err.Raise vbObjectError + 3210, , "PILOT_NOTES_FAILED"
     If CStr(request.Range("A5").Value2) <> originalName Or CStr(request.Range("F5").Value2) <> originalMail Or CStr(request.Range("C7").Value2) <> originalAction Then Err.Raise vbObjectError + 3210, , "PILOT_VALUES_CHANGED"
     If request.Range("F5").FormatConditions.Count < 1 Then Err.Raise vbObjectError + 3210, , "PILOT_HIGHLIGHT_FAILED"
+    Application.CalculateFull
+    If request.Range("F5").DisplayFormat.Interior.Color <> RGB(255, 199, 206) Then Err.Raise vbObjectError + 3210, , "PILOT_HIGHLIGHT_NOT_VISIBLE"
+    If request.Range("F5").Comment.Shape.Height < 60 Or request.Range("F5").Comment.Shape.Width > 480 Or request.Range("F5").Comment.Visible Then Err.Raise vbObjectError + 3210, , "PILOT_NOTE_LAYOUT_FAILED"
+    If Application.DisplayCommentIndicator <> xlCommentIndicatorOnly Then Err.Raise vbObjectError + 3210, , "PILOT_NOTE_HOVER_DISABLED"
     Set window = VBA.UserForms.Add("frmATResults"): window.LoadData feedback, request, ""
     If Not window.Controls("btnCopy").Enabled Or window.Controls("lstIssues").ListCount <> feedback.UserIssues.Count Then Err.Raise vbObjectError + 3210, , "PILOT_RESULT_FORM_FAILED"
     Unload window: Set window = Nothing

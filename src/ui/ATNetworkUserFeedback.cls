@@ -7,6 +7,7 @@ Option Explicit
 Private Const FIRST_MARKER As String = "[AccessToolsv2]"
 Private Const LAST_MARKER As String = "[/AccessToolsv2]"
 Private Const FILL_MARKER As String = "AccessToolsv2:annotation"
+Private Const FILL_FORMULA As String = "=""AccessToolsv2:annotation""=""AccessToolsv2:annotation"""
 Private mPolicy As ATNetworkPolicyReport, mText As String, mErrors As Long, mFailures As Long
 Public Sub Prepare(ByVal policy As ATNetworkPolicyReport)
     Dim item As ATNetworkPolicyDecision, text As String, errors As Long, entry As String
@@ -58,7 +59,7 @@ Public Function ClearNotes(ByVal request As Worksheet) As Boolean
     If rules.Count > 10000 Then GoTo Failed
     For i = rules.Count To 1 Step -1
         If rules(i).Type = xlExpression Then
-            If rules(i).Formula1 = "=N(""" & FILL_MARKER & """)=0" Then rules(i).Delete
+            If rules(i).Formula1 = FILL_FORMULA Or rules(i).Formula1 = "=N(""" & FILL_MARKER & """)=0" Then rules(i).Delete
         End If
     Next i
     For i = request.Comments.Count To 1 Step -1
@@ -128,7 +129,8 @@ Private Function Highlight(ByVal target As Range, ByVal rank As Long) As Boolean
     color = RGB(221, 235, 247)
     If rank = 2 Then color = RGB(255, 235, 156)
     If rank = 3 Then color = RGB(255, 199, 206)
-    Set rule = target.MergeArea.FormatConditions.Add(Type:=xlExpression, Formula1:="=N(""" & FILL_MARKER & """)=0")
+    Set rule = target.MergeArea.FormatConditions.Add(Type:=xlExpression, Formula1:=FILL_FORMULA)
+    rule.Interior.Pattern = xlSolid
     rule.Interior.Color = color: rule.SetFirstPriority: rule.StopIfTrue = True
     Highlight = True
 Failed:
@@ -144,9 +146,48 @@ Private Function WriteNote(ByVal target As Range, ByVal message As String, ByVal
     If Len(text) > 32767 Then Exit Function
     If target.Comment Is Nothing Then target.AddComment text Else target.Comment.Text Text:=text
     target.Comment.Visible = False
+    SizeNote target
     WriteNote = True
 Failed:
 End Function
+Private Sub SizeNote(ByVal target As Range)
+    Dim measure As Shape, note As Shape, height As Double, number As Long, description As String
+    Dim bold As Variant, italic As Variant
+    On Error GoTo Failed
+    Set note = target.Comment.Shape
+    With note.TextFrame
+        .AutoSize = False
+        .MarginLeft = 6: .MarginRight = 6: .MarginTop = 6: .MarginBottom = 6
+        .Characters.Font.Name = "Tahoma": .Characters.Font.Size = 10
+        bold = .Characters.Font.Bold: italic = .Characters.Font.Italic
+    End With
+    ' Mixed styles use a conservative all-bold/italic measurement, retaining text styling.
+    If IsNull(bold) Then bold = True
+    If IsNull(italic) Then italic = True
+    ' Legacy notes do not support TextFrame2. Measure wrapping in an owned textbox,
+    ' then apply the dimensions to the note's legacy TextFrame without changing text.
+    Set measure = target.Worksheet.Shapes.AddTextbox(1, 0, 0, 420, 20)
+    measure.Visible = False
+    With measure.TextFrame2
+        .MarginLeft = 6: .MarginRight = 6: .MarginTop = 6: .MarginBottom = 6
+        .WordWrap = -1
+        .TextRange.Text = target.Comment.Text
+        .TextRange.Font.Name = "Tahoma": .TextRange.Font.Size = 10
+        .TextRange.Font.Bold = CLng(bold): .TextRange.Font.Italic = CLng(italic)
+        .AutoSize = 1
+    End With
+    height = measure.Height + 12
+    If height < 60 Then height = 60
+    note.Width = 420: note.Height = height
+    measure.Delete: Set measure = Nothing
+    Exit Sub
+Failed:
+    number = Err.Number: description = Err.Description
+    On Error Resume Next
+    If Not measure Is Nothing Then measure.Delete
+    On Error GoTo 0
+    Err.Raise number, "SizeNote", description
+End Sub
 Private Function WithoutOwned(ByVal text As String) As String
     Dim first As Long, last As Long, start As Long
     Do

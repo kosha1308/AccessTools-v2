@@ -6,6 +6,8 @@ Public Sub AT_TestNetworkCommand()
     Dim result As ATNetworkRunResult, rulePath As String, supersetPath As String, ws As Worksheet
     Dim runId As String, runDate As String, timezoneId As String
     Dim working As Workbook, count As Long
+    Dim previousIndicators As Long
+    previousIndicators = Application.DisplayCommentIndicator
     On Error GoTo Failed
     Set fs = CreateObject("Scripting.FileSystemObject")
     parent = fs.BuildPath(fs.GetSpecialFolder(2), "AccessTools-command-" & fs.GetTempName): fs.CreateFolder parent
@@ -76,7 +78,9 @@ Public Sub AT_TestNetworkCommand()
     AT_CommandSave parent: caught = Err.Number <> 0: Err.Clear
     On Error GoTo Failed
     AT_Assert caught, "failed presentation cannot silently save diagnostic books instead of full Superset"
+    Application.DisplayCommentIndicator = xlNoIndicator
     Set working = AT_CommandPresent(ws, result, supersetPath, runId)
+    AT_Assert Application.DisplayCommentIndicator = xlCommentIndicatorOnly, "interactive notes use indicators and hover instead of hidden or always-open mode"
     AT_Assert Not result.ReportBook.Windows(1).Visible And Not result.CoordinatorBook.Windows(1).Visible, "interactive presentation keeps diagnostics and internal output hidden"
     AT_Assert Application.ActiveSheet Is ws, "interactive presentation leaves request active for modeless result window"
     AT_Assert working.Worksheets.Count = 3, "interactive output combines full export and two calculated tabs"
@@ -101,6 +105,7 @@ Cleanup:
     AT_TestCloseRun result
     AT_CommandReset
     Application.EnableEvents = previousEvents
+    Application.DisplayCommentIndicator = previousIndicators
     If Len(parent) > 0 Then
         If StrComp(fs.GetParentFolderName(parent), CStr(fs.GetSpecialFolder(2)), vbTextCompare) = 0 And Left$(fs.GetFileName(parent), 20) = "AccessTools-command-" Then fs.DeleteFolder parent, True
     End If

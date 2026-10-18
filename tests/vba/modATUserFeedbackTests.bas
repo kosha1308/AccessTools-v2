@@ -1,11 +1,11 @@
-Attribute VB_Name = "modATUserFeedbackTests"
+﻿Attribute VB_Name = "modATUserFeedbackTests"
 Option Explicit
 Public Sub AT_TestUserFeedback()
     Dim fs As Object, folder As String, rulePath As String, supersetPath As String, stream As Object
     Dim settings As New ATNetworkSourceSettings, loaded As New ATNetworkSourceSettings, caught As Boolean
     Dim feedback As New ATNetworkUserFeedback, policy As ATNetworkPolicyReport, book As Workbook, ws As Worksheet
     Dim issues As New Collection, decisions As New Collection, checks As New Collection, report As New ATCheckReport, message As String
-    Dim menu As Object
+    Dim menu As Object, measure As Shape
     On Error GoTo Failed
     Set fs = CreateObject("Scripting.FileSystemObject")
     folder = fs.BuildPath(fs.GetSpecialFolder(2), "AccessTools-feedback-" & fs.GetTempName): fs.CreateFolder folder
@@ -28,6 +28,7 @@ Public Sub AT_TestUserFeedback()
     ws.Range("E15:G15").Merge
     ws.Range("A1").Interior.Color = RGB(10, 20, 30)
     ws.Range("A1").FormatConditions.Add Type:=xlExpression, Formula1:="=1=2"
+    ws.Range("E15:G15").FormatConditions.Add Type:=xlExpression, Formula1:="=N(""AccessToolsv2:annotation"")=0"
     AddFeedbackDecision issues, decisions, "A1", "Исправьте имя", True, False, True, "ERROR", False
     AddFeedbackDecision issues, decisions, "G15", "Заполните обоснование", True, False, True, "ERROR", False
     AddFeedbackDecision issues, decisions, "B2", "Только координатору", False, False, False, "ERROR", False
@@ -39,6 +40,16 @@ Public Sub AT_TestUserFeedback()
     AT_Assert feedback.ErrorCount = 3 And InStr(feedback.UserErrorsText, "A1") > 0 And InStr(feedback.UserErrorsText, "G15") > 0, "copy payload includes all user errors with exact references"
     AT_Assert InStr(feedback.UserErrorsText, "Только координатору") = 0 And InStr(feedback.UserErrorsText, "Предупреждение") = 0, "coordinator errors and warnings excluded from user-error clipboard payload"
     AT_Assert feedback.ApplyNotes(ws, "RUN1") = 2, "unconfigured user input errors get notes at merged anchors"
+    Application.CalculateFull
+    ws.Range("H1").Value2 = "native CF control"
+    With ws.Range("H1").FormatConditions.Add(Type:=xlExpression, Formula1:="=1=1")
+        .Interior.Pattern = xlSolid: .Interior.Color = RGB(255, 199, 206)
+    End With
+    AT_Assert ws.Range("H1").DisplayFormat.Interior.Color = RGB(255, 199, 206), "native constant conditional format actually displays red; actual=" & CStr(ws.Range("H1").DisplayFormat.Interior.Color)
+    AT_Assert ws.Range("A1").DisplayFormat.Interior.Color = RGB(255, 199, 206), "nonmerged error actually displays red; actual=" & CStr(ws.Range("A1").DisplayFormat.Interior.Color) & "; formula=" & ws.Range("A1").FormatConditions(1).Formula1 & "; evaluation=" & CStr(ws.Evaluate(ws.Range("A1").FormatConditions(1).Formula1)) & "; pattern=" & TypeName(ws.Range("A1").FormatConditions(1).Interior.Pattern)
+    AT_Assert ws.Range("E15").DisplayFormat.Interior.Color = RGB(255, 199, 206), "merged error actually displays red; actual=" & CStr(ws.Range("E15").DisplayFormat.Interior.Color)
+    AT_Assert ws.Range("E15").FormatConditions.Count = 1, "old invisible annotation rule is replaced rather than accumulated after upgrade"
+    If Not ws.Range("E15").Comment Is Nothing Then AT_Assert ws.Range("E15").Comment.Shape.Height >= 60, "note shape grows to complete text instead of default clipped box"
     AT_Assert ws.Range("A1").FormatConditions.Count = 2, "error highlight overlays rather than replacing original formatting"
     If ws.Range("A1").FormatConditions.Count = 2 Then AT_Assert ws.Range("A1").FormatConditions(1).Interior.Color = RGB(255, 199, 206), "legacy red used for errors"
     If Not ws.Range("A1").Comment Is Nothing Then AT_Assert InStr(ws.Range("A1").Comment.Text, "Чужое примечание") > 0 And InStr(ws.Range("A1").Comment.Text, "Исправьте имя") > 0, "foreign note text retained alongside owned block"
@@ -67,7 +78,33 @@ Public Sub AT_TestUserFeedback()
     Set policy = New ATNetworkPolicyReport: policy.Initialize report, decisions: feedback.Prepare policy
     feedback.ApplyNotes ws, "CLEAN"
     AT_Assert ws.Range("A1").FormatConditions.Count = 1 And ws.Range("A1").Interior.Color = RGB(10, 20, 30), "clear removes only own highlights and restores original fill and conditional rule"
+    AT_Assert ws.Range("H1").DisplayFormat.Interior.Color = RGB(255, 199, 206), "foreign visible conditional formatting survives owned-mark cleanup"
     AT_Assert ws.Range("A1").Comment.Text = "Чужое примечание" And ws.Range("E15").Comment Is Nothing, "fixed issues clear own notes and retain original foreign text"
+    Set issues = New Collection: Set decisions = New Collection: Set checks = New Collection: Set report = New ATCheckReport
+    message = "Подробное пояснение ошибки: проверьте указанные значения и исправьте заявку. "
+    message = message & message & message & message & message & message & message & message
+    AddFeedbackDecision issues, decisions, "A1", message, True, False, True, "ERROR", False
+    report.Initialize atEvalOK, "NETWORK_ACCESS_SUPERSET_POLICY", issues, checks
+    Set policy = New ATNetworkPolicyReport: policy.Initialize report, decisions: feedback.Prepare policy
+    feedback.ApplyNotes ws, "LONG_READABLE"
+    AT_Assert ws.Range("A1").Comment.Shape.Width <= 480, "long note wraps at readable width; actual=" & CStr(ws.Range("A1").Comment.Shape.Width)
+    AT_Assert Not ws.Range("A1").Comment.Visible And InStr(ws.Range("A1").Comment.Text, message) > 0, "full explanation retained in a note hidden until hover"
+    AT_Assert ws.Range("A1").Comment.Shape.Height > 100, "long note grows vertically when its text wraps; actual=" & CStr(ws.Range("A1").Comment.Shape.Height)
+    ws.Range("A1").Comment.Text Text:="Чужое жирное примечание"
+    ws.Range("A1").Comment.Shape.TextFrame.Characters.Font.Bold = True
+    ws.Range("A1").Comment.Shape.TextFrame.Characters.Font.Italic = True
+    feedback.ApplyNotes ws, "STYLED"
+    Set measure = ws.Shapes.AddTextbox(1, 0, 0, 420, 20)
+    measure.Visible = False
+    With measure.TextFrame2
+        .MarginLeft = 6: .MarginRight = 6: .MarginTop = 6: .MarginBottom = 6
+        .WordWrap = -1: .TextRange.Text = ws.Range("A1").Comment.Text
+        .TextRange.Font.Name = "Tahoma": .TextRange.Font.Size = 10
+        .TextRange.Font.Bold = -1: .TextRange.Font.Italic = -1
+        .AutoSize = 1
+    End With
+    AT_Assert ws.Range("A1").Comment.Shape.Height >= measure.Height + 11, "note height also fits retained bold italic text; actual=" & CStr(ws.Range("A1").Comment.Shape.Height) & "; needed=" & CStr(measure.Height + 12)
+    measure.Delete: Set measure = Nothing
     Set issues = New Collection: Set decisions = New Collection: Set checks = New Collection: Set report = New ATCheckReport
     AddFeedbackDecision issues, decisions, "A1:A2", "Неточный адрес", True, False, True, "ERROR", False
     report.Initialize atEvalOK, "NETWORK_ACCESS_SUPERSET_POLICY", issues, checks
@@ -76,6 +113,7 @@ Public Sub AT_TestUserFeedback()
 Cleanup:
     On Error Resume Next
     If Not menu Is Nothing Then menu.Delete
+    If Not measure Is Nothing Then measure.Delete
     If Not book Is Nothing Then book.Close False
     If Not stream Is Nothing Then stream.Close
     If Len(folder) > 0 Then

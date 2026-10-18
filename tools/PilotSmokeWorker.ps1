@@ -97,7 +97,7 @@ Public Function AT_PilotFeedback(ByVal request As Worksheet, ByVal rulePath As S
     If picker.Controls("lstTemplates").ListCount <> 1 Then Err.Raise vbObjectError + 3210, , "PILOT_TEMPLATE_SEARCH_FAILED"
     Unload picker: Set picker = Nothing
     outputFolder = AT_CommandSave(workFolder)
-    If Len(Dir$(outputFolder & "\Отчёт-проверок.xlsx")) > 0 Then Err.Raise vbObjectError + 3210, , "PILOT_DIAGNOSTIC_SAVED_AUTOMATICALLY"
+    If Len(Dir`$(outputFolder & "\Отчёт-проверок.xlsx")) > 0 Then Err.Raise vbObjectError + 3210, , "PILOT_DIAGNOSTIC_SAVED_AUTOMATICALLY"
     Set reopened = Application.Workbooks.Open(outputFolder & "\Superset-с-результатами.xlsx", 0, True)
     If reopened.Worksheets.Count <> 3 Or reopened.Worksheets("Сводка координатора").Cells(6, 5).Value2 <> "Сервис из правил" Then Err.Raise vbObjectError + 3210, , "PILOT_SAVED_WORKING_COPY_FAILED"
     reopened.Close False: Set reopened = Nothing

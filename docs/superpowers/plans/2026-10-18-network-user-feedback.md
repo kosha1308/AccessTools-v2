@@ -10,11 +10,13 @@
 
 ## Tasks
 
-- [ ] RED/GREEN settings tests: persist/reload Unicode paths, same-path rejection, missing/malformed data, explicit test directory prevents touching user's settings.
-- [ ] RED/GREEN feedback tests: exact user-error selection/refs, explicit routing exclusion, merged/foreign cells, user note preservation/repeat/clear, worksheet values unchanged; protected/oversize failure surfaced without breaking results.
-- [ ] Thin command integration: retained paths + explicit change, result popup and reopen, copy feedback; no stale result after cancel/failure, no silent copy truncation, menu actions qualified by ThisWorkbook.Name.
-- [ ] Rebuild pilot.3 under AccessToolsv2.xlam with updated guide/Ribbon, full regression/tooling, independent review, installed and extracted ZIP smoke. No automatic installation or security changes.
+- [x] RED/GREEN settings tests: persist/reload Unicode paths, same-path rejection, missing/malformed data, explicit test directory prevents touching user's settings.
+- [x] RED/GREEN feedback tests: exact user-error selection/refs, explicit routing exclusion, merged/foreign cells, user note preservation/repeat/clear, worksheet values unchanged; protected/oversize failure surfaced without breaking results.
+- [x] Thin command integration: retained paths + explicit change, result popup and reopen, copy feedback; no stale result after cancel/failure, no silent copy truncation, menu actions qualified by ThisWorkbook.Name.
+- [x] Rebuild pilot.3 under AccessToolsv2.xlam with updated guide/Ribbon, full regression/tooling, independent review, installed and extracted ZIP smoke. No automatic installation or security changes.
 
 ## Acceptance limits
 
 Popup structure tested programmatically without clicking; clipboard deliberately not overwritten by automated tests. Manual popup/copy acceptance on user's Excel remains required. Notes modify only open request metadata and leave workbook unsaved; failures reported visibly. Source settings persistence tests use private temp folders; no real settings paths written by tests.
+
+Evidence source d808d2f: full/build11330/0; installed/extracted14/0 each, all SHA unchanged. Fresh review fix RED21/1 -> GREEN22/0, review clean. Native popup structure only; clipboard/ShowPopup manual acceptance explicit. PR29 againstPR28, no release/installation.

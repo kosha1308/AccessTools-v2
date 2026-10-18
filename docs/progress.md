@@ -467,3 +467,16 @@ disconnected. Direct user requirement overrides old common-filename spec.
 Source030d5a9 pilot.2: full11308/0 compilePASS, name2/0 Ribbon2/0, installed12/0
 and extractedZIP12/0. Synthetic legacy addin co-loaded and unchanged; actual v1
 functionality not tested/modified. DraftPR28 basePR27; CI source success, no merge/release.
+
+2026-10-18 — Remembered sources/user popup/request notes, basePR28/efc3244:
+Per-user UTF16 atomic source paths, no source data cache. Four-button Ribbon, native
+popup qualified callbacks + Unicode copy exact InUserReport/UserError/ERROR refs.
+Request metadata writes explicitly requested: own note blocks only, preserve foreign
+text, merged anchors/strict local refs, no values/format edit or auto-save. Explicit
+Rulebook routing honored; additive RequestConfigured distinguishes default input
+notes from explicit exclusion; check outputs unchanged. Protected/oversize/missing
+target warnings survive cleanup (review P2 RED21/1 -> GREEN22/0, re-review clean).
+Source d808d2f pilot.3 full/build11330/0 compilePASS, static7/0 names2/0 Ribbon2/0.
+Installed14/0 then extractedZIP14/0, allfileSHA unchanged, synthetic error demo included.
+User settings tests inject tempfolder, clipboard untouched; ShowPopup/copy clicks
+manual acceptance pending. DraftPR29 basePR28, sourceCI success, no merge/release.

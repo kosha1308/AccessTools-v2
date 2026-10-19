@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?><package xmlns="urn:accesstools:definitions:1" schemaVersion="2.0.0" id="SIMPLE_PACKAGE" version="1.0.0" displayName="Synthetic simple template" state="Draft" publishedBy="" publishedAt="">
+  <definitions>
+    <definition kind="Template" id="SIMPLE" version="1.0.0" displayName="Simple">
+      <properties/><references/><dependencies/>
+    </definition>
+    <definition kind="Locator" id="LOC_NAME" version="1.0.0" displayName="Name location">
+      <properties><property name="Strategy" value="A1"/><property name="Sheet" value="Request"/><property name="Address" value="B8"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Field" id="FIELD_NAME" version="1.0.0" displayName="Name">
+      <properties><property name="DataType" value="Text"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/><ref role="Locator" kind="Locator" id="LOC_NAME" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Locator" id="LOC_NOTE" version="1.0.0" displayName="Note location">
+      <properties><property name="Strategy" value="A1"/><property name="Sheet" value="Request"/><property name="Address" value="D12"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Field" id="FIELD_NOTE" version="1.0.0" displayName="Note">
+      <properties><property name="DataType" value="Text"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/><ref role="Locator" kind="Locator" id="LOC_NOTE" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Expression" id="EXPR_REQUIRED" version="1.0.0" displayName="Deferred predicate">
+      <properties><property name="ReturnType" value="Bool"/><property name="Deferred" value="false"/></properties><references/><dependencies/>
+    <ast xmlns="urn:accesstools:definitions:1" root="ROOT" template="SIMPLE"><node id="ROOT" kind="Let" type="Bool"><values/><parameters/><bindings><binding id="B_TEXT"/><binding id="B_BOOL"/></bindings><children><child id="FIELD_VALUE"/><child id="CALL_EQ"/><child id="WHEN_ROOT"/></children></node><node id="FIELD_VALUE" kind="FieldRef" type="Text"><values><value name="FieldId" value="FIELD_NAME"/><value name="FieldVersion" value="1.0.0"/></values><parameters/><bindings/><children/></node><node id="CALL_EQ" kind="Call" type="Bool"><values><value name="OperationId" value="OP_TEST_EQ"/><value name="OperationVersion" value="1.0.0"/></values><parameters><parameter name="MODE" type="Text" value="binary"/></parameters><bindings/><children><child id="VALUE_TEXT"/><child id="LITERAL_TEXT"/></children></node><node id="VALUE_TEXT" kind="ValueRef" type="Text"><values><value name="BindingId" value="B_TEXT"/></values><parameters/><bindings/><children/></node><node id="LITERAL_TEXT" kind="TypedLiteral" type="Text"><values><value name="State" value="OK"/><value name="Value" value="Имя &amp; пример"/></values><parameters/><bindings/><children/></node><node id="WHEN_ROOT" kind="When" type="Bool"><values/><parameters/><bindings/><children><child id="STATE_NODE"/><child id="THEN_NODE"/><child id="ELSE_NODE"/></children></node><node id="STATE_NODE" kind="StateIs" type="Text"><values><value name="States" value="OK|EMPTY"/></values><parameters/><bindings/><children><child id="EMPTY_VALUE"/></children></node><node id="EMPTY_VALUE" kind="TypedLiteral" type="Text"><values><value name="State" value="EMPTY"/><value name="Value" value=""/></values><parameters/><bindings/><children/></node><node id="THEN_NODE" kind="AllOf" type="Bool"><values/><parameters/><bindings/><children><child id="VALUE_BOOL"/><child id="NOT_NODE"/></children></node><node id="VALUE_BOOL" kind="ValueRef" type="Bool"><values><value name="BindingId" value="B_BOOL"/></values><parameters/><bindings/><children/></node><node id="NOT_NODE" kind="Not" type="Bool"><values/><parameters/><bindings/><children><child id="LITERAL_FALSE"/></children></node><node id="LITERAL_FALSE" kind="TypedLiteral" type="Bool"><values><value name="State" value="OK"/><value name="Value" value="false"/></values><parameters/><bindings/><children/></node><node id="ELSE_NODE" kind="AnyOf" type="Bool"><values/><parameters/><bindings/><children><child id="LITERAL_TRUE"/><child id="LITERAL_FALSE2"/></children></node><node id="LITERAL_TRUE" kind="TypedLiteral" type="Bool"><values><value name="State" value="OK"/><value name="Value" value="true"/></values><parameters/><bindings/><children/></node><node id="LITERAL_FALSE2" kind="TypedLiteral" type="Bool"><values><value name="State" value="OK"/><value name="Value" value="false"/></values><parameters/><bindings/><children/></node></ast></definition>
+    <definition kind="Rule" id="RULE_REQUIRED" version="1.0.0" displayName="Synthetic rule reference">
+      <properties/>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/><ref role="Expression" kind="Expression" id="EXPR_REQUIRED" version="1.0.0" expectedType="Bool"/><ref role="Field" kind="Field" id="FIELD_NAME" version="1.0.0" expectedType="Text"/><ref role="Operation" kind="Operation" id="OP_TEST" version="1.0.0" expectedType="Bool"/></references><dependencies/>
+    </definition>
+    <definition kind="Action" id="ACTION_REQUIRED" version="1.0.0" displayName="Synthetic action metadata">
+      <properties><property name="Trigger" value="Warning"/><property name="Audience" value="Initiator"/><property name="Channel" value="Results"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/><ref role="Rule" kind="Rule" id="RULE_REQUIRED" version="1.0.0" expectedType=""/><ref role="Field" kind="Field" id="FIELD_NOTE" version="1.0.0" expectedType="Text"/></references><dependencies/>
+    </definition>
+  </definitions>
+</package>

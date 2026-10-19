@@ -18,6 +18,7 @@ End Function
 Public Function AtToXml(ByVal p As CAtPackage) As String
     Dim dom As Object, root As Object, list As Object, node As Object, group As Object
     Dim item As Object, d As CAtDefinition, prop As Variant, r As Variant, dep As Variant
+    If p.SchemaVersion <> "1.0.0" And p.SchemaVersion <> "2.0.0" Then Err.Raise 5, , "Unsupported schema"
     Set dom = NewDom()
     dom.appendChild dom.createProcessingInstruction("xml", "version=""1.0"" encoding=""UTF-8""")
     Set root = Element(dom, dom, "package")
@@ -26,6 +27,7 @@ Public Function AtToXml(ByVal p As CAtPackage) As String
     Attr root, "state", p.State: Attr root, "publishedBy", p.PublishedBy: Attr root, "publishedAt", p.PublishedAt
     Set list = Element(dom, root, "definitions")
     For Each d In p.Definitions
+        If p.SchemaVersion = "1.0.0" And (d.Nodes.Count > 0 Or d.RootNodeId <> "" Or d.ScopeTemplateId <> "") Then Err.Raise 5, , "AST cannot be written as schema 1.0.0"
         Set node = Element(dom, list, "definition")
         Attr node, "kind", d.Kind: Attr node, "id", d.Id
         Attr node, "version", d.Version: Attr node, "displayName", d.DisplayName
@@ -45,6 +47,7 @@ Public Function AtToXml(ByVal p As CAtPackage) As String
         For Each dep In d.Dependencies
             Set item = Element(dom, group, "dependency"): Attr item, "id", CStr(dep)
         Next dep
+        If p.SchemaVersion = "2.0.0" And d.Kind = "Expression" Then WriteAst dom, node, d
     Next d
     AtToXml = dom.XML
 End Function
@@ -119,7 +122,8 @@ End Sub
 Private Function Decode(ByVal dom As Object, ByVal catalog As Object, ByRef diagnostics As Collection) As CAtPackage
     On Error GoTo ShapeError
     Dim root As Object, definitions As Object, node As Object, group As Object, item As Object
-    Dim p As CAtPackage, d As CAtDefinition, groups As Object, v As String
+    Dim p As CAtPackage, d As CAtDefinition, groups As Object, v As String, schema As String
+    Dim objectId As String, nodeId As String
     For Each node In dom.childNodes
         If node.nodeType <> 1 Then
             If Not (node.nodeType = 7 And node.nodeName = "xml") Then Err.Raise 5
@@ -127,10 +131,12 @@ Private Function Decode(ByVal dom As Object, ByVal catalog As Object, ByRef diag
     Next node
     Set root = dom.documentElement
     Shape root, "package", "schemaVersion|id|version|displayName|state|publishedBy|publishedAt"
-    If ReadAttr(root, "schemaVersion") <> "1.0.0" Then
+    schema = ReadAttr(root, "schemaVersion")
+    If schema <> "1.0.0" And schema <> "2.0.0" Then
         AtProblem diagnostics, "SCHEMA_VERSION", "Package", "SchemaVersion", CStr(ReadAttr(root, "schemaVersion")), "This schema version is not supported. No definitions were interpreted.": Exit Function
     End If
     Set p = AtNewPackage(ReadAttr(root, "id"), ReadAttr(root, "displayName"))
+    p.SchemaVersion = schema
     p.Version = ReadAttr(root, "version"): p.State = ReadAttr(root, "state")
     p.PublishedBy = ReadAttr(root, "publishedBy"): p.PublishedAt = ReadAttr(root, "publishedAt")
     Set definitions = OnlyElement(root, "definitions")
@@ -140,6 +146,7 @@ Private Function Decode(ByVal dom As Object, ByVal catalog As Object, ByRef diag
             If p.Definitions.Count >= 2000 Then Err.Raise 5
             Shape node, "definition", "kind|id|version|displayName"
             Set d = AtNewDefinition(ReadAttr(node, "kind"), ReadAttr(node, "id"), ReadAttr(node, "displayName"))
+            objectId = d.Id: nodeId = ""
             d.Version = ReadAttr(node, "version")
             Set groups = AtDictionary()
             For Each group In node.childNodes
@@ -147,7 +154,7 @@ Private Function Decode(ByVal dom As Object, ByVal catalog As Object, ByRef diag
                     v = group.baseName
                     If groups.Exists(v) Then Err.Raise 5
                     groups.Add v, True
-                    Shape group, v, ""
+                    If v <> "ast" Then Shape group, v, ""
                     Select Case v
                         Case "properties"
                             For Each item In group.childNodes
@@ -171,11 +178,15 @@ Private Function Decode(ByVal dom As Object, ByVal catalog As Object, ByRef diag
                                     d.Dependencies.Add ReadAttr(item, "id")
                                 End If
                             Next item
+                        Case "ast"
+                            If schema <> "2.0.0" Or d.Kind <> "Expression" Then Err.Raise 5
+                            ReadAst group, d, nodeId
                         Case Else: Err.Raise 5
                     End Select
                 End If
             Next group
-            If groups.Count <> 3 Then Err.Raise 5
+            If groups.Count <> IIf(schema = "2.0.0" And d.Kind = "Expression", 4, 3) Then Err.Raise 5
+            If schema = "2.0.0" And d.Kind = "Expression" And Not groups.Exists("ast") Then Err.Raise 5
             p.Definitions.Add d
         End If
     Next node
@@ -184,8 +195,84 @@ Private Function Decode(ByVal dom As Object, ByVal catalog As Object, ByRef diag
     Set Decode = p
     Exit Function
 ShapeError:
-    AtProblem diagnostics, "XML_SHAPE", "Package", "Xml", "Unexpected or duplicate element/attribute", "The file does not match schema 1.0.0. No definitions were loaded."
+    If objectId <> "" Then
+        AtAstProblem diagnostics, "XML_SHAPE", objectId, nodeId, "Unexpected or duplicate element/attribute; no definitions loaded."
+    Else
+        AtProblem diagnostics, "XML_SHAPE", "Package", "Xml", "Unexpected or duplicate element/attribute", "The file does not match its declared schema. No definitions were loaded."
+    End If
 End Function
+
+Private Sub WriteAst(ByVal dom As Object, ByVal parent As Object, ByVal d As CAtDefinition)
+    Dim ast As Object, node As Object, group As Object, item As Object, n As CAtNode
+    Dim key As Variant, id As Variant, parameter As Object
+    Set ast = Element(dom, parent, "ast")
+    Attr ast, "root", d.RootNodeId: Attr ast, "template", d.ScopeTemplateId
+    For Each n In d.Nodes
+        Set node = Element(dom, ast, "node")
+        Attr node, "id", n.Id: Attr node, "kind", n.Kind: Attr node, "type", n.ResultType
+        Set group = Element(dom, node, "values")
+        For Each key In n.Values.Keys
+            Set item = Element(dom, group, "value")
+            Attr item, "name", CStr(key): Attr item, "value", CStr(n.Values(key))
+        Next key
+        Set group = Element(dom, node, "parameters")
+        For Each key In n.Parameters.Keys
+            Set parameter = n.Parameters(key): Set item = Element(dom, group, "parameter")
+            Attr item, "name", CStr(key): Attr item, "type", CStr(parameter("Type")): Attr item, "value", CStr(parameter("Value"))
+        Next key
+        Set group = Element(dom, node, "bindings")
+        For Each id In n.Bindings
+            Set item = Element(dom, group, "binding"): Attr item, "id", CStr(id)
+        Next id
+        Set group = Element(dom, node, "children")
+        For Each id In n.Children
+            Set item = Element(dom, group, "child"): Attr item, "id", CStr(id)
+        Next id
+    Next n
+End Sub
+
+Private Sub ReadAst(ByVal ast As Object, ByVal d As CAtDefinition, ByRef nodeId As String)
+    Dim node As Object, group As Object, item As Object, n As CAtNode, groups As Object, key As String
+    Shape ast, "ast", "root|template"
+    d.RootNodeId = ReadAttr(ast, "root"): d.ScopeTemplateId = ReadAttr(ast, "template")
+    For Each node In ast.childNodes
+        If node.nodeType = 1 Then
+            nodeId = CStr(node.getAttribute("id"))
+            Shape node, "node", "id|kind|type"
+            Set n = AtNewNode(ReadAttr(node, "id"), ReadAttr(node, "kind"), ReadAttr(node, "type"))
+            nodeId = n.Id: Set groups = AtDictionary()
+            For Each group In node.childNodes
+                If group.nodeType = 1 Then
+                    key = group.baseName: Shape group, key, ""
+                    If groups.Exists(key) Then Err.Raise 5
+                    groups.Add key, True
+                    For Each item In group.childNodes
+                        If item.nodeType = 1 Then
+                            Select Case key
+                                Case "values"
+                                    Shape item, "value", "name|value": NoChildren item
+                                    If n.Values.Exists(ReadAttr(item, "name")) Then Err.Raise 5
+                                    n.Values.Add ReadAttr(item, "name"), ReadAttr(item, "value")
+                                Case "parameters"
+                                    Shape item, "parameter", "name|type|value": NoChildren item
+                                    If n.Parameters.Exists(ReadAttr(item, "name")) Then Err.Raise 5
+                                    n.Parameters.Add ReadAttr(item, "name"), AtTypedParameter(ReadAttr(item, "type"), ReadAttr(item, "value"))
+                                Case "bindings"
+                                    Shape item, "binding", "id": NoChildren item: n.Bindings.Add ReadAttr(item, "id")
+                                Case "children"
+                                    Shape item, "child", "id": NoChildren item: n.Children.Add ReadAttr(item, "id")
+                                Case Else: Err.Raise 5
+                            End Select
+                        End If
+                    Next item
+                    If key <> "values" And key <> "parameters" And key <> "bindings" And key <> "children" Then Err.Raise 5
+                End If
+            Next group
+            If groups.Count <> 4 Then Err.Raise 5
+            d.Nodes.Add n
+        End If
+    Next node
+End Sub
 
 Private Sub Shape(ByVal node As Object, ByVal name As String, ByVal attributes As String)
     Dim a As Object, child As Object, expected As Long

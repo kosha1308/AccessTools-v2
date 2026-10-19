@@ -1,209 +1,256 @@
 Attribute VB_Name = "modAtAdminUi"
 Option Explicit
 
-' Native Excel dialogs, deliberately limited to one editable scalar condition.
-' State survives closing dialogs, but never survives loss of the VBA session.
-Private configuration As CAtPackage, targetBook As Object
-Private journal As CAtOwnershipJournal, journalBook As Object
-Private runNumber As Long
+Private editor As CAtAdminEditor, books As Collection, painting As Boolean
+
+Public Function AtNewAdminEditor() As CAtAdminEditor
+    Set AtNewAdminEditor = New CAtAdminEditor
+End Function
+
+Public Function AtUiDiagnostics(ByVal issues As Collection) As String
+    Dim issue As Variant
+    For Each issue In issues
+        AtUiDiagnostics = AtUiDiagnostics & issue("Code") & ": " & issue("Message") & vbLf
+    Next issue
+End Function
+
+Public Function AtUiStatus(ByVal status As String) As String
+    Select Case status
+        Case "READY": AtUiStatus = "Готово к записи"
+        Case "APPLIED": AtUiStatus = "Отметки нанесены"
+        Case "ROLLED_BACK": AtUiStatus = "Собственные отметки сняты"
+        Case "SKIPPED": AtUiStatus = "Без изменений"
+        Case "CONFLICT": AtUiStatus = "Книга изменена: запись заблокирована"
+        Case "RECOVERY_REQUIRED": AtUiStatus = "Требуется разбор состояния журнала"
+        Case Else: AtUiStatus = "Запись не выполнена"
+    End Select
+End Function
+
+Public Function AtUiNotesSupported(ByVal book As Object) As Boolean
+#If Win64 Then
+    AtUiNotesSupported = book.FileFormat = 56 And book.Application.Version = "16.0" And CStr(book.Application.Build) = "17932"
+#End If
+End Function
 
 Public Sub AtAdminOpen()
     On Error GoTo Failed
-    Dim command As String
-    Do
-        If Not Ask("AccessTools editor: NEW / EDIT / LOAD / SAVE / RUN / CLEAR / CLOSE" & vbLf & _
-            "Text equality; Notes require the tested .xls profile. .xlsx: fill only." & vbLf & _
-            "Closing retains ownership only in this live VBA session.", "CLOSE", command) Then Exit Sub
-        Select Case UCase$(command)
-            Case "NEW": EditDefinition True
-            Case "EDIT": EditDefinition False
-            Case "LOAD": LoadDefinition
-            Case "SAVE": SaveDefinition
-            Case "RUN": RunDefinition
-            Case "CLEAR": ClearDefinition
-            Case "CLOSE": Exit Sub
-            Case Else: MsgBox "Choose a command from the list."
-        End Select
-    Loop
+    If editor Is Nothing Then Set editor = AtNewAdminEditor()
+    Load AtAdminMain
+    AtUiFill AtAdminMain
+    AtUiRefreshBooks AtAdminMain
+    AtUiFit AtAdminMain
+    AtAdminMain.Show 0
     Exit Sub
 Failed:
-    MsgBox "Action stopped: " & Err.Description, vbExclamation, "AccessTools"
+    MsgBox "Не удалось открыть конструктор: " & Err.Description, vbExclamation, "AccessTools"
 End Sub
 
-Private Function Ask(ByVal prompt As String, ByVal initial As String, ByRef answer As String) As Boolean
-    Dim value As Variant
-    value = Application.InputBox(prompt, "AccessTools", initial, Type:=2)
-    If VarType(value) = vbBoolean Then Exit Function
-    answer = CStr(value): Ask = True
+Public Sub AtUiFit(ByVal form As Object)
+    Dim factor As Double
+    factor = 1
+    If Application.UsableWidth > 0 Then factor = WorksheetFunction.Min(factor, Application.UsableWidth * 0.94 / form.Width)
+    If Application.UsableHeight > 0 Then factor = WorksheetFunction.Min(factor, Application.UsableHeight * 0.9 / form.Height)
+    If factor < 1 Then
+        form.Zoom = CLng(factor * form.Zoom): form.Width = form.Width * factor: form.Height = form.Height * factor
+    End If
+End Sub
+
+Public Sub AtUiFill(ByVal f As Object)
+    painting = True
+    f.cboSheet.Clear
+    If editor Is Nothing Then Set editor = AtNewAdminEditor()
+    f.txtTemplate.Text = editor.TemplateName: f.txtField.Text = editor.FieldName
+    f.txtAddress.Text = editor.Address: f.txtExpected.Text = editor.ExpectedText: f.txtMessage.Text = editor.Message
+    f.chkNote.Value = editor.AddNote
+    f.cboCondition.Clear: f.cboCondition.AddItem "Текст равен": f.cboCondition.ListIndex = 0
+    f.cboSeverity.Clear: f.cboSeverity.AddItem "Ошибка": f.cboSeverity.AddItem "Предупреждение": f.cboSeverity.AddItem "Информация"
+    Select Case editor.Severity
+        Case "ERROR": f.cboSeverity.ListIndex = 0
+        Case "WARNING": f.cboSeverity.ListIndex = 1
+        Case "INFO": f.cboSeverity.ListIndex = 2
+    End Select
+    f.cboColor.Clear
+    Dim i As Long
+    For i = 0 To 5: f.cboColor.AddItem AtUiColorName(i): Next i
+    f.cboColor.ListIndex = -1
+    For i = 0 To 5
+        If AtUiColor(i) = editor.Color Then f.cboColor.ListIndex = i
+    Next i
+    If f.cboColor.ListIndex = -1 Then f.cboColor.AddItem "Цвет из файла": f.cboColor.ListIndex = 6
+    f.cboMode.Clear: f.cboMode.AddItem "Простой режим": f.cboMode.AddItem "Расширенный режим": f.cboMode.ListIndex = 0
+    f.lstNavigation.Clear: f.lstNavigation.AddItem "Правило: текст равен": f.lstNavigation.ListIndex = 0
+    painting = False: AtUiChanged f
+End Sub
+
+Public Function AtUiColorName(ByVal index As Long) As String
+    AtUiColorName = Choose(index + 1, "Красный", "Жёлтый", "Голубой", "Зелёный", "Сиреневый", "Серый")
+End Function
+Public Function AtUiColor(ByVal index As Long) As Long
+    Select Case index
+        Case 0: AtUiColor = 255
+        Case 1: AtUiColor = 65535
+        Case 2: AtUiColor = RGB(218, 232, 252)
+        Case 3: AtUiColor = RGB(213, 232, 212)
+        Case 4: AtUiColor = RGB(225, 213, 231)
+        Case 5: AtUiColor = RGB(230, 230, 230)
+        Case Else: Err.Raise 5, , "Выберите цвет из палитры."
+    End Select
 End Function
 
-Private Function PickBook() As Object
-    Dim books As New Collection, book As Object, text As String, choice As String, i As Long
+Public Sub AtUiRefreshBooks(ByVal f As Object)
+    Dim book As Object
+    painting = True: Set books = New Collection: f.cboBook.Clear
     For Each book In Application.Workbooks
-        If Not book Is ThisWorkbook Then books.Add book: text = text & books.Count & ": " & book.Name & vbLf
+        If Not book Is ThisWorkbook Then
+            books.Add book: f.cboBook.AddItem book.Name
+        End If
     Next book
-    If books.Count = 0 Then Err.Raise 5, , "Open a target workbook first (separate from the macro host)."
-    If Len(text) > 200 Then Err.Raise 5, , "Too many open workbooks for this small dialog. Close unrelated workbooks."
-    If Not Ask("Choose an open workbook by number:" & vbLf & text, "1", choice) Then Exit Function
-    If Not IsNumeric(choice) Then Err.Raise 5, , "Invalid workbook number."
-    i = CLng(choice)
-    If CStr(i) <> choice Or i < 1 Or i > books.Count Then Err.Raise 5, , "Invalid workbook number."
-    Set PickBook = books(i)
+    f.cboBook.ListIndex = -1: painting = False
+    f.lblStatus.Caption = "Выберите открытую книгу для теста. Она не выбирается автоматически."
+End Sub
+
+Public Sub AtUiLoadFile(ByVal f As Object, ByVal path As String)
+    editor.LoadFile path
+    AtUiFill f: AtUiRefreshBooks f
+    f.lblSaved.Caption = "Загружено. Выберите книгу; сохранение — в новый файл редакции."
+End Sub
+
+Public Function AtUiSelectedBook(ByVal f As Object) As Object
+    If books Is Nothing Then Err.Raise 5, , "Обновите список открытых книг."
+    If f.cboBook.ListIndex < 0 Then Err.Raise 5, , "Явно выберите открытую книгу."
+    Dim selected As Object, book As Object
+    Set selected = books(f.cboBook.ListIndex + 1)
+    For Each book In Application.Workbooks
+        If book Is selected Then Set AtUiSelectedBook = book: Exit Function
+    Next book
+    Err.Raise 5, , "Выбранная книга закрыта. Обновите список."
 End Function
 
-Private Sub EditDefinition(ByVal createNew As Boolean)
-    Dim book As Object, sheet As Object, selected As Object, sheetName As String
-    Dim fieldName As String, expected As String, message As String, severity As String, color As String, notes As String
-    Dim d As CAtDefinition, expression As CAtDefinition, n As CAtNode, candidate As CAtPackage, issues As Collection, registry As New CAtOperationRegistry
-    If Not createNew Then
-        If configuration Is Nothing Then Err.Raise 5, , "Create or load a configuration first."
-        CheckEditorProfile configuration
-    End If
-    Set book = PickBook(): If book Is Nothing Then Exit Sub
-    If Not Ask("Worksheet name in " & book.Name, book.Worksheets(1).Name, sheetName) Then Exit Sub
-    Set sheet = book.Worksheets(sheetName)
-    If sheet.Visible <> -1 Then Err.Raise 5, , "Choose a visible worksheet."
-    book.Activate: sheet.Activate
-    ' Type 8 returns a real Range; cancellation raises 424, handled only here.
-    On Error Resume Next
-    Set selected = Application.InputBox("Select ONE field cell on the chosen worksheet", "AccessTools", Type:=8)
-    Dim pickError As Long: pickError = Err.Number: Err.Clear
-    On Error GoTo 0
-    If selected Is Nothing Then
-        If pickError <> 0 And pickError <> 424 Then Err.Raise pickError
-        Exit Sub
-    End If
-    If Not selected.Parent Is sheet Or selected.Cells.CountLarge <> 1 Then Err.Raise 5, , "Select one cell on the chosen worksheet."
-    fieldName = "Text field": expected = "expected": message = "Value must equal expected text."
-    severity = "ERROR": color = "255": notes = "false"
-    If Not createNew Then
-        fieldName = AtDefinitionById(configuration, "Field", "FIELD_VALUE").DisplayName
-        Set expression = AtDefinitionById(configuration, "Expression", "EXPRESSION")
-        For Each n In expression.Nodes
-            If n.Id = "EXPECTED" Then expected = CStr(n.Values("Value"))
-        Next n
-        Set d = AtDefinitionById(configuration, "Action", "ACTION_FAIL")
-        message = AtValue(d, "Message"): severity = UCase$(AtValue(d, "Trigger"))
-        color = AtValue(d, "FillColor"): notes = AtValue(d, "AddNote")
-    End If
-    If Not Ask("Field display name (type is Text)", fieldName, fieldName) Then Exit Sub
-    If Not Ask("Condition: text equals (case sensitive, exact)", expected, expected) Then Exit Sub
-    If Not Ask("Message on FAIL (short text; Writer heading included in validation)", message, message) Then Exit Sub
-    If Not Ask("Severity: ERROR / WARNING / INFO", severity, severity) Then Exit Sub
-    If Not Ask("Fill color: Excel RGB integer 0-16777215; red=255, yellow=65535", color, color) Then Exit Sub
-    If Not AtLiteralValid("Int64", color) Then Err.Raise 5, , "Invalid RGB integer."
-    If CDec(color) < 0 Or CDec(color) > 16777215 Then Err.Raise 5, , "RGB outside range."
-    If Not Ask("Add Note: true / false. Unsupported .xlsx Notes reject the WHOLE action.", notes, notes) Then Exit Sub
-    If notes <> "true" And notes <> "false" Then Err.Raise 5, , "Choose true or false explicitly."
-    Set candidate = AtAdminDefinition(sheet.Name, selected.Address(False, False), fieldName, expected, message, severity, CLng(color), notes = "true")
-    Set issues = AtValidate(candidate, registry.Catalog)
-    If AtHasErrors(issues) Then Err.Raise 5, , DiagnosticsText(issues)
-    If Not createNew Then
-        candidate.Id = configuration.Id: candidate.Version = configuration.Version
-        candidate.DisplayName = configuration.DisplayName
-    End If
-    Set configuration = candidate: Set targetBook = book
-    MsgBox "Definition updated in memory. SAVE writes a NEW revision file."
+Public Sub AtUiBookChanged(ByVal f As Object)
+    If painting Then Exit Sub
+    On Error GoTo Failed
+    Dim book As Object, sheet As Object, i As Long
+    Set book = AtUiSelectedBook(f): painting = True: f.cboSheet.Clear
+    For Each sheet In book.Worksheets
+        f.cboSheet.AddItem sheet.Name
+    Next sheet
+    f.cboSheet.ListIndex = -1
+    For i = 0 To f.cboSheet.ListCount - 1
+        If f.cboSheet.List(i) = editor.SheetName Then f.cboSheet.ListIndex = i
+    Next i
+    painting = False: AtUiChanged f: Exit Sub
+Failed:
+    painting = False: f.lblStatus.Caption = Err.Description
 End Sub
 
-Private Sub CheckEditorProfile(ByVal p As CAtPackage)
-    ' Reject unsupported configurations rather than silently discarding their AST.
-    Dim d As CAtDefinition, expected As CAtPackage, expression As CAtDefinition, n As CAtNode, value As String
-    If p.SchemaVersion <> "3.0.0" Or p.Definitions.Count <> 6 Then Err.Raise 5, , "This editor opens only its single Text equality profile."
-    Set expression = AtDefinitionById(p, "Expression", "EXPRESSION")
-    For Each n In expression.Nodes
-        If n.Id = "EXPECTED" And n.Values.Exists("Value") Then value = CStr(n.Values("Value"))
-    Next n
-    Set d = AtDefinitionById(p, "Action", "ACTION_FAIL")
-    Dim locator As CAtDefinition: Set locator = AtDefinitionById(p, "Locator", "LOCATION")
-    Set expected = AtAdminDefinition(AtValue(locator, "Sheet"), AtValue(locator, "Address"), AtDefinitionById(p, "Field", "FIELD_VALUE").DisplayName, value, AtValue(d, "Message"), UCase$(AtValue(d, "Trigger")), CLng(AtValue(d, "FillColor")), AtValue(d, "AddNote") = "true")
-    expected.Id = p.Id: expected.Version = p.Version: expected.DisplayName = p.DisplayName
-    If AtToXml(expected) <> AtToXml(p) Then Err.Raise 5, , "Configuration exceeds the supported editor profile; no changes made."
+Public Sub AtUiChanged(ByVal f As Object)
+    If painting Then Exit Sub
+    If editor Is Nothing Then Exit Sub
+    editor.TemplateName = f.txtTemplate.Text: editor.FieldName = f.txtField.Text
+    editor.Address = f.txtAddress.Text: editor.ExpectedText = f.txtExpected.Text: editor.Message = f.txtMessage.Text
+    If f.cboSheet.ListIndex >= 0 Then editor.SheetName = f.cboSheet.Value
+    editor.AddNote = f.chkNote.Value
+    f.lblNavTitle.Caption = editor.TemplateName
+    If f.cboSeverity.ListIndex >= 0 Then editor.Severity = Choose(f.cboSeverity.ListIndex + 1, "ERROR", "WARNING", "INFO")
+    If f.cboColor.ListIndex >= 0 And f.cboColor.ListIndex < 6 Then editor.Color = AtUiColor(f.cboColor.ListIndex)
+    f.lblColorSample.BackColor = editor.Color
+    f.lblWhen.Caption = "Когда выполняется проверка" & vbLf & "По кнопке «Протестировать» для выбранной книги."
+    f.lblWhat.Caption = "Что проверяется" & vbLf & editor.FieldName & " • " & editor.SheetName & "!" & editor.Address & vbLf & "Текст равен: «" & editor.ExpectedText & "»"
+    f.lblExceptions.Caption = "Исключения" & vbLf & "Не настроены. Редактор исключений пока недоступен."
+    f.lblAction.Caption = "Что делать при ошибке" & vbLf & editor.Message & vbLf & "Заливка" & IIf(editor.AddNote, " и внутреннее примечание", "; без примечания")
+    f.lblDetails.Visible = f.cboMode.ListIndex = 1
+    f.lblDetails.Caption = "Подробности: одно поле типа «Текст» → точное сравнение с учётом регистра → отметка при ошибке. Пустое/неверное/недоступное значение не считается успехом. Вложенные условия и исключения пока недоступны."
+    f.lblSaved.Caption = "Изменения в памяти. Для новой редакции выберите новое имя файла."
 End Sub
 
-Private Sub LoadDefinition()
-    Dim path As Variant, candidate As CAtPackage, issues As Collection, registry As New CAtOperationRegistry
-    path = Application.GetOpenFilename("AccessTools XML (*.xml),*.xml")
-    If VarType(path) = vbBoolean Then Exit Sub
-    Set candidate = AtLoad(CStr(path), registry.Catalog, issues)
-    If candidate Is Nothing Then Err.Raise 5, , DiagnosticsText(issues)
-    If AtHasErrors(issues) Then Err.Raise 5, , DiagnosticsText(issues)
-    CheckEditorProfile candidate
-    Set configuration = candidate: Set targetBook = Nothing
-    MsgBox "Loaded. RUN will ask for the target workbook explicitly."
+Public Sub AtUiCommand(ByVal f As Object, ByVal command As String)
+    On Error GoTo Failed
+    Dim path As Variant, book As Object, folder As Object, fso As Object, directory As String, selected As Object, pickError As Long
+    Dim candidate As CAtAdminPreview
+    AtUiChanged f
+    Select Case command
+        Case "SAVE"
+            path = Application.GetSaveAsFilename("Проверка.xml", "Конфигурация (*.xml),*.xml")
+            If VarType(path) = vbBoolean Then Exit Sub
+            editor.SaveFile CStr(path): f.lblSaved.Caption = "Сохранено: " & CStr(path)
+        Case "LOAD"
+            path = Application.GetOpenFilename("Конфигурация (*.xml),*.xml")
+            If VarType(path) = vbBoolean Then Exit Sub
+            AtUiLoadFile f, CStr(path)
+        Case "PICK"
+            Set book = AtUiSelectedBook(f)
+            If f.cboSheet.ListIndex < 0 Then Err.Raise 5, , "Выберите лист."
+            If book.Worksheets(f.cboSheet.Value).Visible <> -1 Then Err.Raise 5, , "Выберите видимый лист."
+            f.Hide: book.Activate: book.Worksheets(f.cboSheet.Value).Activate
+            On Error Resume Next
+            Set selected = Application.InputBox("Выберите одну ячейку поля на выбранном листе", "Выбор поля", Type:=8)
+            pickError = Err.Number: Err.Clear
+            On Error GoTo Failed
+            f.Show 0
+            If selected Is Nothing Then
+                If pickError <> 0 And pickError <> 424 Then Err.Raise pickError
+                Exit Sub
+            End If
+            If Not selected.Parent.Parent Is book Then Err.Raise 5, , "Выберите ячейку в указанной книге."
+            If selected.Parent.Name <> f.cboSheet.Value Or selected.Cells.CountLarge <> 1 Then Err.Raise 5, , "Выберите одну ячейку указанного листа."
+            f.txtAddress.Text = selected.Address(False, False)
+        Case "TEST", "APPLY"
+            Set book = AtUiSelectedBook(f)
+            If command = "TEST" Then
+                Set candidate = editor.Preview(book)
+            Else
+                Set candidate = editor.Preview(book)
+                If editor.NeedsJournal And candidate.Outcome.Status = "FAIL" Then
+                    Set folder = Application.FileDialog(4): folder.Title = "Безопасная локальная папка для нового журнала"
+                    If folder.Show <> -1 Then Exit Sub
+                    Set fso = CreateObject("Scripting.FileSystemObject")
+                    directory = fso.BuildPath(folder.SelectedItems(1), "AccessTools-" & fso.GetTempName): fso.CreateFolder directory
+                End If
+                Set candidate = editor.Apply(book, directory)
+            End If
+            AtUiShowResult candidate
+        Case "CLEAR": f.lblStatus.Caption = editor.Clear(AtUiSelectedBook(f))
+    End Select
+    Exit Sub
+Failed:
+    If Not f.Visible Then f.Show 0
+    f.lblStatus.Caption = Err.Description
 End Sub
 
-Private Sub SaveDefinition()
-    Dim path As Variant, issues As Collection, registry As New CAtOperationRegistry
-    If configuration Is Nothing Then Err.Raise 5, , "Create or load first."
-    path = Application.GetSaveAsFilename("AccessTools-rule.xml", "AccessTools XML (*.xml),*.xml")
-    If VarType(path) = vbBoolean Then Exit Sub
-    If Not AtSaveNew(configuration, CStr(path), registry.Catalog, issues) Then Err.Raise 5, , DiagnosticsText(issues)
-    MsgBox "Saved and round-trip verified: " & CStr(path)
+Public Sub AtUiShowResult(ByVal result As CAtAdminPreview)
+    Load AtAdminResults
+    AtUiFillResult AtAdminResults, result
+    AtUiFit AtAdminResults
+    AtAdminResults.Show 0
 End Sub
 
-Private Sub EnsureJournal(ByVal book As Object)
-    If Not journal Is Nothing Then
-        If journalBook Is book Then Exit Sub
-        Err.Raise 5, , "This session is bound to another workbook. Clear its owned marks before switching."
-    End If
-    Dim folder As Object, fso As Object, path As String
-    Set folder = Application.FileDialog(4)
-    folder.Title = "Choose SAFE LOCAL parent directory for a NEW ownership journal"
-    If folder.Show <> -1 Then Err.Raise 5, , "Journal selection cancelled."
-    Set fso = CreateObject("Scripting.FileSystemObject")
-    path = fso.BuildPath(folder.SelectedItems(1), "AccessTools-" & fso.GetTempName)
-    fso.CreateFolder path
-    Set journal = AtNewOwnershipJournal(book, path): Set journalBook = book
-    MsgBox "Live-session journal: " & path & vbLf & "Never automatically reused after session loss."
+Public Sub AtUiFillResult(ByVal form As Object, ByVal result As CAtAdminPreview)
+    With form
+        .lblResult.Caption = result.Summary
+        .txtTarget.Text = result.Target: .txtActual.Text = result.ActualText
+        .txtRemark.Text = result.InitiatorText
+        .txtActions.Text = result.Actions: .txtOutput.Text = result.Output
+        .txtDiagnostic.Text = result.Diagnostics & vbLf & result.Outcome.Result.State
+        .cmdCopy.Enabled = Len(result.InitiatorText) > 0
+        .lblCopy.Caption = ""
+    End With
 End Sub
 
-Private Sub RunDefinition()
-    Dim book As Object, resolver As CAtExcelResolver, context As CAtEvalContext, outcome As CAtRuleOutcome
-    Dim issues As Collection, intents As Collection, plan As CAtActionPlan, receipts As Collection, receipt As CAtActionReceipt, text As String
-    If configuration Is Nothing Then Err.Raise 5, , "Create or load first."
-    Set book = PickBook(): If book Is Nothing Then Exit Sub
-    Set resolver = AtNewExcelResolver(configuration, "TEMPLATE", AtDictionary())
-    Set context = resolver.Resolve(book, issues)
-    If context Is Nothing Then Err.Raise 5, , DiagnosticsText(issues)
-    Set outcome = AtEvaluateRule(configuration, "RULE_EQUAL", context)
-    If outcome.Status = "CANNOT_EVALUATE" Then
-        MsgBox outcome.Status & " / " & outcome.Result.State & vbLf & DiagnosticsText(outcome.Result.Diagnostics) & vbLf & "Existing marks retained.", vbExclamation
-        Exit Sub
-    End If
-    EnsureJournal book
-    Set intents = AtOutcomeIntents(configuration, outcome)
-    runNumber = runNumber + 1
-    Set plan = AtPlanActions(book, intents, "RUN_" & runNumber, journal)
-    text = "Condition: " & outcome.Status & vbLf & "Output plan: " & plan.Status & " " & plan.Code & " " & plan.Message
-    If plan.Status = "READY" Then
-        Set receipts = AtApplyPlan(plan, journal)
-        For Each receipt In receipts
-            text = text & vbLf & receipt.Status & " " & receipt.Code & " " & receipt.Message
-        Next receipt
-    End If
-    If outcome.Status = "FAIL" Then text = text & vbLf & AtValue(AtDefinitionById(configuration, "Action", "ACTION_FAIL"), "Message")
-    MsgBox text, vbInformation, "AccessTools results"
-End Sub
-
-Private Sub ClearDefinition()
-    Dim receipts As Collection, receipt As CAtActionReceipt, text As String, complete As Boolean
-    If journal Is Nothing Then Err.Raise 5, , "No owned marks in this session."
-    runNumber = runNumber + 1: Set receipts = AtClearOwned(journalBook, journal, "CLEAR_" & runNumber)
-    complete = True
-    For Each receipt In receipts
-        text = text & receipt.Status & " " & receipt.Code & vbLf
-        If receipt.Status <> "ROLLED_BACK" And receipt.Status <> "SKIPPED" Then complete = False
-    Next receipt
-    MsgBox text
-    If complete And Not journal.RecoveryRequired Then
-        Set journal = Nothing: Set journalBook = Nothing
-    End If
-End Sub
-
-Private Function DiagnosticsText(ByVal issues As Collection) As String
-    Dim issue As Variant
-    For Each issue In issues
-        DiagnosticsText = DiagnosticsText & issue("Code") & ": " & issue("Message") & vbLf
-    Next issue
+Public Function AtAdminUiSmoke() As String
+    Load AtAdminMain
+    Load AtAdminResults
+    AtUiFill AtAdminMain
+    AtAdminUiSmoke = "READY|" & AtAdminMain.Caption & "|" & AtAdminMain.Controls.Count & "|" & AtAdminResults.Controls.Count
 End Function
+
+Public Sub AtUiCopyRemark()
+    On Error GoTo Failed
+    If AtAdminResults.txtRemark.Text = "" Then Exit Sub
+    Dim clipboard As New MSForms.DataObject
+    ' Copy exactly the displayed initiator-only text, never a hidden candidate.
+    clipboard.SetText AtAdminResults.txtRemark.Text: clipboard.PutInClipboard
+    AtAdminResults.lblCopy.Caption = "Текст замечания скопирован без служебной информации."
+    Exit Sub
+Failed:
+    AtAdminResults.lblCopy.Caption = "Не удалось скопировать. Выделите текст замечания и нажмите Ctrl+C."
+End Sub

@@ -1,4 +1,4 @@
-param([Parameter(Mandatory=$true)][string]$OutputPath)
+﻿param([Parameter(Mandatory=$true)][string]$OutputPath)
 $ErrorActionPreference = 'Stop'
 $repo = Split-Path $PSScriptRoot -Parent
 $destination = [IO.Path]::GetFullPath($OutputPath)
@@ -12,27 +12,32 @@ try {
     $excel.Visible = $false; $excel.DisplayAlerts = $false; $excel.AutomationSecurity = 3
     $book = $excel.Workbooks.Add()
     $project = $book.VBProject
-    foreach ($file in Get-ChildItem (Join-Path $repo 'src') -File | Where-Object { $_.Extension -in '.bas','.cls' }) {
-        $source = [IO.File]::ReadAllText($file.FullName)
-        $name = [regex]::Match($source,'Attribute VB_Name = "([^"]+)"').Groups[1].Value
-        if (-not $name) { throw "Missing module name: $file" }
-        $source = ($source -split "`r?`n" | Where-Object { $_ -notmatch '^(Attribute |VERSION |BEGIN$|END$|  MultiUse)' }) -join "`r`n"
-        $component = $project.VBComponents.Add($(if ($file.Extension -eq '.cls') {2} else {1}))
-        $component.Name = $name; $component.CodeModule.AddFromString($source)
-        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($component)
-    }
-    $sheet = $book.Worksheets(1); $sheet.Name = 'AccessTools Admin'
-    $sheet.Range('A1').Value2 = 'AccessTools: Text equality editor'
-    $sheet.Range('A3').Value2 = 'Open a synthetic target workbook, then click Open editor.'
-    $sheet.Range('A4').Value2 = 'NEW -> SAVE -> CLOSE -> LOAD -> RUN. XML/AST editing is not required.'
-    $sheet.Range('A5').Value2 = '.xlsx supports fill only; Notes require the tested .xls profile.'
-    $sheet.Range('A6').Value2 = 'Correct inputs before RUN. Changed annotation/structure or inputs changed after planning block writes.'
-    $sheet.Range('A7').Value2 = 'Keep this macro host open until owned marks are cleared. No automatic recovery after session loss.'
-    $sheet.Columns.Item(1).ColumnWidth = 110
-    $button = $sheet.Buttons().Add(20,150,180,35)
-    $button.Caption = 'Open editor'
-    $button.OnAction = "'" + [IO.Path]::GetFileName($destination).Replace("'","''") + "'!AtAdminOpen"
+    . (Join-Path $PSScriptRoot 'Import-AtProject.ps1')
+    $null = Import-AtProject $project $repo
+    $sheet = $book.Worksheets(1); $sheet.Name = 'AccessTools'
+    $sheet.Range('A1').Value2 = 'AccessTools 2 — конструктор проверок'
+    $sheet.Range('A3').Value2 = 'Откройте другую книгу Excel с тестовыми данными. Нажмите «Открыть конструктор».'
+    $sheet.Range('A4').Value2 = 'Настройте поле и условие справа. Сначала используйте «Протестировать» — книга не изменится.'
+    $sheet.Range('A5').Value2 = '«Нанести отметки» — отдельное действие. В .xlsx доступны только заливки, без примечаний.'
+    $sheet.Range('A6').Value2 = 'Сохраняйте новые редакции в новые файлы. Не закрывайте эту книгу до очистки своих отметок.'
+    $sheet.Range('A7').Value2 = 'Восстановление журнала после потери сессии автоматически не выполняется.'
+    $sheet.Range('A1').Font.Size = 20
+    $sheet.Columns.Item(1).ColumnWidth = 120
+    $sheet.Rows.Item(1).RowHeight = 36
+    $button = $sheet.Buttons().Add(20,160,250,40)
+    $button.Caption = 'Открыть конструктор'
     $book.SaveAs($destination, 52)
+    # SaveAs can rewrite a pre-save OnAction. Bind using the ACTUAL final name.
+    $expectedAction = "'" + $book.Name.Replace("'","''") + "'!AtAdminOpen"
+    $button.OnAction = $expectedAction
+    $book.Save()
+    if ($button.OnAction -ne $expectedAction) { throw 'Launch binding mismatch.' }
+    foreach ($name in 'AtAdminMain','AtAdminResults') {
+        if ($project.VBComponents.Item($name).Type -ne 3) { throw "Missing UserForm: $name" }
+    }
+    $smoke = [string]$excel.Run(("'" + $book.Name.Replace("'","''") + "'!AtAdminUiSmoke"))
+    if (-not $smoke.StartsWith('READY|')) { throw "Form initialization failed: $smoke" }
+    Write-Output $smoke
     Write-Output "Created: $destination"
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }

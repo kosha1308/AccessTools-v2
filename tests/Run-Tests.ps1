@@ -38,19 +38,8 @@ try {
     $excel.Visible = $false; $excel.DisplayAlerts = $false; $excel.AutomationSecurity = 3
     $book = $excel.Workbooks.Add()
     $project = $book.VBProject
-    $files = @()
-    if (Test-Path (Join-Path $repo 'src')) { $files += Get-ChildItem (Join-Path $repo 'src') -File | Where-Object { $_.Extension -in '.bas','.cls' } }
-    $files += Get-ChildItem $PSScriptRoot -Filter '*.bas'
-    foreach ($file in $files) {
-        $source = [IO.File]::ReadAllText($file.FullName)
-        $moduleName = [regex]::Match($source,'Attribute VB_Name = "([^"]+)"').Groups[1].Value
-        if (-not $moduleName) { throw "Missing module name: $file" }
-        $source = ($source -split "`r?`n" | Where-Object { $_ -notmatch '^(Attribute |VERSION |BEGIN$|END$|  MultiUse)' }) -join "`r`n"
-        $component = $project.VBComponents.Add($(if ($file.Extension -eq '.cls') {2} else {1}))
-        $component.Name = $moduleName
-        $component.CodeModule.AddFromString($source)
-        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($component)
-    }
+    . (Join-Path $repo 'tools/Import-AtProject.ps1')
+    $files = @(Import-AtProject $project $repo -IncludeTests)
     $book.Activate()
     "Excel=$($excel.Version); Build=$($excel.Build); OS=$($excel.OperatingSystem); DeveloperHostBits=$([IntPtr]::Size * 8)" | Set-Content (Join-Path $RunDirectory 'host.txt')
     $sha = [Security.Cryptography.SHA256]::Create()
@@ -84,6 +73,10 @@ try {
     $adminResult | Set-Content (Join-Path $RunDirectory 'admin-result.txt')
     Write-Output $adminResult
     if (-not $adminResult.StartsWith('PASS|')) { throw $adminResult }
+    $visualResult = [string]$excel.Run("'"+$book.Name+"'!AtRunVisualTests", $repo, $RunDirectory)
+    $visualResult | Set-Content (Join-Path $RunDirectory 'visual-result.txt')
+    Write-Output $visualResult
+    if (-not $visualResult.StartsWith('PASS|')) { throw $visualResult }
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }
     if ($excel) { $excel.Quit(); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) }

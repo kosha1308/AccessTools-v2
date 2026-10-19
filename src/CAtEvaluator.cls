@@ -25,7 +25,7 @@ Public Function Evaluate(ByVal package As CAtPackage, ByVal expressionId As Stri
         If d.Kind = "Expression" And d.Id = expressionId Then Set expression = d
     Next d
     If expression Is Nothing Then Set r = Failure("Text", "ERROR", "", "E_EXPRESSION", "Expression does not exist."): GoTo Done
-    If package.SchemaVersion <> "2.0.0" Then Set r = Failure(AtValue(expression, "ReturnType"), "ERROR", expression.RootNodeId, "E_SCHEMA", "Only validated schema 2.0.0 AST may execute."): GoTo Done
+    If package.SchemaVersion <> "2.0.0" And package.SchemaVersion <> "3.0.0" Then Set r = Failure(AtValue(expression, "ReturnType"), "ERROR", expression.RootNodeId, "E_SCHEMA", "Only validated schema 2.0.0/3.0.0 AST may execute."): GoTo Done
     If context.PackageId <> package.Id Or context.PackageVersion <> package.Version Or context.TemplateId <> expression.ScopeTemplateId Then
         Set r = Failure(AtValue(expression, "ReturnType"), "ERROR", expression.RootNodeId, "E_CONTEXT", "Snapshot package/version/template mismatch."): GoTo Done
     End If

@@ -118,7 +118,7 @@ Private Sub TestFixtures(ByVal repo As String, ByVal scratch As String)
     Check q Is Nothing And Has(issues, "XML_SHAPE"), "no silent v2 as legacy"
     p.SchemaVersion = "1.0.0": Expect p, cat, "AST_SCHEMA", "ROOT", "memory AST forbidden in legacy"
     p.SchemaVersion = "2.0.0"
-    Set q = AtFromXml(Replace(xml, "schemaVersion=""2.0.0""", "schemaVersion=""3.0.0"""), cat, issues)
+    Set q = AtFromXml(Replace(xml, "schemaVersion=""2.0.0""", "schemaVersion=""99.0.0"""), cat, issues)
     Check q Is Nothing And Has(issues, "SCHEMA_VERSION"), "unknown AST schema"
     Set q = AtFromXml("<!DOCTYPE package [<!ENTITY x SYSTEM 'file:///C:/not-read'>]>" & xml, cat, issues)
     Check q Is Nothing And Has(issues, "XML_INVALID"), "AST DTD rejected"

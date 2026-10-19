@@ -7,6 +7,9 @@ if (-not $Worker) {
     $hostExe = Join-Path $env:WINDIR 'System32/WindowsPowerShell/v1.0/powershell.exe'
     $arguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+$PSCommandPath+'"'),'-Worker','-RunDirectory',('"'+$run+'"'))
     $p = Start-Process $hostExe -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $run 'stdout.txt') -RedirectStandardError (Join-Path $run 'stderr.txt')
+    # Hold the process handle before exit; Windows PowerShell otherwise may
+    # expose a null ExitCode after WaitForExit despite completed output files.
+    $workerHandle = $p.Handle
     if (-not $p.WaitForExit(90000)) {
         $ownerFile = Join-Path $run 'excel-owner.json'
         if (Test-Path $ownerFile) {
@@ -17,6 +20,8 @@ if (-not $Worker) {
         Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
         throw "Excel test timeout; evidence: $run"
     }
+    $p.Refresh()
+    [string]$p.ExitCode | Set-Content (Join-Path $run 'worker-exit.txt')
     Get-Content (Join-Path $run 'stdout.txt')
     if ($p.ExitCode -ne 0) { Get-Content (Join-Path $run 'stderr.txt'); throw "Tests failed; evidence: $run" }
     Write-Output "Evidence: $run"
@@ -75,7 +80,13 @@ try {
     $writerResult | Set-Content (Join-Path $RunDirectory 'writer-result.txt')
     Write-Output $writerResult
     if (-not $writerResult.StartsWith('PASS|')) { throw $writerResult }
+    $adminResult = [string]$excel.Run("'"+$book.Name+"'!AtRunAdminTests", $repo, $RunDirectory)
+    $adminResult | Set-Content (Join-Path $RunDirectory 'admin-result.txt')
+    Write-Output $adminResult
+    if (-not $adminResult.StartsWith('PASS|')) { throw $adminResult }
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }
     if ($excel) { $excel.Quit(); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) }
 }
+# Successful completion is explicit; an exception above still terminates with failure.
+exit 0

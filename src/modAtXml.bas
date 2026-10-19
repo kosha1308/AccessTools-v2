@@ -18,7 +18,7 @@ End Function
 Public Function AtToXml(ByVal p As CAtPackage) As String
     Dim dom As Object, root As Object, list As Object, node As Object, group As Object
     Dim item As Object, d As CAtDefinition, prop As Variant, r As Variant, dep As Variant
-    If p.SchemaVersion <> "1.0.0" And p.SchemaVersion <> "2.0.0" Then Err.Raise 5, , "Unsupported schema"
+    If p.SchemaVersion <> "1.0.0" And p.SchemaVersion <> "2.0.0" And p.SchemaVersion <> "3.0.0" Then Err.Raise 5, , "Unsupported schema"
     Set dom = NewDom()
     dom.appendChild dom.createProcessingInstruction("xml", "version=""1.0"" encoding=""UTF-8""")
     Set root = Element(dom, dom, "package")
@@ -47,7 +47,7 @@ Public Function AtToXml(ByVal p As CAtPackage) As String
         For Each dep In d.Dependencies
             Set item = Element(dom, group, "dependency"): Attr item, "id", CStr(dep)
         Next dep
-        If p.SchemaVersion = "2.0.0" And d.Kind = "Expression" Then WriteAst dom, node, d
+        If p.SchemaVersion <> "1.0.0" And d.Kind = "Expression" Then WriteAst dom, node, d
     Next d
     AtToXml = dom.XML
 End Function
@@ -132,7 +132,7 @@ Private Function Decode(ByVal dom As Object, ByVal catalog As Object, ByRef diag
     Set root = dom.documentElement
     Shape root, "package", "schemaVersion|id|version|displayName|state|publishedBy|publishedAt"
     schema = ReadAttr(root, "schemaVersion")
-    If schema <> "1.0.0" And schema <> "2.0.0" Then
+    If schema <> "1.0.0" And schema <> "2.0.0" And schema <> "3.0.0" Then
         AtProblem diagnostics, "SCHEMA_VERSION", "Package", "SchemaVersion", CStr(ReadAttr(root, "schemaVersion")), "This schema version is not supported. No definitions were interpreted.": Exit Function
     End If
     Set p = AtNewPackage(ReadAttr(root, "id"), ReadAttr(root, "displayName"))
@@ -179,14 +179,14 @@ Private Function Decode(ByVal dom As Object, ByVal catalog As Object, ByRef diag
                                 End If
                             Next item
                         Case "ast"
-                            If schema <> "2.0.0" Or d.Kind <> "Expression" Then Err.Raise 5
+                            If schema = "1.0.0" Or d.Kind <> "Expression" Then Err.Raise 5
                             ReadAst group, d, nodeId
                         Case Else: Err.Raise 5
                     End Select
                 End If
             Next group
-            If groups.Count <> IIf(schema = "2.0.0" And d.Kind = "Expression", 4, 3) Then Err.Raise 5
-            If schema = "2.0.0" And d.Kind = "Expression" And Not groups.Exists("ast") Then Err.Raise 5
+            If groups.Count <> IIf(schema <> "1.0.0" And d.Kind = "Expression", 4, 3) Then Err.Raise 5
+            If schema <> "1.0.0" And d.Kind = "Expression" And Not groups.Exists("ast") Then Err.Raise 5
             p.Definitions.Add d
         End If
     Next node

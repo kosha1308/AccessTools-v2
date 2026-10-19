@@ -63,6 +63,10 @@ try {
     $astResult | Set-Content (Join-Path $RunDirectory 'ast-result.txt')
     Write-Output $astResult
     if (-not $astResult.StartsWith('PASS|')) { throw $astResult }
+    $evalResult = [string]$excel.Run("'"+$book.Name+"'!AtRunEvalTests", $repo, $RunDirectory)
+    $evalResult | Set-Content (Join-Path $RunDirectory 'eval-result.txt')
+    Write-Output $evalResult
+    if (-not $evalResult.StartsWith('PASS|')) { throw $evalResult }
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }
     if ($excel) { $excel.Quit(); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) }

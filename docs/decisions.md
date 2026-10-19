@@ -1,5 +1,9 @@
 # Архитектурные решения
 
+## PR-04 — scalar Evaluator и EvaluationRequirements
+
+По отдельному заданию владельца реализованы существующие scalar nodes, immutable field snapshot, exact compiled OperationRegistry (четыре общие операции), bounded trace и runtime budgets. [Контракт и ограничения](pr04-evaluator.md): StateIs сохраняет обязательные технические ошибки; IsComplete не равен PASS. XML 1.0.0/2.0.0 не меняются, legacy не исполняется. 172 прежние +84 runtime assertions проверены в Excel x64; Office x86 не проверен. Resolver/Writer/UI/табличное исполнение не созданы, PR-05 не начат. Записи PR-03 ниже описывают историческую границу своего этапа.
+
 ## PR-03 — типизированная структура AST / схема 2.0.0
 
 Реализовано по отдельному заданию владельца; детали для ревью — [контракт PR-03](pr03-typed-ast.md). Flat tree, lexical bindings, доверенные exact operation signatures; структурная типизация без исполнения. Schema 1.0.0 сохраняет deferred-смысл и не обновляется автоматически. Проверены 96 legacy + 76 AST assertions в Excel x64, Office x86 не проверен. Состояния и будущая completeness не означают реализованный Evaluator или разрешение PASS. PR-04 не начат.

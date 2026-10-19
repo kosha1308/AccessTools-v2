@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="urn:accesstools:definitions:1" schemaVersion="1.0.0" id="SIMPLE_PACKAGE" version="1.0.0" displayName="Synthetic simple template" state="Draft" publishedBy="" publishedAt="">
+  <definitions>
+    <definition kind="Template" id="SIMPLE" version="1.0.0" displayName="Simple">
+      <properties/><references/><dependencies/>
+    </definition>
+    <definition kind="Locator" id="LOC_NAME" version="1.0.0" displayName="Name location">
+      <properties><property name="Strategy" value="A1"/><property name="Sheet" value="Request"/><property name="Address" value="B8"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Field" id="FIELD_NAME" version="1.0.0" displayName="Name">
+      <properties><property name="DataType" value="Text"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/><ref role="Locator" kind="Locator" id="LOC_NAME" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Locator" id="LOC_NOTE" version="1.0.0" displayName="Note location">
+      <properties><property name="Strategy" value="A1"/><property name="Sheet" value="Request"/><property name="Address" value="D12"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Field" id="FIELD_NOTE" version="1.0.0" displayName="Note">
+      <properties><property name="DataType" value="Text"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/><ref role="Locator" kind="Locator" id="LOC_NOTE" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Expression" id="EXPR_REQUIRED" version="1.0.0" displayName="Deferred predicate">
+      <properties><property name="ReturnType" value="Bool"/><property name="Deferred" value="true"/></properties><references/><dependencies/>
+    </definition>
+    <definition kind="Rule" id="RULE_REQUIRED" version="1.0.0" displayName="Synthetic rule reference">
+      <properties/>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/><ref role="Expression" kind="Expression" id="EXPR_REQUIRED" version="1.0.0" expectedType="Bool"/><ref role="Field" kind="Field" id="FIELD_NAME" version="1.0.0" expectedType="Text"/><ref role="Operation" kind="Operation" id="OP_TEST" version="1.0.0" expectedType="Bool"/></references><dependencies/>
+    </definition>
+    <definition kind="Action" id="ACTION_REQUIRED" version="1.0.0" displayName="Synthetic action metadata">
+      <properties><property name="Trigger" value="Warning"/><property name="Audience" value="Initiator"/><property name="Channel" value="Results"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="SIMPLE" version="1.0.0" expectedType=""/><ref role="Rule" kind="Rule" id="RULE_REQUIRED" version="1.0.0" expectedType=""/><ref role="Field" kind="Field" id="FIELD_NOTE" version="1.0.0" expectedType="Text"/></references><dependencies/>
+    </definition>
+  </definitions>
+</package>

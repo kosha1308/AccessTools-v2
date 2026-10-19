@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<package xmlns="urn:accesstools:definitions:1" schemaVersion="1.0.0" id="RETURN_PACKAGE" version="1.0.0" displayName="Synthetic equipment return" state="Draft" publishedBy="" publishedAt="">
+  <definitions>
+    <definition kind="Template" id="EQUIPMENT_RETURN" version="1.0.0" displayName="Equipment return"><properties/><references/><dependencies/></definition>
+    <definition kind="Locator" id="LOC_ITEMS" version="1.0.0" displayName="Items area">
+      <properties><property name="Strategy" value="A1"/><property name="Sheet" value="Return"/><property name="Address" value="A5:C50"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="EQUIPMENT_RETURN" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Table" id="ITEMS" version="1.0.0" displayName="Items">
+      <properties/><references><ref role="OwnerTemplate" kind="Template" id="EQUIPMENT_RETURN" version="1.0.0" expectedType=""/><ref role="Locator" kind="Locator" id="LOC_ITEMS" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Column" id="ITEM_CODE" version="1.0.0" displayName="Item code">
+      <properties><property name="DataType" value="Text"/></properties>
+      <references><ref role="OwnerTable" kind="Table" id="ITEMS" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Source" id="CATALOG" version="1.0.0" displayName="Shared equipment catalog">
+      <properties><property name="Adapter" value="Excel"/><property name="FileName" value="synthetic-catalog.xlsx"/><property name="Sheet" value="Catalog"/></properties><references/><dependencies/>
+    </definition>
+    <definition kind="Column" id="CATALOG_CODE" version="1.0.0" displayName="Catalog code">
+      <properties><property name="DataType" value="Text"/></properties>
+      <references><ref role="OwnerSource" kind="Source" id="CATALOG" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+    <definition kind="Binding" id="CATALOG_BINDING" version="1.0.0" displayName="Code lookup binding">
+      <properties/><references><ref role="OwnerTemplate" kind="Template" id="EQUIPMENT_RETURN" version="1.0.0" expectedType=""/><ref role="Source" kind="Source" id="CATALOG" version="1.0.0" expectedType=""/><ref role="Column" kind="Column" id="CATALOG_CODE" version="1.0.0" expectedType="Text"/></references><dependencies/>
+    </definition>
+    <definition kind="Expression" id="EXPR_RETURN" version="1.0.0" displayName="Deferred return predicate">
+      <properties><property name="ReturnType" value="Bool"/><property name="Deferred" value="true"/></properties><references/><dependencies/>
+    </definition>
+    <definition kind="Rule" id="RULE_RETURN" version="1.0.0" displayName="Synthetic return rule">
+      <properties/><references><ref role="OwnerTemplate" kind="Template" id="EQUIPMENT_RETURN" version="1.0.0" expectedType=""/><ref role="Expression" kind="Expression" id="EXPR_RETURN" version="1.0.0" expectedType="Bool"/><ref role="Table" kind="Table" id="ITEMS" version="1.0.0" expectedType=""/><ref role="Operation" kind="Operation" id="OP_TEST" version="1.0.0" expectedType="Bool"/></references><dependencies/>
+    </definition>
+    <definition kind="Action" id="ACTION_RETURN" version="1.0.0" displayName="Return action metadata">
+      <properties><property name="Trigger" value="Info"/><property name="Audience" value="Coordinator"/><property name="Channel" value="Report"/></properties>
+      <references><ref role="OwnerTemplate" kind="Template" id="EQUIPMENT_RETURN" version="1.0.0" expectedType=""/><ref role="Rule" kind="Rule" id="RULE_RETURN" version="1.0.0" expectedType=""/></references><dependencies/>
+    </definition>
+  </definitions>
+</package>

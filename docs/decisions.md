@@ -1,5 +1,9 @@
 # Архитектурные решения
 
+## PR-05 — read-only Excel Resolver
+
+По отдельному заданию владельца добавлено чтение явно переданной книги через существующие LocatorDefinition: A1, абсолютные DefinedName, LabelOffset и ограниченный scalar TableColumn; bounded table snapshots и immutable context. [Контракт и ограничения](pr05-excel-resolver.md): физические offsets столбцов передаются явно хостом, существующие XML-схемы не расширены; скалярные MergeArea читаются сверху слева, любые объединения в границах таблицы дают CONFLICT. В Excel x64 проверены 256 прежних +115 новых assertions; Office x86 и ручная приёмка не подтверждены. Writer/UI/внешние адаптеры/табличное исполнение не созданы. PR-06 не начат; записи ниже сохраняют исторические границы своих этапов.
+
 ## PR-04 — scalar Evaluator и EvaluationRequirements
 
 По отдельному заданию владельца реализованы существующие scalar nodes, immutable field snapshot, exact compiled OperationRegistry (четыре общие операции), bounded trace и runtime budgets. [Контракт и ограничения](pr04-evaluator.md): StateIs сохраняет обязательные технические ошибки; IsComplete не равен PASS. XML 1.0.0/2.0.0 не меняются, legacy не исполняется. 172 прежние +84 runtime assertions проверены в Excel x64; Office x86 не проверен. Resolver/Writer/UI/табличное исполнение не созданы, PR-05 не начат. Записи PR-03 ниже описывают историческую границу своего этапа.

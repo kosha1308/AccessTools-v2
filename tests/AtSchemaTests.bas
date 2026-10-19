@@ -14,6 +14,7 @@ Public Function AtRunSchemaTests(ByVal repo As String, ByVal scratch As String) 
     Set p = Application.Run("'" & ThisWorkbook.Name & "'!AtNewPackage", "SIMPLE", "Simple")
     TestModels repo, scratch
     TestValidationEdges repo
+    TestNameRegressions repo
     WriteText scratch & "\assertions.txt", transcript
     AtRunSchemaTests = IIf(failed = 0, "PASS|", "FAIL|") & passed & "|" & failed & "|" & failures & "|" & HostBits()
     Exit Function
@@ -224,6 +225,49 @@ Private Function FileBytes(ByVal path As String) As String
     Close #handle
     FileBytes = buffer
 End Function
+
+Private Sub TestNameRegressions(ByVal repo As String)
+    Dim p As CAtPackage, d As Collection, cat As Object, x As CAtDefinition, value As Variant
+    Set cat = AtDictionary(): cat.Add "OP_TEST@1.0.0", "Bool"
+    Set p = AtLoad(repo & "\tests\fixtures\simple.xml", cat, d)
+    Set x = Entity(p, "LOC_NAME")
+    x.Values.Remove "Address": x.Values("Strategy") = "DefinedName"
+    For Each value In Array("R1C1", "R2C3", "r1c1", "RC", "rc", "R1C", "RC1", "R", "c", "A1", "a1")
+        x.Values("DefinedName") = CStr(value)
+        Expect p, cat, "LOCATOR_NAME", "reserved DefinedName " & value
+    Next value
+    For Each value In Array("R1C1_NOTE", "_R1C1", "REQUEST_NAME", "RC_NOTE")
+        x.Values("DefinedName") = CStr(value): Set d = AtValidate(p, cat)
+        Check Not AtHasErrors(d), "allowed DefinedName " & value
+    Next value
+    Set p = AtLoad(repo & "\tests\fixtures\equipment-return.xml", cat, d)
+    Set x = Entity(p, "CATALOG")
+    Dim i As Long, ok As Boolean
+    ok = True
+    For i = 0 To 31
+        x.Values("FileName") = "catalog" & ChrW(i) & ".xlsx": Set d = AtValidate(p, cat)
+        If Not HasCode(d, "SOURCE_PATH") Then ok = False
+    Next i
+    Check ok, "FileName rejects all controls U+0000-U+001F"
+    ok = True
+    For Each value In Array("CON", "nul.xlsx", "PrN.csv", "AUX.backup.xlsx", "COM1", "com9.xlsx", "LPT1.txt", "Lpt9", "COM" & ChrW(&HB9) & ".xlsx", "LPT" & ChrW(&HB2), "COM" & ChrW(&HB3), "CON .xlsx")
+        x.Values("FileName") = CStr(value): Set d = AtValidate(p, cat)
+        If Not HasCode(d, "SOURCE_PATH") Then ok = False
+    Next value
+    Check ok, "FileName rejects device names regardless of case and extension"
+    ok = True
+    For Each value In Array("catalog.xlsx", "CONTRACT.xlsx", "NUL_data.xlsx", "COM10.xlsx", "LPT0.csv", "archive.backup.xlsx")
+        x.Values("FileName") = CStr(value): Set d = AtValidate(p, cat)
+        If AtHasErrors(d) Then ok = False
+    Next value
+    Check ok, "FileName allows ordinary names without blanket device prefix ban"
+    ok = True
+    For Each value In Array("sub\catalog.xlsx", "catalog.xlsx ", "catalog.xlsx.", "bad?.xlsx")
+        x.Values("FileName") = CStr(value): Set d = AtValidate(p, cat)
+        If Not HasCode(d, "SOURCE_PATH") Then ok = False
+    Next value
+    Check ok, "FileName retains existing leaf restrictions"
+End Sub
 
 Private Sub WriteText(ByVal path As String, ByVal text As String)
     Dim fso As Object, file As Object

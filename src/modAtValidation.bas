@@ -125,7 +125,7 @@ Private Sub ValidateProperties(ByVal d As CAtDefinition, ByVal issues As Collect
         Case "Source"
             If AtValue(d, "Adapter") <> "Excel" Then AtProblem issues, "SOURCE_ADAPTER", d.Id, "Adapter", AtValue(d, "Adapter"), "This structural schema supports Excel source metadata."
             Required d, "Sheet", issues: Required d, "FileName", issues
-            If Not SafeLeaf(AtValue(d, "FileName")) Then AtProblem issues, "SOURCE_PATH", d.Id, "FileName", "Not a leaf file name", "Store a file name only; choosing a trusted source path is a separate host responsibility."
+            If Not SafeLeaf(AtValue(d, "FileName")) Then AtProblem issues, "SOURCE_PATH", d.Id, "FileName", "Invalid Windows leaf file name", "Use a file name without paths, control characters or reserved Windows device names."
         Case "Locator"
             Required d, "Sheet", issues
             strategy = AtValue(d, "Strategy")
@@ -355,16 +355,48 @@ Private Function SafeName(ByVal text As String) As Boolean
         c = Mid$(text, i, 1)
         If Not (c Like "[A-Za-z_]" Or (i > 1 And c Like "[0-9.]")) Then Exit Function
     Next i
-    If UCase$(text) = "R" Or UCase$(text) = "C" Then Exit Function
+    If UCase$(text) = "R" Or UCase$(text) = "C" Or R1C1Reference(text) Then Exit Function
     SafeName = True
 End Function
 
+Private Function R1C1Reference(ByVal text As String) As Boolean
+    Dim separator As Long
+    text = UCase$(text)
+    If Left$(text, 1) <> "R" Then Exit Function
+    separator = InStr(2, text, "C", vbBinaryCompare)
+    If separator = 0 Then Exit Function
+    ' Match the whole reference, never a prefix such as R1C1_NOTE.
+    R1C1Reference = ReferencePart(Mid$(text, 2, separator - 2), 1048576) And ReferencePart(Mid$(text, separator + 1), 16384)
+End Function
+
+Private Function ReferencePart(ByVal text As String, ByVal maximum As Long) As Boolean
+    If text = "" Then ReferencePart = True: Exit Function ' Relative row/column: RC.
+    If Not Digits(text) Then Exit Function
+    Do While Len(text) > 1 And Left$(text, 1) = "0"
+        text = Mid$(text, 2)
+    Loop
+    If Len(text) > 7 Then Exit Function
+    ReferencePart = CLng(text) >= 1 And CLng(text) <= maximum
+End Function
+
 Private Function SafeLeaf(ByVal text As String) As Boolean
-    Dim c As Variant
+    Dim c As Variant, i As Long, stem As String, suffix As String
     If Len(text) = 0 Or Len(text) > 255 Or text = "." Or text = ".." Then Exit Function
     For Each c In Array("\", "/", ":", "*", "?", """", "<", ">", "|")
         If InStr(text, CStr(c)) > 0 Then Exit Function
     Next c
+    For i = 1 To Len(text)
+        If AscW(Mid$(text, i, 1)) >= 0 And AscW(Mid$(text, i, 1)) < 32 Then Exit Function
+    Next i
+    stem = UCase$(RTrim$(Split(text, ".")(0)))
+    Select Case stem
+        Case "CON", "NUL", "PRN", "AUX": Exit Function
+    End Select
+    If Len(stem) = 4 And (Left$(stem, 3) = "COM" Or Left$(stem, 3) = "LPT") Then
+        suffix = Right$(stem, 1)
+        ' Windows also recognizes ISO-8859-1 superscript 1, 2, 3 as device digits.
+        If suffix Like "[1-9]" Or suffix = ChrW(&HB9) Or suffix = ChrW(&HB2) Or suffix = ChrW(&HB3) Then Exit Function
+    End If
     SafeLeaf = Right$(text, 1) <> "." And Right$(text, 1) <> " "
 End Function
 

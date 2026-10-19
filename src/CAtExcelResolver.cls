@@ -76,8 +76,8 @@ Private Function FieldValue(ByVal workbook As Object, ByVal fieldId As String) A
             Set r = AtExcelFailure(typeName, "INVALID", fieldId, "R_TABLE_SHEET", "TableColumn sheet must match the table bounds locator."): GoTo Done
         End If
         Set table = TableValue(workbook, RefId(locator, "Table"))
-        If table.Status.State <> "OK" Then
-            Set failure = table.Status
+        If table.StructuralStatus.State <> "OK" Then
+            Set failure = table.StructuralStatus
         ElseIf table.RowCount <> 1 Then
             Set failure = AtExcelFailure("Text", "CONFLICT", fieldId, "R_CARDINALITY", "Table column is not scalar; no implicit first row or aggregation.")
         Else

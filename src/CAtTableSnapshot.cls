@@ -6,13 +6,14 @@ Attribute VB_Name = "CAtTableSnapshot"
 Option Explicit
 
 Private mId As String, mStartRow As Long, mRows As Collection, mColumns As Collection
-Private mStatus As CAtEvalResult
+Private mStatus As CAtEvalResult, mStructuralStatus As CAtEvalResult
 
 Friend Sub Initialize(ByVal id As String, ByVal startRow As Long, ByVal columns As Collection, ByVal status As CAtEvalResult)
     mId = id: mStartRow = startRow: Set mColumns = New Collection: Set mRows = New Collection
     Dim item As Variant
     For Each item In columns: mColumns.Add CStr(item): Next item
     Set mStatus = status.Snapshot()
+    Set mStructuralStatus = status.Snapshot()
 End Sub
 
 Friend Sub AppendRow(ByVal cells As Object)
@@ -44,6 +45,9 @@ Public Property Get ColumnIds() As Collection
 End Property
 Public Property Get Status() As CAtEvalResult
     Set Status = mStatus.Snapshot()
+End Property
+Friend Property Get StructuralStatus() As CAtEvalResult
+    Set StructuralStatus = mStructuralStatus.Snapshot()
 End Property
 Public Function ReadCell(ByVal rowIndex As Long, ByVal columnId As String) As CAtEvalResult
     If rowIndex < 1 Or rowIndex > mRows.Count Then Err.Raise 5, , "Row index outside snapshot"

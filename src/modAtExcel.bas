@@ -72,5 +72,7 @@ Public Function AtExcelNameAddress(ByVal refersTo As String, ByVal sheetName As 
     address = Mid$(refersTo, separator + 1)
     Set re = CreateObject("VBScript.RegExp")
     re.Pattern = "^\$[A-Z]{1,3}\$[1-9][0-9]{0,6}(:\$[A-Z]{1,3}\$[1-9][0-9]{0,6})?$"
-    If re.Test(address) Then AtExcelNameAddress = address
+    If re.Test(address) Then
+        If AtValidAddress(address) Then AtExcelNameAddress = address
+    End If
 End Function

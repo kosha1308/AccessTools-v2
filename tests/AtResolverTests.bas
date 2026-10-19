@@ -23,6 +23,8 @@ Public Function AtRunResolverTests(ByVal repo As String, ByVal scratch As String
     TestSnapshotBudgets
     TestIntegration scratch
     TestSafety scratch
+    TestTableColumnReview
+    TestNameBoundsReview
     Cleanup
     Dim file As Object
     Set file = CreateObject("Scripting.FileSystemObject").CreateTextFile(scratch & "\resolver-assertions.txt", True, True)
@@ -40,6 +42,72 @@ Private Sub Cleanup()
     If Not firstBook Is Nothing Then firstBook.Close False
     If Not secondBook Is Nothing Then secondBook.Close False
     Set firstBook = Nothing: Set secondBook = Nothing
+End Sub
+
+Private Sub TestTableColumnReview()
+    Dim p As CAtPackage, d As CAtDefinition, resolver As CAtExcelResolver, table As CAtTableSnapshot
+    Dim r As CAtEvalResult, b As Object, s As Object
+    Set p = Model(True): Set s = secondBook.Worksheets("Return")
+    Def(p, "LOC_ITEMS").Values("Address") = "A5:C5"
+    Strategy p, "TableColumn": Set d = Def(p, "LOC_FIELD_TEXT"): d.Values("Sheet") = "Return"
+    AtAddReference d, "Table", "Table", "ITEMS", "1.0.0"
+    AtAddReference d, "Column", "Column", "ITEM_CODE", "1.0.0", "Text"
+    s.Range("A5").Value2 = "valid target": s.Range("B5").Value2 = "invalid count": s.Range("C5").Value2 = True
+    Set resolver = Reader(p, True, Bindings()): Set table = resolver.ReadTable(secondBook, "ITEMS")
+    Set r = resolver.ReadField(secondBook, "FIELD_TEXT")
+    Check table.Status.State = "INVALID" And table.ReadCell(1, "ITEM_COUNT").State = "INVALID", "review: table still reports invalid neighboring content"
+    Check r.State = "OK" And r.Value = "valid target", "review: valid TableColumn is independent of neighboring INVALID"
+    Check r.Dependency = "FIELD_TEXT" And r.Diagnostics.Count = 0, "review: neighbor diagnostics do not contaminate scalar field"
+    s.Range("A5").Value2 = 123
+    Set r = resolver.ReadField(secondBook, "FIELD_TEXT")
+    Check r.State = "INVALID" And r.Diagnostics(1)("ObjectId") = "ITEM_CODE/5", "review: invalid target retains its own cell diagnostic"
+    s.Range("A5").ClearContents
+    Set r = resolver.ReadField(secondBook, "FIELD_TEXT")
+    Check r.State = "EMPTY" And r.Dependency = "FIELD_TEXT", "review: EMPTY target independent of neighboring INVALID"
+    s.Range("A5").Value2 = "valid target": s.Range("B5:C5").Merge
+    Check resolver.ReadField(secondBook, "FIELD_TEXT").State = "CONFLICT", "review: merge in other columns still blocks scalar target"
+    s.Range("B5:C5").UnMerge
+    Set resolver = Reader(p, True)
+    Check resolver.ReadField(secondBook, "FIELD_TEXT").State = "MISSING", "review: missing bindings remain structural failures"
+    Set b = Bindings(): b("ITEM_COUNT") = 1: Set resolver = Reader(p, True, b)
+    Check resolver.ReadField(secondBook, "FIELD_TEXT").State = "CONFLICT", "review: duplicate offsets remain structural failures"
+    Set b = Bindings(): b("ITEM_COUNT") = 4: Set resolver = Reader(p, True, b)
+    Check resolver.ReadField(secondBook, "FIELD_TEXT").State = "MISSING", "review: out-of-bounds offsets remain structural failures"
+    Def(p, "LOC_ITEMS").Values("Address") = "A5:C1005": Set resolver = Reader(p, True, Bindings())
+    Check resolver.ReadField(secondBook, "FIELD_TEXT").State = "LIMIT", "review: resource LIMIT still blocks scalar target"
+    Def(p, "LOC_ITEMS").Values("Address") = "A5:C6": Set resolver = Reader(p, True, Bindings())
+    Check resolver.ReadField(secondBook, "FIELD_TEXT").State = "CONFLICT", "review: multirow scalar remains structural cardinality conflict"
+End Sub
+
+Private Sub TestNameBoundsReview()
+    Dim address As Variant, p As CAtPackage, n As Object, r As CAtEvalResult, failure As Long, raw As String
+    For Each address In Array("$XFE$1", "$A$1048577", "$A$1:$XFE$1", "$A$1:$A$1048577", "$B$2:$A$1")
+        Check AtExcelNameAddress("=Request!" & address, "Request") = "", "review: reject absolute name bounds " & address
+    Next address
+    Check AtExcelNameAddress("=Request!$XFD$1048576", "Request") = "$XFD$1048576", "review: accept last Excel cell"
+    Check AtExcelNameAddress("=Request!$A$1:$XFD$1048576", "Request") = "$A$1:$XFD$1048576", "review: accept rectangle ending at Excel boundary"
+    Set p = Model(): Strategy p, "DefinedName": Def(p, "LOC_FIELD_TEXT").Values.Add "DefinedName", "BoundaryName"
+    Set n = firstBook.Names.Add("BoundaryName", "=Request!$XFD$1048576")
+    Check ReadText(p).State = "EMPTY", "review: last Excel cell resolves end to end without out-of-bounds error"
+    n.Delete
+    For Each address In Array("$XFE$1", "$A$1048577", "$A$1:$XFE$1", "$A$1:$A$1048577")
+        Set n = Nothing
+        On Error Resume Next
+        Set n = firstBook.Names.Add("BoundaryName", "=Request!" & address)
+        failure = Err.Number: Err.Clear
+        On Error GoTo 0
+        If n Is Nothing Then
+            Check failure <> 0, "review: Excel rejects invalid name at creation " & address
+        Else
+            raw = n.RefersTo: Set r = ReadText(p)
+            If InStr(raw, "#REF!") > 0 Then
+                Check r.State = "MISSING" And r.Diagnostics(1)("Code") = "R_NAME", "review: Excel-normalized broken reference remains MISSING " & address
+            Else
+                Check r.State = "INVALID" And r.Diagnostics(1)("Code") = "R_NAME_REFERENCE", "review: invalid bounds are INVALID not UNAVAILABLE " & address
+            End If
+            n.Delete
+        End If
+    Next address
 End Sub
 
 Private Sub Check(ByVal ok As Boolean, ByVal label As String)

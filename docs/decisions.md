@@ -25,3 +25,20 @@ ADMIN и Runtime разделены, FIRST_LINE и COORDINATOR получают 
 
 ## Открытые решения
 Точный формат конфигураций, сериализация, DSL vs AST, способ безопасной атрибуции старых/новых Excel-аннотаций, конкретный набор базовых операций, минимальные Excel версии и производительность. Решать на G1 и записывать отдельными ADR.
+
+## Предложения PR-01 — НЕ утверждённые ADR
+
+Следующие записи — кандидаты на архитектурное решение. Их появление в PR не означает принятия и не закрывает Q-01…Q-11 аудита. ADR-007 принят отдельно и имеет прежний приоритет.
+
+| ProposalId | Предложение | Статус / материал ревью |
+| --- | --- | --- |
+| P01 | Authoritative typed AST, визуальный редактор того же дерева, read-only text preview | PROPOSED; [expression-model](expression-model.md) |
+| P02 | Immutable entity IDs/exact versions, graph validation, draft/package separation и controlled migration | PROPOSED; [rule-model](rule-model.md) |
+| P03 | Typed EvalResult отдельно от RuleOutcome и ActionReceipt; обязательная ошибка не становится PASS | PROPOSED для конкретного контракта; общий запрет ложного успеха уже в ТЗ; [expression-model](expression-model.md) |
+| P04 | IpSet interval mathematics отдельно от DeclarationSet comparison и source match coverage | PROPOSED для типов/сигнатур; включительный диапазон уже APPROVED ADR-007; [каталог](operation-catalog.md) |
+| P05 | Shared source snapshots/cache, explicit dirty-workbook revision и lazy profile dependency graph | PROPOSED; [rule-model](rule-model.md) |
+| P06 | Canonical MergeArea planning, ownership journal/check-before-restore/recovery и capability gates Writer | PROPOSED, до физического прототипа не замораживать; [admin-workflows](admin-workflows.md) |
+| P07 | Audience/Channel/ExecutionProfile независимы, report projections не содержат writer side effects | PROPOSED для детального формата; [rule-model](rule-model.md) |
+| P08 | Кандидатная библиотека операций с exact version и миграцией, без template evaluator | PROPOSED; [operation-catalog](operation-catalog.md) |
+
+Решения по сериализации, физическому журналу, Office capabilities и Q-policy требуют явного рассмотрения. Полная таблица открытых вопросов и критерии допуска к программированию — [pr01-architecture-findings](pr01-architecture-findings.md). До отдельного задания исполняемые компоненты не создаются.

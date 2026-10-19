@@ -94,7 +94,7 @@ Private Sub TestModels(ByVal repo As String, ByVal scratch As String)
     Entity(p, "RULE_REQUIRED").References(4)("Version") = "2.0.0"
     Expect p, cat, "OPERATION_UNKNOWN", "unknown operation version"
     Entity(p, "RULE_REQUIRED").References(4)("Version") = "1.0.0"
-    p.SchemaVersion = "2.0.0": Expect p, cat, "SCHEMA_VERSION", "schema mismatch"
+    p.SchemaVersion = "9.0.0": Expect p, cat, "SCHEMA_VERSION", "schema mismatch"
     p.SchemaVersion = "1.0.0": p.State = "Published"
     Expect p, cat, "PUBLISHED_REQUIRED", "published metadata missing"
     p.State = "Draft"

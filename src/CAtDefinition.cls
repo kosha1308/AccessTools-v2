@@ -13,10 +13,14 @@ Public DisplayName As String
 Public Values As Object
 Public References As Collection
 Public Dependencies As Collection
+Public RootNodeId As String
+Public ScopeTemplateId As String
+Public Nodes As Collection
 
 Private Sub Class_Initialize()
     Set Values = AtDictionary()
     Set References = New Collection
     Set Dependencies = New Collection
+    Set Nodes = New Collection
     Version = "1.0.0"
 End Sub

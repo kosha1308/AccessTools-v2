@@ -35,7 +35,7 @@ try {
     $project = $book.VBProject
     $files = @()
     if (Test-Path (Join-Path $repo 'src')) { $files += Get-ChildItem (Join-Path $repo 'src') -File | Where-Object { $_.Extension -in '.bas','.cls' } }
-    $files += Get-Item (Join-Path $PSScriptRoot 'AtSchemaTests.bas')
+    $files += Get-ChildItem $PSScriptRoot -Filter '*.bas'
     foreach ($file in $files) {
         $source = [IO.File]::ReadAllText($file.FullName)
         $moduleName = [regex]::Match($source,'Attribute VB_Name = "([^"]+)"').Groups[1].Value
@@ -59,6 +59,10 @@ try {
     $result | Set-Content (Join-Path $RunDirectory 'result.txt')
     Write-Output "Excel $($excel.Version) | $result"
     if (-not $result.StartsWith('PASS|')) { throw $result }
+    $astResult = [string]$excel.Run("'"+$book.Name+"'!AtRunAstTests", $repo, $RunDirectory)
+    $astResult | Set-Content (Join-Path $RunDirectory 'ast-result.txt')
+    Write-Output $astResult
+    if (-not $astResult.StartsWith('PASS|')) { throw $astResult }
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }
     if ($excel) { $excel.Quit(); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) }

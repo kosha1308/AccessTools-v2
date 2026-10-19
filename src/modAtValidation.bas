@@ -12,7 +12,9 @@ Public Function AtValidate(ByVal p As CAtPackage, ByVal operationCatalog As Obje
     On Error GoTo InvalidModel
     Set index = AtDictionary(): Set colors = AtDictionary()
     If p Is Nothing Then Err.Raise 5, , "Package is Nothing"
-    If p.SchemaVersion <> "1.0.0" Then AtProblem issues, "SCHEMA_VERSION", p.Id, "SchemaVersion", p.SchemaVersion, "This schema version is not supported. Use reader 1.0.0."
+    If p.SchemaVersion <> "1.0.0" And p.SchemaVersion <> "2.0.0" Then
+        AtProblem issues, "SCHEMA_VERSION", p.Id, "SchemaVersion", p.SchemaVersion, "Supported schemas are exactly 1.0.0 and 2.0.0.": GoTo Done
+    End If
     Identity issues, "Package", p.Id, p.Version, p.DisplayName
     If p.State <> "Draft" And p.State <> "Published" Then AtProblem issues, "STATE_INVALID", p.Id, "State", p.State, "Choose Draft or Published."
     If p.Definitions.Count = 0 Then AtProblem issues, "DEFINITIONS_REQUIRED", p.Id, "Definitions", "Empty package", "Add at least one template definition."
@@ -35,7 +37,8 @@ Public Function AtValidate(ByVal p As CAtPackage, ByVal operationCatalog As Obje
             If Not InList(CStr(prop), Properties(d.Kind)) Then AtProblem issues, "PROPERTY_UNKNOWN", d.Id, CStr(prop), "Not allowed for " & d.Kind, "Remove the unknown property or use a supported schema."
             If VarType(d.Values(prop)) <> vbString Then AtProblem issues, "PROPERTY_TYPE", d.Id, CStr(prop), "Storage scalars must be strings", "Use the declared lexical form of the property."
         Next prop
-        ValidateProperties d, issues
+        ValidateProperties d, issues, p.SchemaVersion = "2.0.0"
+        If p.SchemaVersion = "1.0.0" And (d.Nodes.Count > 0 Or d.RootNodeId <> "" Or d.ScopeTemplateId <> "") Then AtAstProblem issues, "AST_SCHEMA", d.Id, d.RootNodeId, "Schema 1.0.0 cannot contain AST; explicit upgrade required."
     Next d
     If Not ContainsKind(p, "Template") Then AtProblem issues, "TEMPLATE_REQUIRED", p.Id, "Definitions", "No Template", "Add a template definition."
     For Each d In p.Definitions
@@ -44,7 +47,11 @@ Public Function AtValidate(ByVal p As CAtPackage, ByVal operationCatalog As Obje
     For Each d In p.Definitions
         If d.Kind = "Rule" Or d.Kind = "Expression" Then Visit d, index, colors, issues, 0
     Next d
-    AtProblem issues, "AST_DEFERRED", p.Id, "Expressions", "Only expression identity and declared result type validated", "Structural validation does not prove AST correctness or publication readiness (PR-03).", "Info"
+    If p.SchemaVersion = "2.0.0" Then
+        AtValidateAst p, index, operationCatalog, issues
+    Else
+        AtProblem issues, "AST_DEFERRED", p.Id, "Expressions", "Only expression identity and declared result type validated", "Legacy schema has no checked AST and is not executable or publication-ready.", "Info"
+    End If
 Done:
     Set AtValidate = issues
     Exit Function
@@ -112,7 +119,7 @@ Private Sub Required(ByVal d As CAtDefinition, ByVal member As String, ByVal iss
     If Len(Trim$(AtValue(d, member))) = 0 Then AtProblem issues, "PROPERTY_REQUIRED", d.Id, member, "Missing value", "Enter the required property: " & member & "."
 End Sub
 
-Private Sub ValidateProperties(ByVal d As CAtDefinition, ByVal issues As Collection)
+Private Sub ValidateProperties(ByVal d As CAtDefinition, ByVal issues As Collection, ByVal hasAst As Boolean)
     Dim strategy As String, prop As Variant
     If d.Kind = "Source" Or d.Kind = "Locator" Then
         If Not SheetNameValid(AtValue(d, "Sheet")) Then AtProblem issues, "SHEET_INVALID", d.Id, "Sheet", "Invalid literal worksheet name", "Use a nonempty worksheet name up to 31 characters without control characters or : \\ / ? * [ ]."
@@ -121,7 +128,10 @@ Private Sub ValidateProperties(ByVal d As CAtDefinition, ByVal issues As Collect
         Case "Field", "Column", "Expression"
             prop = IIf(d.Kind = "Expression", "ReturnType", "DataType")
             If Not InList(AtValue(d, CStr(prop)), TYPES) Then AtProblem issues, "TYPE_UNKNOWN", d.Id, CStr(prop), AtValue(d, CStr(prop)), "Choose a supported declared type. No implicit conversion is performed."
-            If d.Kind = "Expression" And AtValue(d, "Deferred") <> "true" Then AtProblem issues, "AST_UNSUPPORTED", d.Id, "Deferred", "Only structural AST references supported", "Set Deferred=true; AST content belongs to PR-03."
+            If d.Kind = "Expression" Then
+                If Not hasAst And AtValue(d, "Deferred") <> "true" Then AtProblem issues, "AST_UNSUPPORTED", d.Id, "Deferred", "Legacy expression is deferred", "Schema 1.0.0 requires Deferred=true."
+                If hasAst And AtValue(d, "Deferred") <> "false" Then AtAstProblem issues, "AST_REQUIRED", d.Id, d.RootNodeId, "Schema 2.0.0 requires Deferred=false and a checked tree."
+            End If
         Case "Source"
             If AtValue(d, "Adapter") <> "Excel" Then AtProblem issues, "SOURCE_ADAPTER", d.Id, "Adapter", AtValue(d, "Adapter"), "This structural schema supports Excel source metadata."
             Required d, "Sheet", issues: Required d, "FileName", issues
@@ -204,7 +214,12 @@ Private Sub ValidateReferences(ByVal d As CAtDefinition, ByVal index As Object, 
             ElseIf Not catalog.Exists(key) Then
                 AtProblem issues, "OPERATION_UNKNOWN", d.Id, role, key, "Install or select the exact registered operation version."
             Else
-                actual = CStr(catalog(key))
+                If IsObject(catalog(key)) Then
+                    Dim signature As Object: Set signature = catalog(key)
+                    actual = CStr(signature("ReturnType"))
+                Else
+                    actual = CStr(catalog(key))
+                End If
                 If Not InList(actual, TYPES) Then AtProblem issues, "CATALOG_TYPE", d.Id, role, actual, "The trusted operation metadata has an unsupported result type."
             End If
         ElseIf Not index.Exists(key) Then

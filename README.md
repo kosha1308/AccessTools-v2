@@ -1,6 +1,6 @@
 # AccessTools 2 — архитектурный перезапуск
 
-**Статус: PR-05 — Excel Resolver → immutable context → scalar AST Evaluator; пользовательской надстройки ещё нет.** AccessTools-v2 создаётся заново как универсальный конструктор Excel-шаблонов и проверок («constructor first»). Новый VBA в `src` не выполняет реальные бизнес-проверки и не изменяет книги. Чтение Excel и ограничения таблиц: [PR-05 Resolver](docs/pr05-excel-resolver.md); исполнение — [PR-04 Evaluator](docs/pr04-evaluator.md); модель — [PR-03 typed AST](docs/pr03-typed-ast.md), хранение — [ADR-008](docs/adr/008-schema-storage.md).
+**Статус: PR-06 — ограниченный безопасный Excel Writer; пользовательской надстройки ещё нет.** AccessTools-v2 создаётся заново как универсальный конструктор Excel-шаблонов и проверок («constructor first»). Resolver и Evaluator читают данные; Writer изменяет только явно запланированные собственные отметки через проверяемый журнал. Реальные бизнес-проверки не настроены. Поддержка и capability gates: [PR-06 Writer](docs/pr06-excel-writer.md); [PR-05 Resolver](docs/pr05-excel-resolver.md); [PR-04 Evaluator](docs/pr04-evaluator.md).
 
 ## Источники истины
 1. [ТЗ v0.15 — конструктор сначала и полные IPv4-диапазоны (Google Docs)](https://docs.google.com/document/d/1skCtOzRTq4_wuNNkZHSaeyWsh_sf_RjYq1OKDezmBKM/edit) — актуальный проект новой архитектуры и критериев приёмки.

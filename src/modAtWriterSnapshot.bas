@@ -181,6 +181,38 @@ Public Function AtWEqual(ByVal first As Object, ByVal second As Object) As Boole
     AtWEqual = True
 End Function
 
+' Historical inputs are not owned by Writer. Only these exact capture keys
+' may differ at reconciliation; missing/extra evidence still fails closed.
+Private Function InputGuard(ByVal key As String) As Boolean
+    Dim i As Long
+    For i = 1 To 64
+        If key = "Data" & i Or key = "Formula" & i Then InputGuard = True: Exit Function
+    Next i
+End Function
+
+Public Function AtWOwnedEqual(ByVal current As Object, ByVal expected As Object) As Boolean
+    Dim key As Variant
+    If current Is Nothing Or expected Is Nothing Then Exit Function
+    If current.Count <> expected.Count Then Exit Function
+    For Each key In current.Keys
+        If Not expected.Exists(key) Then Exit Function
+        If Not InputGuard(CStr(key)) Then
+            If current(key) <> expected(key) Then Exit Function
+        End If
+    Next key
+    AtWOwnedEqual = True
+End Function
+
+' Before is a restoration/ownership snapshot, never a source of old inputs.
+' Full fresh Observed/StepBefore/Expected snapshots retain the input guards.
+Public Function AtWAnnotationState(ByVal snapshot As Object) As Object
+    Dim result As Object, key As Variant: Set result = AtDictionary()
+    For Each key In snapshot.Keys
+        If Not InputGuard(CStr(key)) Then result.Add CStr(key), CStr(snapshot(key))
+    Next key
+    Set AtWAnnotationState = result
+End Function
+
 Public Function AtWFillState(ByVal current As Object, ByVal desired As Object) As Object
     Dim result As Object: Set result = AtRecordCopy(current)
     result("Pattern") = desired("Pattern"): result("Color") = desired("Color"): result("PatternColor") = desired("PatternColor")

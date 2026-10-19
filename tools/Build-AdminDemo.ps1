@@ -26,7 +26,7 @@ try {
     $sheet.Range('A3').Value2 = 'Open a synthetic target workbook, then click Open editor.'
     $sheet.Range('A4').Value2 = 'NEW -> SAVE -> CLOSE -> LOAD -> RUN. XML/AST editing is not required.'
     $sheet.Range('A5').Value2 = '.xlsx supports fill only; Notes require the tested .xls profile.'
-    $sheet.Range('A6').Value2 = 'Input edits in an annotated cell can block cleanup: CONFLICT is preserved.'
+    $sheet.Range('A6').Value2 = 'Correct inputs before RUN. Changed annotation/structure or inputs changed after planning block writes.'
     $sheet.Range('A7').Value2 = 'Keep this macro host open until owned marks are cleared. No automatic recovery after session loss.'
     $sheet.Columns.Item(1).ColumnWidth = 110
     $button = $sheet.Buttons().Add(20,150,180,35)

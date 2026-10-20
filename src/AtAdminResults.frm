@@ -1,11 +1,11 @@
 Attribute VB_Name = "AtAdminResults"
 Option Explicit
 Private Sub UserForm_Initialize()
-    Dim control As Object
-    For Each control In Me.Controls
-        control.Font.Name = "Segoe UI": control.Font.Size = 10
-    Next control
+    AtUiStyle Me
     lblResult.Font.Size = 20
+End Sub
+Private Sub cmdDetails_Click()
+    AtUiToggleDiagnostics Me
 End Sub
 Private Sub cmdCopy_Click()
     AtUiCopyRemark

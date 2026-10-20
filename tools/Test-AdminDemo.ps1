@@ -17,9 +17,13 @@ try {
         $component = $book.VBProject.VBComponents.Item($definition.Name)
         if ($component.Type -ne 3) { throw 'Not a native UserForm.' }; $passed++
         if ($component.CodeModule.CountOfLines -eq 0) { throw 'Persisted form event code missing.' }; $passed++
-        if ($component.Designer.Controls.Count -ne $definition.Controls.Count) { throw 'Persisted controls missing.' }; $passed++
+        # MSForms UserForm.Controls includes controls nested inside Frames.
+        $expectedRootCount = @($definition.Controls).Count
+        if ($component.Designer.Controls.Count -ne $expectedRootCount) { throw 'Persisted root controls missing.' }; $passed++
         foreach ($control in $definition.Controls) {
-            $native = $component.Designer.Controls.Item($control.Name)
+            $parent = $component.Designer
+            if ($control.Parent) { $parent = $component.Designer.Controls.Item($control.Parent).Object }
+            $native = $parent.Controls.Item($control.Name)
             if ($control.Caption -and $native.Caption -ne $control.Caption) { throw "Persisted control caption mismatch: $($control.Name)" }
         }
         $passed++
@@ -27,6 +31,9 @@ try {
     $module = $book.VBProject.VBComponents.Item('modAtAdminUi').CodeModule
     if ($module.Lines(1,$module.CountOfLines) -notmatch 'Public Sub AtAdminOpen\(') { throw 'Public launcher missing.' }; $passed++
     if (-not $book.ReadOnly) { throw 'Verification must stay read-only.' }; $passed++
+    $events = $book.VBProject.VBComponents.Item($book.CodeName).CodeModule
+    if ($events.Lines(1,$events.CountOfLines) -notmatch 'Workbook_Open') { throw 'Open-time launcher binding missing.' }; $passed++
+    if ($button.Name -ne 'AtOpenConstructor') { throw 'Stable launcher identity missing.' }; $passed++
     Write-Output "PASS|DEMO|$passed|0|ManualUI=UNVERIFIED"
     Write-Output ('SHA256=' + (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash)
 } finally {

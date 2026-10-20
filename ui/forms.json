@@ -3,15 +3,127 @@
     {
       "Controls": [
         {
+          "Name": "pnlBody",
+          "Type": "Frame",
+          "Left": 12,
+          "Top": 46,
+          "Width": 860,
+          "Height": 448,
+          "Caption": "",
+          "ScrollBars": 3,
+          "KeepScrollBarsVisible": 3,
+          "ScrollWidth": 872,
+          "ScrollHeight": 526,
+          "SpecialEffect": 0,
+          "BorderStyle": 0,
+          "BackColor": 16578805
+        },
+        {
+          "Name": "cardAction",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 185,
+          "Top": 336,
+          "Width": 350,
+          "Height": 90,
+          "BackColor": 16777215,
+          "BorderStyle": 1,
+          "BorderColor": 15787999
+        },
+        {
+          "Name": "titleAction",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 197,
+          "Top": 344,
+          "Width": 326,
+          "Height": 18,
+          "Caption": "Что делать при ошибке",
+          "BackStyle": 0,
+          "ForeColor": 6504222
+        },
+        {
+          "Name": "cardExceptions",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 185,
+          "Top": 261,
+          "Width": 350,
+          "Height": 65,
+          "BackColor": 16777215,
+          "BorderStyle": 1,
+          "BorderColor": 15787999
+        },
+        {
+          "Name": "titleExceptions",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 197,
+          "Top": 269,
+          "Width": 326,
+          "Height": 18,
+          "Caption": "Исключения",
+          "BackStyle": 0,
+          "ForeColor": 6504222
+        },
+        {
+          "Name": "cardWhat",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 185,
+          "Top": 161,
+          "Width": 350,
+          "Height": 90,
+          "BackColor": 16777215,
+          "BorderStyle": 1,
+          "BorderColor": 15787999
+        },
+        {
+          "Name": "titleWhat",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 197,
+          "Top": 169,
+          "Width": 326,
+          "Height": 18,
+          "Caption": "Что проверяется",
+          "BackStyle": 0,
+          "ForeColor": 6504222
+        },
+        {
+          "Name": "cardWhen",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 185,
+          "Top": 86,
+          "Width": 350,
+          "Height": 65,
+          "BackColor": 16777215,
+          "BorderStyle": 1,
+          "BorderColor": 15787999
+        },
+        {
+          "Name": "titleWhen",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 197,
+          "Top": 94,
+          "Width": 326,
+          "Height": 18,
+          "Caption": "Когда выполняется проверка",
+          "BackStyle": 0,
+          "ForeColor": 6504222
+        },
+        {
           "Height": 25,
           "Type": "Label",
           "FontSize": 17,
-          "ForeColor": 5652769,
           "Caption": "AccessTools 2",
           "Left": 14,
           "Name": "lblHeading",
           "Top": 10,
-          "Width": 160
+          "Width": 160,
+          "ForeColor": 5258282
         },
         {
           "Width": 350,
@@ -19,7 +131,10 @@
           "Top": 10,
           "Height": 25,
           "Left": 185,
-          "Name": "txtTemplate"
+          "Name": "txtTemplate",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 305,
@@ -28,7 +143,10 @@
           "Top": 10,
           "Height": 25,
           "Left": 550,
-          "Name": "cboMode"
+          "Name": "cboMode",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 150,
@@ -37,7 +155,9 @@
           "Height": 20,
           "Left": 14,
           "Caption": "Шаблоны и правила",
-          "Name": "lblNavTitle"
+          "Name": "lblNavTitle",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 150,
@@ -45,7 +165,10 @@
           "Top": 82,
           "Height": 296,
           "Left": 14,
-          "Name": "lstNavigation"
+          "Name": "lstNavigation",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 150,
@@ -54,7 +177,9 @@
           "Height": 100,
           "Left": 14,
           "Caption": "Одна проверка «Текст равен». Другие типы условий пока недоступны.",
-          "Name": "lblNavHelp"
+          "Name": "lblNavHelp",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Height": 22,
@@ -64,43 +189,57 @@
           "Left": 185,
           "Name": "lblRuleTitle",
           "Top": 56,
-          "Width": 350
+          "Width": 350,
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
-          "Width": 350,
+          "Width": 326,
           "Type": "Label",
-          "Top": 86,
+          "Top": 115,
           "BackColor": 15921906,
-          "Height": 65,
-          "Left": 185,
-          "Name": "lblWhen"
+          "Height": 32,
+          "Left": 197,
+          "Name": "lblWhen",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282,
+          "BackStyle": 0
         },
         {
-          "Width": 350,
+          "Width": 326,
           "Type": "Label",
-          "Top": 161,
+          "Top": 190,
           "BackColor": 16053492,
-          "Height": 90,
-          "Left": 185,
-          "Name": "lblWhat"
+          "Height": 57,
+          "Left": 197,
+          "Name": "lblWhat",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282,
+          "BackStyle": 0
         },
         {
-          "Width": 350,
+          "Width": 326,
           "Type": "Label",
-          "Top": 261,
+          "Top": 290,
           "BackColor": 15921906,
-          "Height": 65,
-          "Left": 185,
-          "Name": "lblExceptions"
+          "Height": 32,
+          "Left": 197,
+          "Name": "lblExceptions",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282,
+          "BackStyle": 0
         },
         {
-          "Width": 350,
+          "Width": 326,
           "Type": "Label",
-          "Top": 336,
+          "Top": 365,
           "BackColor": 15921906,
-          "Height": 90,
-          "Left": 185,
-          "Name": "lblAction"
+          "Height": 57,
+          "Left": 197,
+          "Name": "lblAction",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282,
+          "BackStyle": 0
         },
         {
           "Width": 350,
@@ -109,7 +248,9 @@
           "Height": 50,
           "Left": 185,
           "FontSize": 9,
-          "Name": "lblDetails"
+          "Name": "lblDetails",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Height": 22,
@@ -119,7 +260,9 @@
           "Left": 550,
           "Name": "lblPropsTitle",
           "Top": 56,
-          "Width": 305
+          "Width": 305,
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 235,
@@ -128,7 +271,9 @@
           "Height": 18,
           "Left": 550,
           "Caption": "Открытая книга для теста",
-          "Name": "lblBook"
+          "Name": "lblBook",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 245,
@@ -137,7 +282,10 @@
           "Top": 100,
           "Height": 24,
           "Left": 550,
-          "Name": "cboBook"
+          "Name": "cboBook",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 55,
@@ -146,7 +294,10 @@
           "Height": 24,
           "Left": 800,
           "Caption": "↻",
-          "Name": "cmdRefresh"
+          "Name": "cmdRefresh",
+          "Parent": "pnlBody",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         },
         {
           "Width": 140,
@@ -155,7 +306,9 @@
           "Height": 18,
           "Left": 550,
           "Caption": "Лист",
-          "Name": "lblSheet"
+          "Name": "lblSheet",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 150,
@@ -164,7 +317,9 @@
           "Height": 18,
           "Left": 705,
           "Caption": "Ячейка",
-          "Name": "lblAddress"
+          "Name": "lblAddress",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 145,
@@ -173,7 +328,10 @@
           "Top": 149,
           "Height": 24,
           "Left": 550,
-          "Name": "cboSheet"
+          "Name": "cboSheet",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 80,
@@ -181,7 +339,10 @@
           "Top": 149,
           "Height": 24,
           "Left": 705,
-          "Name": "txtAddress"
+          "Name": "txtAddress",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 65,
@@ -190,7 +351,10 @@
           "Height": 24,
           "Left": 790,
           "Caption": "Выбрать",
-          "Name": "cmdPick"
+          "Name": "cmdPick",
+          "Parent": "pnlBody",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         },
         {
           "Width": 305,
@@ -199,7 +363,9 @@
           "Height": 18,
           "Left": 550,
           "Caption": "Название поля",
-          "Name": "lblField"
+          "Name": "lblField",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 305,
@@ -207,7 +373,10 @@
           "Top": 198,
           "Height": 24,
           "Left": 550,
-          "Name": "txtField"
+          "Name": "txtField",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 305,
@@ -216,7 +385,9 @@
           "Height": 18,
           "Left": 550,
           "Caption": "Условие",
-          "Name": "lblCondition"
+          "Name": "lblCondition",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 305,
@@ -225,7 +396,10 @@
           "Top": 247,
           "Height": 24,
           "Left": 550,
-          "Name": "cboCondition"
+          "Name": "cboCondition",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 305,
@@ -234,7 +408,9 @@
           "Height": 18,
           "Left": 550,
           "Caption": "Ожидаемый текст",
-          "Name": "lblExpected"
+          "Name": "lblExpected",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 305,
@@ -242,7 +418,10 @@
           "Top": 296,
           "Height": 24,
           "Left": 550,
-          "Name": "txtExpected"
+          "Name": "txtExpected",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 305,
@@ -251,7 +430,9 @@
           "Height": 18,
           "Left": 550,
           "Caption": "Замечание для инициатора",
-          "Name": "lblMessage"
+          "Name": "lblMessage",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Height": 48,
@@ -263,7 +444,10 @@
           "ScrollBars": 2,
           "Left": 550,
           "Name": "txtMessage",
-          "Top": 345
+          "Top": 345,
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 145,
@@ -272,7 +456,9 @@
           "Height": 18,
           "Left": 550,
           "Caption": "Уровень",
-          "Name": "lblSeverity"
+          "Name": "lblSeverity",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 150,
@@ -281,7 +467,9 @@
           "Height": 18,
           "Left": 705,
           "Caption": "Подсветка",
-          "Name": "lblColor"
+          "Name": "lblColor",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 145,
@@ -290,7 +478,10 @@
           "Top": 419,
           "Height": 24,
           "Left": 550,
-          "Name": "cboSeverity"
+          "Name": "cboSeverity",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 125,
@@ -299,7 +490,10 @@
           "Top": 419,
           "Height": 24,
           "Left": 705,
-          "Name": "cboColor"
+          "Name": "cboColor",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 20,
@@ -308,7 +502,9 @@
           "BackColor": 255,
           "Height": 24,
           "Left": 835,
-          "Name": "lblColorSample"
+          "Name": "lblColorSample",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 305,
@@ -317,7 +513,8 @@
           "Height": 30,
           "Left": 550,
           "Caption": "Внутреннее примечание в книге",
-          "Name": "chkNote"
+          "Name": "chkNote",
+          "Parent": "pnlBody"
         },
         {
           "Width": 840,
@@ -326,7 +523,8 @@
           "Height": 34,
           "Left": 14,
           "FontSize": 9,
-          "Name": "lblStatus"
+          "Name": "lblStatus",
+          "ForeColor": 5258282
         },
         {
           "Width": 840,
@@ -335,7 +533,9 @@
           "Height": 22,
           "Left": 14,
           "FontSize": 9,
-          "Name": "lblSaved"
+          "Name": "lblSaved",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 105,
@@ -344,7 +544,9 @@
           "Height": 30,
           "Left": 14,
           "Caption": "Загрузить",
-          "Name": "cmdLoad"
+          "Name": "cmdLoad",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         },
         {
           "Width": 105,
@@ -353,17 +555,20 @@
           "Height": 30,
           "Left": 129,
           "Caption": "Сохранить",
-          "Name": "cmdSave"
+          "Name": "cmdSave",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         },
         {
-          "BackColor": 14999101,
           "Height": 30,
           "Type": "CommandButton",
           "Caption": "Протестировать",
           "Left": 265,
           "Name": "cmdTest",
           "Top": 526,
-          "Width": 135
+          "Width": 135,
+          "BackColor": 10442530,
+          "ForeColor": 16777215
         },
         {
           "Width": 150,
@@ -372,7 +577,9 @@
           "Height": 30,
           "Left": 410,
           "Caption": "Нанести отметки",
-          "Name": "cmdApply"
+          "Name": "cmdApply",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         },
         {
           "Width": 150,
@@ -381,7 +588,9 @@
           "Height": 30,
           "Left": 570,
           "Caption": "Очистить отметки",
-          "Name": "cmdClear"
+          "Name": "cmdClear",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         },
         {
           "Width": 125,
@@ -390,7 +599,9 @@
           "Height": 30,
           "Left": 730,
           "Caption": "Закрыть",
-          "Name": "cmdClose"
+          "Name": "cmdClose",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         }
       ],
       "Height": 638,
@@ -401,40 +612,64 @@
     {
       "Controls": [
         {
+          "Name": "pnlBody",
+          "Type": "Frame",
+          "Left": 12,
+          "Top": 56,
+          "Width": 686,
+          "Height": 448,
+          "Caption": "",
+          "ScrollBars": 3,
+          "KeepScrollBarsVisible": 3,
+          "ScrollWidth": 700,
+          "ScrollHeight": 458,
+          "SpecialEffect": 0,
+          "BorderStyle": 0,
+          "BackColor": 16578805
+        },
+        {
           "Width": 660,
           "Type": "Label",
           "Top": 15,
           "Height": 30,
           "Left": 20,
           "FontSize": 20,
-          "Name": "lblResult"
+          "Name": "lblResult",
+          "ForeColor": 5258282
         },
         {
           "Width": 200,
           "Type": "Label",
-          "Top": 55,
+          "Top": 0,
           "Height": 18,
           "Left": 20,
           "Caption": "Ячейка / поле",
-          "Name": "lblTarget"
+          "Name": "lblTarget",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Width": 660,
           "Locked": true,
           "Type": "TextBox",
-          "Top": 74,
+          "Top": 19,
           "Height": 25,
           "Left": 20,
-          "Name": "txtTarget"
+          "Name": "txtTarget",
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 600,
           "Type": "Label",
-          "Top": 107,
+          "Top": 52,
           "Height": 18,
           "Left": 20,
           "Caption": "Фактически прочитанное значение",
-          "Name": "lblActual"
+          "Name": "lblActual",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Locked": true,
@@ -445,16 +680,21 @@
           "ScrollBars": 2,
           "Left": 20,
           "Name": "txtActual",
-          "Top": 127
+          "Top": 72,
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 660,
           "Type": "Label",
-          "Top": 180,
+          "Top": 125,
           "Height": 18,
           "Left": 20,
           "Caption": "Замечание для передачи инициатору",
-          "Name": "lblRemark"
+          "Name": "lblRemark",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Locked": true,
@@ -465,16 +705,21 @@
           "ScrollBars": 2,
           "Left": 20,
           "Name": "txtRemark",
-          "Top": 200
+          "Top": 145,
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 660,
           "Type": "Label",
-          "Top": 270,
+          "Top": 215,
           "Height": 18,
           "Left": 20,
           "Caption": "Предполагаемые внутренние действия",
-          "Name": "lblActions"
+          "Name": "lblActions",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Locked": true,
@@ -485,16 +730,21 @@
           "ScrollBars": 2,
           "Left": 20,
           "Name": "txtActions",
-          "Top": 290
+          "Top": 235,
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 660,
           "Type": "Label",
-          "Top": 350,
+          "Top": 295,
           "Height": 18,
           "Left": 20,
           "Caption": "Состояние записи в книгу",
-          "Name": "lblOutput"
+          "Name": "lblOutput",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282
         },
         {
           "Locked": true,
@@ -505,16 +755,22 @@
           "ScrollBars": 2,
           "Left": 20,
           "Name": "txtOutput",
-          "Top": 370
+          "Top": 315,
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903
         },
         {
           "Width": 660,
           "Type": "Label",
-          "Top": 425,
+          "Top": 370,
           "Height": 18,
           "Left": 20,
           "Caption": "Внутренняя диагностика (не для инициатора)",
-          "Name": "lblDiagnostic"
+          "Name": "lblDiagnostic",
+          "Parent": "pnlBody",
+          "ForeColor": 5258282,
+          "Visible": false
         },
         {
           "Locked": true,
@@ -525,7 +781,11 @@
           "ScrollBars": 2,
           "Left": 20,
           "Name": "txtDiagnostic",
-          "Top": 445
+          "Top": 390,
+          "Parent": "pnlBody",
+          "BackColor": 16777215,
+          "ForeColor": 4271903,
+          "Visible": false
         },
         {
           "Width": 270,
@@ -534,7 +794,9 @@
           "Height": 30,
           "Left": 20,
           "Caption": "Копировать замечание",
-          "Name": "cmdCopy"
+          "Name": "cmdCopy",
+          "BackColor": 10442530,
+          "ForeColor": 16777215
         },
         {
           "Width": 140,
@@ -543,7 +805,9 @@
           "Height": 30,
           "Left": 540,
           "Caption": "Закрыть",
-          "Name": "cmdClose"
+          "Name": "cmdClose",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         },
         {
           "Width": 660,
@@ -551,7 +815,19 @@
           "Top": 553,
           "Height": 27,
           "Left": 20,
-          "Name": "lblCopy"
+          "Name": "lblCopy",
+          "ForeColor": 5258282
+        },
+        {
+          "Name": "cmdDetails",
+          "Type": "CommandButton",
+          "Left": 305,
+          "Top": 515,
+          "Width": 205,
+          "Height": 30,
+          "Caption": "Технические подробности",
+          "BackColor": 16249323,
+          "ForeColor": 4797730
         }
       ],
       "Height": 610,

@@ -9,6 +9,12 @@ Public TemplateName As String, FieldName As String, SheetName As String, Address
 Public ExpectedText As String, Message As String, Severity As String, Color As Long, AddNote As Boolean
 Private identity As CAtPackage, audience As String
 Private journal As CAtOwnershipJournal, journalBook As Object, sequence As Long
+Private store As CAtJournalStore, storeDirectory As String, journalRoot As String
+
+Friend Sub ConfigureJournalRoot(ByVal directory As String)
+    If Not journal Is Nothing Then Err.Raise 5, , "Journal already bound"
+    journalRoot = directory
+End Sub
 
 Private Sub Class_Initialize()
     TemplateName = "Новый шаблон": FieldName = "Поле заявки": Address = "A1"
@@ -94,6 +100,10 @@ Public Function Apply(ByVal book As Object, ByVal newJournalDirectory As String)
     If result.Outcome.Status = "CANNOT_EVALUATE" Then Set Apply = result: Exit Function
     If journal Is Nothing Then
         If result.Outcome.Status = "PASS" Then result.Output = "Нанесённых отметок этой сессии нет.": Set Apply = result: Exit Function
+        If newJournalDirectory = "" Then
+            If store Is Nothing Then Set store = AtNewJournalStore(journalRoot)
+            storeDirectory = store.NewDirectory(): newJournalDirectory = storeDirectory
+        End If
         Set journal = AtNewOwnershipJournal(book, newJournalDirectory): Set journalBook = book
     End If
     If Not journalBook Is book Then Err.Raise 5, , "Журнал связан с другой книгой. Сначала очистите её отметки."
@@ -107,7 +117,9 @@ Public Function Apply(ByVal book As Object, ByVal newJournalDirectory As String)
             result.Output = result.Output & vbLf & AtUiStatus(receipt.Status)
             result.Diagnostics = result.Diagnostics & vbLf & receipt.Status & " " & receipt.Code & " " & receipt.Message
         Next receipt
+        If receipts.Count = 0 Then result.Output = "Изменять отметки не требуется."
     End If
+    result.Diagnostics = result.Diagnostics & ReleaseCompleted()
     Set Apply = result
 End Function
 
@@ -121,5 +133,24 @@ Public Function Clear(ByVal book As Object) As String
         Clear = Clear & AtUiStatus(receipt.Status) & vbLf
         If receipt.Status <> "ROLLED_BACK" And receipt.Status <> "SKIPPED" Then complete = False
     Next receipt
-    If complete And Not journal.RecoveryRequired Then Set journal = Nothing: Set journalBook = Nothing
+    If complete And Not journal.RecoveryRequired Then
+        If storeDirectory <> "" Then
+            Clear = Clear & ReleaseCompleted()
+        Else
+            Set journal = Nothing: Set journalBook = Nothing
+        End If
+    End If
+End Function
+
+Private Function ReleaseCompleted() As String
+    Dim manifest As Object
+    If storeDirectory = "" Then Exit Function
+    If journal Is Nothing Then Exit Function
+    Set manifest = journal.CompletedManifest()
+    If manifest Is Nothing Then Exit Function
+    If Not store.PruneCompleted(journal, storeDirectory) Then
+        ReleaseCompleted = vbLf & "Завершённый служебный журнал сохранён: автоматическая уборка недоступна. Пользовательские файлы не удалялись."
+    End If
+    ' Verified rollback releases the workbook even if evidence must stay on disk.
+    Set journal = Nothing: Set journalBook = Nothing: storeDirectory = ""
 End Function

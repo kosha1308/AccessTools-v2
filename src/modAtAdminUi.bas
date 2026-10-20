@@ -3,8 +3,9 @@ Option Explicit
 
 Private editor As CAtAdminEditor, books As Collection, painting As Boolean
 
-Public Function AtNewAdminEditor() As CAtAdminEditor
-    Set AtNewAdminEditor = New CAtAdminEditor
+Public Function AtNewAdminEditor(Optional ByVal journalRoot As String = "") As CAtAdminEditor
+    Dim instance As New CAtAdminEditor
+    instance.ConfigureJournalRoot journalRoot: Set AtNewAdminEditor = instance
 End Function
 
 Public Function AtUiDiagnostics(ByVal issues As Collection) As String
@@ -46,19 +47,16 @@ Failed:
 End Sub
 
 Public Sub AtUiFit(ByVal form As Object)
-    Dim factor As Double
-    factor = 1
-    If Application.UsableWidth > 0 Then factor = WorksheetFunction.Min(factor, Application.UsableWidth * 0.94 / form.Width)
-    If Application.UsableHeight > 0 Then factor = WorksheetFunction.Min(factor, Application.UsableHeight * 0.9 / form.Height)
-    If factor < 1 Then
-        form.Zoom = CLng(factor * form.Zoom): form.Width = form.Width * factor: form.Height = form.Height * factor
-    End If
+    AtUiLayout form, Application.UsableWidth * 0.94, Application.UsableHeight * 0.9
+    form.StartUpPosition = 0
+    form.Left = Application.Left + 12: form.Top = Application.Top + 12
 End Sub
 
 Public Sub AtUiFill(ByVal f As Object)
     painting = True
     f.cboSheet.Clear
     If editor Is Nothing Then Set editor = AtNewAdminEditor()
+    If editor.SheetName <> "" Then f.cboSheet.AddItem editor.SheetName: f.cboSheet.ListIndex = 0
     f.txtTemplate.Text = editor.TemplateName: f.txtField.Text = editor.FieldName
     f.txtAddress.Text = editor.Address: f.txtExpected.Text = editor.ExpectedText: f.txtMessage.Text = editor.Message
     f.chkNote.Value = editor.AddNote
@@ -151,13 +149,14 @@ Public Sub AtUiChanged(ByVal f As Object)
     If f.cboSheet.ListIndex >= 0 Then editor.SheetName = f.cboSheet.Value
     editor.AddNote = f.chkNote.Value
     f.lblNavTitle.Caption = editor.TemplateName
+    f.lblHeading.Caption = "AccessTools — " & Left$(editor.TemplateName, 60)
     If f.cboSeverity.ListIndex >= 0 Then editor.Severity = Choose(f.cboSeverity.ListIndex + 1, "ERROR", "WARNING", "INFO")
     If f.cboColor.ListIndex >= 0 And f.cboColor.ListIndex < 6 Then editor.Color = AtUiColor(f.cboColor.ListIndex)
     f.lblColorSample.BackColor = editor.Color
-    f.lblWhen.Caption = "Когда выполняется проверка" & vbLf & "По кнопке «Протестировать» для выбранной книги."
-    f.lblWhat.Caption = "Что проверяется" & vbLf & editor.FieldName & " • " & editor.SheetName & "!" & editor.Address & vbLf & "Текст равен: «" & editor.ExpectedText & "»"
-    f.lblExceptions.Caption = "Исключения" & vbLf & "Не настроены. Редактор исключений пока недоступен."
-    f.lblAction.Caption = "Что делать при ошибке" & vbLf & editor.Message & vbLf & "Заливка" & IIf(editor.AddNote, " и внутреннее примечание", "; без примечания")
+    f.lblWhen.Caption = "По кнопке «Протестировать» для выбранной книги."
+    f.lblWhat.Caption = editor.FieldName & " • " & editor.SheetName & "!" & editor.Address & vbLf & "Текст равен: «" & Left$(editor.ExpectedText, 100) & "»"
+    f.lblExceptions.Caption = "Не настроены. Редактор исключений пока недоступен."
+    f.lblAction.Caption = Left$(editor.Message, 150) & IIf(Len(editor.Message) > 150, "…", "") & vbLf & "Заливка" & IIf(editor.AddNote, " и внутреннее примечание", "; без примечания")
     f.lblDetails.Visible = f.cboMode.ListIndex = 1
     f.lblDetails.Caption = "Подробности: одно поле типа «Текст» → точное сравнение с учётом регистра → отметка при ошибке. Пустое/неверное/недоступное значение не считается успехом. Вложенные условия и исключения пока недоступны."
     f.lblSaved.Caption = "Изменения в памяти. Для новой редакции выберите новое имя файла."
@@ -165,7 +164,7 @@ End Sub
 
 Public Sub AtUiCommand(ByVal f As Object, ByVal command As String)
     On Error GoTo Failed
-    Dim path As Variant, book As Object, folder As Object, fso As Object, directory As String, selected As Object, pickError As Long
+    Dim path As Variant, book As Object, selected As Object, pickError As Long
     Dim candidate As CAtAdminPreview
     AtUiChanged f
     Select Case command
@@ -199,14 +198,7 @@ Public Sub AtUiCommand(ByVal f As Object, ByVal command As String)
             If command = "TEST" Then
                 Set candidate = editor.Preview(book)
             Else
-                Set candidate = editor.Preview(book)
-                If editor.NeedsJournal And candidate.Outcome.Status = "FAIL" Then
-                    Set folder = Application.FileDialog(4): folder.Title = "Безопасная локальная папка для нового журнала"
-                    If folder.Show <> -1 Then Exit Sub
-                    Set fso = CreateObject("Scripting.FileSystemObject")
-                    directory = fso.BuildPath(folder.SelectedItems(1), "AccessTools-" & fso.GetTempName): fso.CreateFolder directory
-                End If
-                Set candidate = editor.Apply(book, directory)
+                Set candidate = editor.Apply(book, "")
             End If
             AtUiShowResult candidate
         Case "CLEAR": f.lblStatus.Caption = editor.Clear(AtUiSelectedBook(f))
@@ -227,10 +219,18 @@ End Sub
 Public Sub AtUiFillResult(ByVal form As Object, ByVal result As CAtAdminPreview)
     With form
         .lblResult.Caption = result.Summary
+        .lblResult.ForeColor = AtUiOutcomeColor(result.Outcome.Status)
         .txtTarget.Text = result.Target: .txtActual.Text = result.ActualText
         .txtRemark.Text = result.InitiatorText
         .txtActions.Text = result.Actions: .txtOutput.Text = result.Output
-        .txtDiagnostic.Text = result.Diagnostics & vbLf & result.Outcome.Result.State
+        Select Case result.Outcome.Status
+            Case "PASS": .txtDiagnostic.Text = "Условие выполнено; данные успешно прочитаны."
+            Case "FAIL": .txtDiagnostic.Text = "Условие удалось вычислить, но фактический текст не совпадает с ожидаемым."
+            Case Else: .txtDiagnostic.Text = "Результат не определён: проверьте доступность поля и корректность значения."
+        End Select
+        If result.Diagnostics <> "" Then .txtDiagnostic.Text = .txtDiagnostic.Text & vbLf & result.Diagnostics
+        .txtDiagnostic.Visible = False: .lblDiagnostic.Visible = False
+        .cmdDetails.Caption = "Технические подробности"
         .cmdCopy.Enabled = Len(result.InitiatorText) > 0
         .lblCopy.Caption = ""
     End With

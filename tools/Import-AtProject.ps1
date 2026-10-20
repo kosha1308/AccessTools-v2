@@ -1,4 +1,4 @@
-function Import-AtProject($Project, [string]$Repo, [switch]$IncludeTests) {
+function Import-AtProject($Project, [string]$Repo, [switch]$IncludeTests, [switch]$Demo, [string]$WorkbookCodeName) {
     $layout = Get-Content -LiteralPath (Join-Path $Repo 'ui/forms.json') -Raw -Encoding UTF8 | ConvertFrom-Json
     foreach ($form in $layout.Forms) {
         $component = $Project.VBComponents.Add(3)
@@ -9,9 +9,11 @@ function Import-AtProject($Project, [string]$Repo, [switch]$IncludeTests) {
         $designer = $component.Designer
         $designer.BackColor = 16448250; $designer.Font.Name = 'Segoe UI'; $designer.Font.Size = 10
         foreach ($definition in $form.Controls) {
-            $control = $designer.Controls.Add(('Forms.' + $definition.Type + '.1'), $definition.Name, $true)
+            $parentControls = $designer.Controls
+            if ($definition.Parent) { $parentControls = $designer.Controls.Item($definition.Parent).Object.Controls }
+            $control = $parentControls.Add(('Forms.' + $definition.Type + '.1'), $definition.Name, $true)
             foreach ($property in $definition.PSObject.Properties) {
-                if ($property.Name -in 'Name','Type') { continue }
+                if ($property.Name -in 'Name','Type','Parent') { continue }
                 if ($property.Name -eq 'FontSize') { continue }
                 $value = $property.Value
                 if ($value -is [long]) { $value = [int]$value }
@@ -31,5 +33,7 @@ function Import-AtProject($Project, [string]$Repo, [switch]$IncludeTests) {
         else { $component = $Project.VBComponents.Add($(if ($file.Extension -eq '.cls') {2} else {1})); $component.Name = $name }
         $component.CodeModule.AddFromString($source)
     }
-    return $files + @(Get-Item (Join-Path $Repo 'ui/forms.json'))
+    $events = Join-Path $Repo 'ui/demo-workbook.vba'
+    if ($Demo) { $Project.VBComponents.Item($WorkbookCodeName).CodeModule.AddFromString([IO.File]::ReadAllText($events)) }
+    return $files + @(Get-Item (Join-Path $Repo 'ui/forms.json')) + @(Get-Item $events)
 }

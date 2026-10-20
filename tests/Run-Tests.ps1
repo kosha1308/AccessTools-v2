@@ -77,6 +77,10 @@ try {
     $visualResult | Set-Content (Join-Path $RunDirectory 'visual-result.txt')
     Write-Output $visualResult
     if (-not $visualResult.StartsWith('PASS|')) { throw $visualResult }
+    $completionResult = [string]$excel.Run("'"+$book.Name+"'!AtRunCompletionTests", $repo, $RunDirectory)
+    $completionResult | Set-Content (Join-Path $RunDirectory 'completion-result.txt')
+    Write-Output $completionResult
+    if (-not $completionResult.StartsWith('PASS|')) { throw $completionResult }
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }
     if ($excel) { $excel.Quit(); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) }

@@ -46,6 +46,18 @@ End Property
 Public Property Get RevisionCount() As Long
     RevisionCount = mSequence
 End Property
+
+' Read-only lifecycle evidence for the optional automatic local store.
+' Active, interrupted, changed or orphaned journals can never be discarded.
+Friend Function CompletedManifest() As Object
+    Dim entry As Variant
+    If mRecovery Then Exit Function
+    For Each entry In Entries
+        If entry("State") <> "ROLLED_BACK" Then Exit Function
+    Next entry
+    If Not Verify() Then Exit Function
+    Set CompletedManifest = AtRecordCopy(mFiles)
+End Function
 Friend Sub RequireRecovery()
     mRecovery = True
 End Sub

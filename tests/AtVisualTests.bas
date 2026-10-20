@@ -62,7 +62,7 @@ Public Function AtRunVisualTests(ByVal repo As String, ByVal scratch As String) 
     Check editor.NeedsJournal, "successful clear releases binding for another workbook"
     Load AtAdminMain: AtUiFill AtAdminMain: AtUiRefreshBooks AtAdminMain
     Check AtAdminMain.cboBook.ListIndex = -1, "UI requires explicit workbook choice"
-    Check AtAdminMain.Controls.Count > 30, "main form contains real controls"
+    Check AtUiControlCount(AtAdminMain) > 30, "main form contains real controls"
     Check AtAdminMain.cmdTest.Caption = ChrW(&H41F) & ChrW(&H440) & ChrW(&H43E) & ChrW(&H442) & ChrW(&H435) & ChrW(&H441) & ChrW(&H442) & ChrW(&H438) & ChrW(&H440) & ChrW(&H43E) & ChrW(&H432) & ChrW(&H430) & ChrW(&H442) & ChrW(&H44C), "Russian control captions preserved"
     AtAdminMain.cboBook.ListIndex = 0: AtAdminMain.cboSheet.ListIndex = 0
     AtAdminMain.txtField.Text = "Visual field": AtAdminMain.txtAddress.Text = "D5": AtAdminMain.txtExpected.Text = "text"

@@ -1,12 +1,10 @@
 Attribute VB_Name = "AtAdminMain"
 Option Explicit
 Private Sub UserForm_Initialize()
-    Dim control As Object
-    For Each control In Me.Controls
-        control.Font.Name = "Segoe UI": control.Font.Size = 10
-    Next control
+    AtUiStyle Me
     lblHeading.Font.Size = 17: lblRuleTitle.Font.Size = 15: lblPropsTitle.Font.Size = 15
-    lblDetails.Font.Size = 9: lblStatus.Font.Size = 9: lblSaved.Font.Size = 9
+    titleWhen.Font.Bold = True: titleWhat.Font.Bold = True: titleExceptions.Font.Bold = True: titleAction.Font.Bold = True
+    lblStatus.Font.Size = 10: lblSaved.Font.Size = 10
 End Sub
 Private Sub txtTemplate_Change()
     AtUiChanged Me

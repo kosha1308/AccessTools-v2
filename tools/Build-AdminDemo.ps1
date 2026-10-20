@@ -13,23 +13,27 @@ try {
     $book = $excel.Workbooks.Add()
     $project = $book.VBProject
     . (Join-Path $PSScriptRoot 'Import-AtProject.ps1')
-    $null = Import-AtProject $project $repo
+    $null = Import-AtProject $project $repo -Demo -WorkbookCodeName $book.CodeName
     $sheet = $book.Worksheets(1); $sheet.Name = 'AccessTools'
     $sheet.Range('A1').Value2 = 'AccessTools 2 — конструктор проверок'
     $sheet.Range('A3').Value2 = 'Откройте другую книгу Excel с тестовыми данными. Нажмите «Открыть конструктор».'
     $sheet.Range('A4').Value2 = 'Настройте поле и условие справа. Сначала используйте «Протестировать» — книга не изменится.'
     $sheet.Range('A5').Value2 = '«Нанести отметки» — отдельное действие. В .xlsx доступны только заливки, без примечаний.'
     $sheet.Range('A6').Value2 = 'Сохраняйте новые редакции в новые файлы. Не закрывайте эту книгу до очистки своих отметок.'
-    $sheet.Range('A7').Value2 = 'Восстановление журнала после потери сессии автоматически не выполняется.'
+    $sheet.Range('A7').Value2 = 'Служебными данными управляет AccessTools. Папку выбирать не требуется.'
+    $sheet.Range('A8').Value2 = 'Если кнопка не открывает окно: сохраните текст сообщения Excel и проверьте обычную политику макросов с администратором.'
+    $sheet.Range('A9').Value2 = 'Блокированные макросы не могут показать собственную диагностику. Эта книга не изменяет защиту Office.'
     $sheet.Range('A1').Font.Size = 20
     $sheet.Columns.Item(1).ColumnWidth = 120
     $sheet.Rows.Item(1).RowHeight = 36
-    $button = $sheet.Buttons().Add(20,160,250,40)
+    $button = $sheet.Buttons().Add(20,200,250,40)
+    $button.Name = 'AtOpenConstructor'
     $button.Caption = 'Открыть конструктор'
     $book.SaveAs($destination, 52)
     # SaveAs can rewrite a pre-save OnAction. Bind using the ACTUAL final name.
     $expectedAction = "'" + $book.Name.Replace("'","''") + "'!AtAdminOpen"
     $button.OnAction = $expectedAction
+    $sheet.Range('A12').Value2 = 'Рабочий режим «Проверить заявку» для 1ЛП/координатора будет отдельным этапом. Здесь — административный конструктор.'
     $book.Save()
     if ($button.OnAction -ne $expectedAction) { throw 'Launch binding mismatch.' }
     foreach ($name in 'AtAdminMain','AtAdminResults') {

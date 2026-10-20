@@ -87,7 +87,7 @@ End Function
 
 Public Function AtOutcomeIntents(ByVal p As CAtPackage, ByVal outcome As CAtRuleOutcome) As Collection
     Dim intents As New Collection, d As CAtDefinition, field As CAtDefinition, locator As CAtDefinition, intent As CAtActionIntent
-    If p.SchemaVersion <> "3.0.0" Then Err.Raise 5, , "Explicit schema 3 action payload required."
+    If p.SchemaVersion <> "3.0.0" And p.SchemaVersion <> "4.0.0" Then Err.Raise 5, , "Explicit action payload required."
     If outcome.Status = "CANNOT_EVALUATE" Then Err.Raise 5, , "Incomplete evaluation cannot write or clear marks."
     If outcome.Status = "FAIL" Then
         For Each d In p.Definitions

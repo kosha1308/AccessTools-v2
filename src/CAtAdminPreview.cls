@@ -6,8 +6,16 @@ Attribute VB_Name = "CAtAdminPreview"
 Option Explicit
 Public Outcome As CAtRuleOutcome, Actual As CAtEvalResult
 Public Summary As String, Target As String, Remark As String, Actions As String, Diagnostics As String, Output As String
+Public Findings As Collection
 
 Public Property Get ActualText() As String
+    If Not Findings Is Nothing Then
+        Dim finding As CAtRuleFinding
+        For Each finding In Findings
+            ActualText = ActualText & finding.RuleName & ": " & finding.Outcome.Status & " — " & finding.FieldName & " (" & finding.Target & ") = " & finding.ActualText & vbLf
+        Next finding
+        Exit Property
+    End If
     If Actual Is Nothing Then ActualText = "Значение не прочитано": Exit Property
     Select Case Actual.State
         Case "OK": ActualText = Actual.Value
@@ -19,6 +27,13 @@ Public Property Get ActualText() As String
 End Property
 
 Public Property Get InitiatorText() As String
+    If Not Findings Is Nothing Then
+        Dim finding As CAtRuleFinding
+        For Each finding In Findings
+            If finding.Outcome.Status = "FAIL" Then InitiatorText = InitiatorText & finding.Message & vbCrLf
+        Next finding
+        Exit Property
+    End If
     If Not Outcome Is Nothing Then
         If Outcome.Status = "FAIL" Then InitiatorText = Remark
     End If

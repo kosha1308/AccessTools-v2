@@ -87,6 +87,25 @@ Friend Sub MergeEffects(ByVal source As CAtEvalResult)
     For Each item In source.Provenance: UniqueAdd mProvenance, item, "Key": Next item
 End Sub
 
+' Only the trusted requiredness operation consumes observed EMPTY input effects.
+' Unrelated diagnostics, technical requirements, provenance and traces survive.
+Friend Sub MergeEffectsConsumingEmpty(ByVal source As CAtEvalResult)
+    Dim item As Variant, consumed As Object, key As String
+    Set consumed = AtDictionary()
+    For Each item In source.Requirements
+        If item("State") = "EMPTY" And item("Classification") = "Input" Then
+            consumed(item("ObjectId") & "/" & item("OriginNodeId")) = True
+        Else
+            UniqueAdd mRequirements, item, "RequirementId"
+        End If
+    Next item
+    For Each item In source.Diagnostics
+        key = item("ObjectId") & "/" & item("NodeId")
+        If item("Code") <> "E_EMPTY" Or Not consumed.Exists(key) Then UniqueAdd mDiagnostics, item, "DiagnosticId"
+    Next item
+    For Each item In source.Provenance: UniqueAdd mProvenance, item, "Key": Next item
+End Sub
+
 Friend Sub SetTrace(ByVal records As Collection)
     Set mTrace = AtRecordsCopy(records)
 End Sub

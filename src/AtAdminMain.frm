@@ -33,6 +33,36 @@ End Sub
 Private Sub cboMode_Change()
     AtUiChanged Me
 End Sub
+Private Sub txtRuleName_Change()
+    AtUiChanged Me
+End Sub
+Private Sub chkRuleEnabled_Click()
+    AtUiChanged Me
+End Sub
+Private Sub cboFieldFilter_Change()
+    AtUiMultiFilter Me
+End Sub
+Private Sub cboRuleField_Change()
+    AtUiMultiBindField Me
+End Sub
+Private Sub lstNavigation_Click()
+    AtUiMultiSelectRule Me
+End Sub
+Private Sub cmdAddField_Click()
+    AtUiMultiCommand Me, "ADD_FIELD"
+End Sub
+Private Sub cmdAddRule_Click()
+    AtUiMultiCommand Me, "ADD_RULE"
+End Sub
+Private Sub cmdCopyRule_Click()
+    AtUiMultiCommand Me, "COPY_RULE"
+End Sub
+Private Sub cmdDeleteRule_Click()
+    AtUiMultiCommand Me, "DELETE_RULE"
+End Sub
+Private Sub cmdSelectedPreview_Click()
+    AtUiMultiCommand Me, "SELECTED"
+End Sub
 Private Sub cboSheet_Change()
     AtUiChanged Me
 End Sub

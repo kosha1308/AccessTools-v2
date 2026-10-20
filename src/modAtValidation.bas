@@ -12,8 +12,8 @@ Public Function AtValidate(ByVal p As CAtPackage, ByVal operationCatalog As Obje
     On Error GoTo InvalidModel
     Set index = AtDictionary(): Set colors = AtDictionary()
     If p Is Nothing Then Err.Raise 5, , "Package is Nothing"
-    If p.SchemaVersion <> "1.0.0" And p.SchemaVersion <> "2.0.0" And p.SchemaVersion <> "3.0.0" Then
-        AtProblem issues, "SCHEMA_VERSION", p.Id, "SchemaVersion", p.SchemaVersion, "Supported schemas are exactly 1.0.0, 2.0.0 and 3.0.0.": GoTo Done
+    If p.SchemaVersion <> "1.0.0" And p.SchemaVersion <> "2.0.0" And p.SchemaVersion <> "3.0.0" And p.SchemaVersion <> "4.0.0" Then
+        AtProblem issues, "SCHEMA_VERSION", p.Id, "SchemaVersion", p.SchemaVersion, "Supported schemas are exactly 1.0.0, 2.0.0, 3.0.0 and 4.0.0.": GoTo Done
     End If
     Identity issues, "Package", p.Id, p.Version, p.DisplayName
     If p.State <> "Draft" And p.State <> "Published" Then AtProblem issues, "STATE_INVALID", p.Id, "State", p.State, "Choose Draft or Published."
@@ -38,7 +38,10 @@ Public Function AtValidate(ByVal p As CAtPackage, ByVal operationCatalog As Obje
             If VarType(d.Values(prop)) <> vbString Then AtProblem issues, "PROPERTY_TYPE", d.Id, CStr(prop), "Storage scalars must be strings", "Use the declared lexical form of the property."
         Next prop
         ValidateProperties d, issues, p.SchemaVersion <> "1.0.0"
-        If p.SchemaVersion = "3.0.0" And d.Kind = "Action" Then AtValidateActionPayload d, issues
+        If (p.SchemaVersion = "3.0.0" Or p.SchemaVersion = "4.0.0") And d.Kind = "Action" Then AtValidateActionPayload d, issues
+        If p.SchemaVersion = "4.0.0" And d.Kind = "Rule" Then
+            If AtValue(d, "Enabled") <> "true" And AtValue(d, "Enabled") <> "false" Then AtProblem issues, "RULE_ENABLED", d.Id, "Enabled", "", "Schema4 requires explicit true/false."
+        End If
         If p.SchemaVersion = "1.0.0" And (d.Nodes.Count > 0 Or d.RootNodeId <> "" Or d.ScopeTemplateId <> "") Then AtAstProblem issues, "AST_SCHEMA", d.Id, d.RootNodeId, "Schema 1.0.0 cannot contain AST; explicit upgrade required."
     Next d
     If Not ContainsKind(p, "Template") Then AtProblem issues, "TEMPLATE_REQUIRED", p.Id, "Definitions", "No Template", "Add a template definition."
@@ -113,7 +116,10 @@ Private Function Properties(ByVal kind As String, ByVal schema As String) As Str
         Case "Expression": Properties = "|ReturnType|Deferred|"
         Case "Action"
             Properties = "|Trigger|Audience|Channel|"
-            If schema = "3.0.0" Then Properties = Properties & "OnOutcome|Message|FillColor|AddNote|"
+            If schema = "3.0.0" Or schema = "4.0.0" Then Properties = Properties & "OnOutcome|Message|FillColor|AddNote|"
+        Case "Rule"
+            Properties = "|"
+            If schema = "4.0.0" Then Properties = "|Enabled|"
         Case Else: Properties = "|"
     End Select
 End Function

@@ -85,6 +85,10 @@ try {
     $r5Result | Set-Content (Join-Path $RunDirectory 'r5-result.txt')
     Write-Output $r5Result
     if (-not $r5Result.StartsWith('PASS|')) { throw $r5Result }
+    $multiResult = [string]$excel.Run("'"+$book.Name+"'!AtRunMultiTests", $repo, $RunDirectory)
+    $multiResult | Set-Content (Join-Path $RunDirectory 'multi-result.txt')
+    Write-Output $multiResult
+    if (-not $multiResult.StartsWith('PASS|')) { throw $multiResult }
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }
     if ($excel) { $excel.Quit(); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) }

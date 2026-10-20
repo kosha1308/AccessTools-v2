@@ -1,7 +1,22 @@
 Attribute VB_Name = "modAtAdminUi"
 Option Explicit
 
-Private editor As CAtAdminEditor, books As Collection, painting As Boolean
+Private editor As Object, books As Collection, painting As Boolean
+
+Public Function AtUiMultiEditor() As Object
+    If TypeName(editor) = "CAtTemplateEditor" Then Set AtUiMultiEditor = editor
+End Function
+Public Function AtUiIsPainting() As Boolean
+    AtUiIsPainting = painting
+End Function
+Public Sub AtUiOpenTemplate(ByVal instance As CAtTemplateEditor)
+    If Not editor Is Nothing Then
+        If Not editor.NeedsJournal Then Err.Raise 5, , "Сначала согласуйте или очистите отметки открытого редактора."
+    End If
+    Set editor = instance
+    Load AtAdminMain: AtUiFill AtAdminMain: AtUiRefreshBooks AtAdminMain
+    AtUiFit AtAdminMain: AtAdminMain.Show 0: AtUiWatchWindows
+End Sub
 
 Public Function AtNewAdminEditor(Optional ByVal journalRoot As String = "") As CAtAdminEditor
     Dim instance As New CAtAdminEditor
@@ -39,7 +54,7 @@ Public Sub AtAdminOpen()
     For Each instance In VBA.UserForms
         If TypeName(instance) = "AtAdminMain" Then alreadyLoaded = True
     Next instance
-    If editor Is Nothing Then Set editor = AtNewAdminEditor()
+    If editor Is Nothing Then Set editor = AtNewTemplateEditor()
     Load AtAdminMain
     If Not alreadyLoaded Then
         AtUiFill AtAdminMain
@@ -68,6 +83,11 @@ Public Sub AtUiFill(ByVal f As Object)
     f.txtAddress.Text = editor.Address: f.txtExpected.Text = editor.ExpectedText: f.txtMessage.Text = editor.Message
     f.chkNote.Value = editor.AddNote
     f.cboCondition.Clear: f.cboCondition.AddItem "Текст равен": f.cboCondition.ListIndex = 0
+    If TypeName(editor) = "CAtTemplateEditor" Then
+        f.cboCondition.AddItem "Текст не равен": f.cboCondition.AddItem "Поле обязательно"
+        If editor.Condition = "NOT_EQUAL" Then f.cboCondition.ListIndex = 1
+        If editor.Condition = "REQUIRED" Then f.cboCondition.ListIndex = 2
+    End If
     f.cboSeverity.Clear: f.cboSeverity.AddItem "Ошибка": f.cboSeverity.AddItem "Предупреждение": f.cboSeverity.AddItem "Информация"
     Select Case editor.Severity
         Case "ERROR": f.cboSeverity.ListIndex = 0
@@ -84,7 +104,9 @@ Public Sub AtUiFill(ByVal f As Object)
     If f.cboColor.ListIndex = -1 Then f.cboColor.AddItem "Цвет из файла": f.cboColor.ListIndex = 6
     f.cboMode.Clear: f.cboMode.AddItem "Простой режим": f.cboMode.AddItem "Расширенный режим": f.cboMode.ListIndex = 0
     f.lstNavigation.Clear: f.lstNavigation.AddItem "Правило: текст равен": f.lstNavigation.ListIndex = 0
+    AtUiMultiFill f, editor
     painting = False: AtUiChanged f
+    If TypeName(editor) = "CAtTemplateEditor" And f.cboBook.ListIndex >= 0 Then AtUiBookChanged f
 End Sub
 
 Public Function AtUiColorName(ByVal index As Long) As String
@@ -157,6 +179,11 @@ Public Sub AtUiChanged(ByVal f As Object)
     editor.Address = f.txtAddress.Text: editor.ExpectedText = f.txtExpected.Text: editor.Message = f.txtMessage.Text
     If f.cboSheet.ListIndex >= 0 Then editor.SheetName = f.cboSheet.Value
     editor.AddNote = f.chkNote.Value
+    If TypeName(editor) = "CAtTemplateEditor" Then
+        editor.RuleName = f.txtRuleName.Text: editor.RuleEnabled = f.chkRuleEnabled.Value
+        If f.cboCondition.ListIndex >= 0 Then editor.Condition = Choose(f.cboCondition.ListIndex + 1, "EQUAL", "NOT_EQUAL", "REQUIRED")
+        f.txtExpected.Enabled = editor.Condition <> "REQUIRED" And editor.SelectedRuleId <> ""
+    End If
     f.lblNavTitle.Caption = editor.TemplateName
     f.lblHeading.Caption = "AccessTools — " & Left$(editor.TemplateName, 60)
     If f.cboSeverity.ListIndex >= 0 Then editor.Severity = Choose(f.cboSeverity.ListIndex + 1, "ERROR", "WARNING", "INFO")
@@ -169,6 +196,13 @@ Public Sub AtUiChanged(ByVal f As Object)
     f.lblDetails.Visible = f.cboMode.ListIndex = 1
     f.lblDetails.Caption = "Подробности: одно поле типа «Текст» → точное сравнение с учётом регистра → отметка при ошибке. Пустое/неверное/недоступное значение не считается успехом. Вложенные условия и исключения пока недоступны."
     f.lblSaved.Caption = "Изменения в памяти. Для новой редакции выберите новое имя файла."
+    If TypeName(editor) = "CAtTemplateEditor" Then
+        f.lblWhen.Caption = "Общий тест всех активных правил; выбранное правило — только предпросмотр."
+        f.lblDetails.Caption = "Поле типа «Текст». Сравнение учитывает регистр. Обязательность считает пустым EMPTY и текст из обычных пробелов; отсутствие поля и технические ошибки блокируют запись. Сложные группы пока недоступны."
+        f.lblWhat.Caption = editor.RuleName & vbLf & editor.FieldName & " • " & editor.SheetName & "!" & editor.Address & vbLf & f.cboCondition.Value
+        If editor.Condition <> "REQUIRED" Then f.lblWhat.Caption = f.lblWhat.Caption & ": «" & editor.ExpectedText & "»"
+        AtUiMultiRefreshLabel f, editor
+    End If
     AtUiRelayout f
 End Sub
 
@@ -247,6 +281,17 @@ Public Sub AtUiFillResult(ByVal form As Object, ByVal result As CAtAdminPreview)
         .cmdDetails.Caption = "Технические подробности"
         .cmdCopy.Enabled = Len(result.InitiatorText) > 0
         .lblCopy.Caption = ""
+        .lstResults.Visible = Not result.Findings Is Nothing
+        .lstResults.Clear
+        If Not result.Findings Is Nothing Then
+            Dim finding As CAtRuleFinding, row As Long
+            For Each finding In result.Findings
+                .lstResults.AddItem finding.RuleName
+                row = .lstResults.ListCount - 1
+                .lstResults.List(row, 1) = finding.Outcome.Status
+                .lstResults.List(row, 2) = finding.Target
+            Next finding
+        End If
     End With
     AtUiRelayout form
 End Sub

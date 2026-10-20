@@ -35,6 +35,10 @@ Public Sub AtUiLayout(ByVal form As Object, ByVal availableWidth As Double, ByVa
     If main Then
         names = Array("cmdTest", "cmdPreview", "cmdLoad", "cmdSave", "cmdClear", "cmdClose")
         width = 1020: height = 720: top = 46
+        If form.cmdSelectedPreview.Visible Then
+            names = Array("cmdTest", "cmdSelectedPreview", "cmdPreview", "cmdLoad", "cmdSave", "cmdClear", "cmdClose")
+            width = 900: height = 650
+        End If
     Else
         names = Array("cmdCopy", "cmdDetails", "cmdClose")
         width = 710: height = 530: top = 56
@@ -134,6 +138,12 @@ End Function
 Private Function Properties(ByVal form As Object, ByVal x As Double, ByVal y As Double, ByVal width As Double) As Double
     Dim h As Double, leftWidth As Double, rightX As Double
     Place form, "lblPropsTitle", x, y, width, 24: y = y + 32
+    If form.txtRuleName.Visible Then
+        h = TextHeight(form.lblRuleName, x, y, width): y = y + h + 2
+        Place form, "txtRuleName", x, y, width - 150, 24
+        Place form, "chkRuleEnabled", x + width - 144, y, 144, 24: y = y + 32
+        y = PropertyRow(form, "lblRuleField", "cboRuleField", x, y, width)
+    End If
     h = TextHeight(form.lblBook, x, y, width): y = y + h + 2
     Place form, "cboBook", x, y, width - 42, 24: Place form, "cmdRefresh", x + width - 36, y, 36, 24: y = y + 32
     leftWidth = (width - 12) * 0.48: rightX = x + leftWidth + 12
@@ -170,26 +180,49 @@ Private Sub MainContent(ByVal form As Object, ByVal width As Double)
         Place form, "cboMode", propX, 4, propWidth, 24
         y = 42
         navHeight = TextHeight(form.lblNavTitle, 0, y, 144)
-        Place form, "lstNavigation", 0, y + navHeight + 6, 144, 180
+        navHeight = y + navHeight + 6
+        If form.cboFieldFilter.Visible Then
+            Place form, "cboFieldFilter", 0, navHeight, 144, 24: navHeight = navHeight + 30
+            Place form, "lstNavigation", 0, navHeight, 144, 120: navHeight = navHeight + 128
+            navHeight = NavigationActions(form, 0, navHeight, 144, False)
+        Else
+            Place form, "lstNavigation", 0, navHeight, 144, 180: navHeight = navHeight + 194
+        End If
         form.lblNavHelp.Visible = True
-        navHeight = y + navHeight + 194
         navHeight = navHeight + TextHeight(form.lblNavHelp, 0, navHeight, 144)
         bottom = WorksheetFunction.Max(RuleCards(form, cardX, y, cardWidth), Properties(form, propX, y, propWidth), navHeight)
     Else
         Place form, "txtTemplate", 0, 4, width * 0.6 - 6, 24
         Place form, "cboMode", width * 0.6 + 6, 4, width * 0.4 - 6, 24
         navHeight = TextHeight(form.lblNavTitle, 0, 36, width)
-        Place form, "lstNavigation", 0, 36 + navHeight + 4, width, 28
+        y = 36 + navHeight + 4
+        If form.cboFieldFilter.Visible Then Place form, "cboFieldFilter", 0, y, width, 24: y = y + 30
+        Place form, "lstNavigation", 0, y, width, 40: y = y + 48
+        If form.cmdAddField.Visible Then y = NavigationActions(form, 0, y, width, True)
         form.lblNavHelp.Visible = False
-        y = 36 + navHeight + 44
         bottom = Properties(form, 0, y, width)
         bottom = RuleCards(form, 0, bottom + 12, width)
     End If
     bottom = bottom + TextHeight(form.lblSaved, 0, bottom + 4, width) + 12
 End Sub
+Private Function NavigationActions(ByVal form As Object, ByVal x As Double, ByVal y As Double, ByVal width As Double, ByVal twoColumns As Boolean) As Double
+    Dim names As Variant, i As Long, w As Double
+    names = Array("cmdAddField", "cmdAddRule", "cmdCopyRule", "cmdDeleteRule")
+    w = width
+    If twoColumns Then w = (width - 8) / 2
+    For i = 0 To 3
+        If twoColumns Then
+            Place form, CStr(names(i)), x + (i Mod 2) * (w + 8), y + (i \ 2) * 32, w, 26
+        Else
+            Place form, CStr(names(i)), x, y + i * 32, w, 26
+        End If
+    Next i
+    NavigationActions = y + IIf(twoColumns, 72, 136)
+End Function
 Private Sub ResultContent(ByVal form As Object, ByVal width As Double)
     Dim y As Double
-    y = PropertyRow(form, "lblTarget", "txtTarget", 0, 0, width)
+    If form.lstResults.Visible Then Place form, "lstResults", 0, 0, width, 90: y = 100
+    y = PropertyRow(form, "lblTarget", "txtTarget", 0, y, width)
     y = PropertyRow(form, "lblActual", "txtActual", 0, y, width, 45)
     y = PropertyRow(form, "lblRemark", "txtRemark", 0, y, width, 60)
     y = PropertyRow(form, "lblActions", "txtActions", 0, y, width, 50)

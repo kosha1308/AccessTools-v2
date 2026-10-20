@@ -14,12 +14,17 @@ Public Property Get Catalog() As Object
     c.Add "OP_TEXT_EQUAL@1.0.0", s
     Set args = New Collection: args.Add "Text"
     c.Add "OP_TEXT_TRIM@1.0.0", AtSignature("Text", args)
+    c.Add "OP_TEXT_REQUIRED@1.0.0", AtSignature("Bool", args)
     Set args = New Collection: args.Add "Bool": args.Add "Bool"
     c.Add "OP_BOOL_EQUAL@1.0.0", AtSignature("Bool", args)
     Set args = New Collection: args.Add "Int64": args.Add "Int64"
     c.Add "OP_INT64_LE@1.0.0", AtSignature("Bool", args)
     Set Catalog = c
 End Property
+
+Public Function HandlesEmpty(ByVal operationId As String, ByVal version As String) As Boolean
+    HandlesEmpty = operationId = "OP_TEXT_REQUIRED" And version = "1.0.0"
+End Function
 
 Public Function ExecuteOperation(ByVal operationId As String, ByVal version As String, ByVal args As Collection, ByVal parameters As Object) As CAtEvalResult
     On Error GoTo Broken
@@ -49,7 +54,7 @@ Public Function ExecuteOperation(ByVal operationId As String, ByVal version As S
         End If
     Next i
     For Each a In args
-        If a.State <> "OK" Then
+        If a.State <> "OK" And Not (a.State = "EMPTY" And HandlesEmpty(operationId, version)) Then
             Set r = AtEvalValue(typeName, a.State, ""): GoTo Effects
         End If
     Next a
@@ -67,11 +72,19 @@ Public Function ExecuteOperation(ByVal operationId As String, ByVal version As S
             Set b = args(2): ok = Int64Compare(a.Value, b.Value) <= 0
         Case "OP_TEXT_TRIM@1.0.0"
             Set r = AtEvalValue("Text", "OK", Trim$(a.Value)): GoTo Effects
+        Case "OP_TEXT_REQUIRED@1.0.0"
+            ok = a.State = "OK" And Len(Trim$(a.Value)) > 0
         Case Else: GoTo Broken
     End Select
     Set r = AtEvalValue(typeName, "OK", IIf(ok, "true", "false"))
 Effects:
-    For Each a In args: r.MergeEffects a: Next a
+    For Each a In args
+        If a.State = "EMPTY" And HandlesEmpty(operationId, version) Then
+            r.MergeEffectsConsumingEmpty a
+        Else
+            r.MergeEffects a
+        End If
+    Next a
     Set ExecuteOperation = r: Exit Function
 Broken:
     If typeName = "" Then typeName = "Text"

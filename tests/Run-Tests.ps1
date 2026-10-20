@@ -7,6 +7,9 @@ if (-not $Worker) {
     $hostExe = Join-Path $env:WINDIR 'System32/WindowsPowerShell/v1.0/powershell.exe'
     $arguments = @('-NoProfile','-ExecutionPolicy','Bypass','-File',('"'+$PSCommandPath+'"'),'-Worker','-RunDirectory',('"'+$run+'"'))
     $p = Start-Process $hostExe -ArgumentList $arguments -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $run 'stdout.txt') -RedirectStandardError (Join-Path $run 'stderr.txt')
+    # Hold the process handle before exit; Windows PowerShell otherwise may
+    # expose a null ExitCode after WaitForExit despite completed output files.
+    $workerHandle = $p.Handle
     if (-not $p.WaitForExit(90000)) {
         $ownerFile = Join-Path $run 'excel-owner.json'
         if (Test-Path $ownerFile) {
@@ -17,6 +20,8 @@ if (-not $Worker) {
         Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
         throw "Excel test timeout; evidence: $run"
     }
+    $p.Refresh()
+    [string]$p.ExitCode | Set-Content (Join-Path $run 'worker-exit.txt')
     Get-Content (Join-Path $run 'stdout.txt')
     if ($p.ExitCode -ne 0) { Get-Content (Join-Path $run 'stderr.txt'); throw "Tests failed; evidence: $run" }
     Write-Output "Evidence: $run"
@@ -33,19 +38,8 @@ try {
     $excel.Visible = $false; $excel.DisplayAlerts = $false; $excel.AutomationSecurity = 3
     $book = $excel.Workbooks.Add()
     $project = $book.VBProject
-    $files = @()
-    if (Test-Path (Join-Path $repo 'src')) { $files += Get-ChildItem (Join-Path $repo 'src') -File | Where-Object { $_.Extension -in '.bas','.cls' } }
-    $files += Get-ChildItem $PSScriptRoot -Filter '*.bas'
-    foreach ($file in $files) {
-        $source = [IO.File]::ReadAllText($file.FullName)
-        $moduleName = [regex]::Match($source,'Attribute VB_Name = "([^"]+)"').Groups[1].Value
-        if (-not $moduleName) { throw "Missing module name: $file" }
-        $source = ($source -split "`r?`n" | Where-Object { $_ -notmatch '^(Attribute |VERSION |BEGIN$|END$|  MultiUse)' }) -join "`r`n"
-        $component = $project.VBComponents.Add($(if ($file.Extension -eq '.cls') {2} else {1}))
-        $component.Name = $moduleName
-        $component.CodeModule.AddFromString($source)
-        [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($component)
-    }
+    . (Join-Path $repo 'tools/Import-AtProject.ps1')
+    $files = @(Import-AtProject $project $repo -IncludeTests)
     $book.Activate()
     "Excel=$($excel.Version); Build=$($excel.Build); OS=$($excel.OperatingSystem); DeveloperHostBits=$([IntPtr]::Size * 8)" | Set-Content (Join-Path $RunDirectory 'host.txt')
     $sha = [Security.Cryptography.SHA256]::Create()
@@ -75,7 +69,25 @@ try {
     $writerResult | Set-Content (Join-Path $RunDirectory 'writer-result.txt')
     Write-Output $writerResult
     if (-not $writerResult.StartsWith('PASS|')) { throw $writerResult }
+    $adminResult = [string]$excel.Run("'"+$book.Name+"'!AtRunAdminTests", $repo, $RunDirectory)
+    $adminResult | Set-Content (Join-Path $RunDirectory 'admin-result.txt')
+    Write-Output $adminResult
+    if (-not $adminResult.StartsWith('PASS|')) { throw $adminResult }
+    $visualResult = [string]$excel.Run("'"+$book.Name+"'!AtRunVisualTests", $repo, $RunDirectory)
+    $visualResult | Set-Content (Join-Path $RunDirectory 'visual-result.txt')
+    Write-Output $visualResult
+    if (-not $visualResult.StartsWith('PASS|')) { throw $visualResult }
+    $completionResult = [string]$excel.Run("'"+$book.Name+"'!AtRunCompletionTests", $repo, $RunDirectory)
+    $completionResult | Set-Content (Join-Path $RunDirectory 'completion-result.txt')
+    Write-Output $completionResult
+    if (-not $completionResult.StartsWith('PASS|')) { throw $completionResult }
+    $r5Result = [string]$excel.Run("'"+$book.Name+"'!AtRunR5Tests", $repo, $RunDirectory)
+    $r5Result | Set-Content (Join-Path $RunDirectory 'r5-result.txt')
+    Write-Output $r5Result
+    if (-not $r5Result.StartsWith('PASS|')) { throw $r5Result }
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }
     if ($excel) { $excel.Quit(); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) }
 }
+# Successful completion is explicit; an exception above still terminates with failure.
+exit 0

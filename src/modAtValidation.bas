@@ -12,8 +12,8 @@ Public Function AtValidate(ByVal p As CAtPackage, ByVal operationCatalog As Obje
     On Error GoTo InvalidModel
     Set index = AtDictionary(): Set colors = AtDictionary()
     If p Is Nothing Then Err.Raise 5, , "Package is Nothing"
-    If p.SchemaVersion <> "1.0.0" And p.SchemaVersion <> "2.0.0" Then
-        AtProblem issues, "SCHEMA_VERSION", p.Id, "SchemaVersion", p.SchemaVersion, "Supported schemas are exactly 1.0.0 and 2.0.0.": GoTo Done
+    If p.SchemaVersion <> "1.0.0" And p.SchemaVersion <> "2.0.0" And p.SchemaVersion <> "3.0.0" Then
+        AtProblem issues, "SCHEMA_VERSION", p.Id, "SchemaVersion", p.SchemaVersion, "Supported schemas are exactly 1.0.0, 2.0.0 and 3.0.0.": GoTo Done
     End If
     Identity issues, "Package", p.Id, p.Version, p.DisplayName
     If p.State <> "Draft" And p.State <> "Published" Then AtProblem issues, "STATE_INVALID", p.Id, "State", p.State, "Choose Draft or Published."
@@ -34,10 +34,11 @@ Public Function AtValidate(ByVal p As CAtPackage, ByVal operationCatalog As Obje
             index.Add key, d
         End If
         For Each prop In d.Values.Keys
-            If Not InList(CStr(prop), Properties(d.Kind)) Then AtProblem issues, "PROPERTY_UNKNOWN", d.Id, CStr(prop), "Not allowed for " & d.Kind, "Remove the unknown property or use a supported schema."
+            If Not InList(CStr(prop), Properties(d.Kind, p.SchemaVersion)) Then AtProblem issues, "PROPERTY_UNKNOWN", d.Id, CStr(prop), "Not allowed for " & d.Kind, "Remove the unknown property or use a supported schema."
             If VarType(d.Values(prop)) <> vbString Then AtProblem issues, "PROPERTY_TYPE", d.Id, CStr(prop), "Storage scalars must be strings", "Use the declared lexical form of the property."
         Next prop
-        ValidateProperties d, issues, p.SchemaVersion = "2.0.0"
+        ValidateProperties d, issues, p.SchemaVersion <> "1.0.0"
+        If p.SchemaVersion = "3.0.0" And d.Kind = "Action" Then AtValidateActionPayload d, issues
         If p.SchemaVersion = "1.0.0" And (d.Nodes.Count > 0 Or d.RootNodeId <> "" Or d.ScopeTemplateId <> "") Then AtAstProblem issues, "AST_SCHEMA", d.Id, d.RootNodeId, "Schema 1.0.0 cannot contain AST; explicit upgrade required."
     Next d
     If Not ContainsKind(p, "Template") Then AtProblem issues, "TEMPLATE_REQUIRED", p.Id, "Definitions", "No Template", "Add a template definition."
@@ -47,7 +48,7 @@ Public Function AtValidate(ByVal p As CAtPackage, ByVal operationCatalog As Obje
     For Each d In p.Definitions
         If d.Kind = "Rule" Or d.Kind = "Expression" Then Visit d, index, colors, issues, 0
     Next d
-    If p.SchemaVersion = "2.0.0" Then
+    If p.SchemaVersion <> "1.0.0" Then
         AtValidateAst p, index, operationCatalog, issues
     Else
         AtProblem issues, "AST_DEFERRED", p.Id, "Expressions", "Only expression identity and declared result type validated", "Legacy schema has no checked AST and is not executable or publication-ready.", "Info"
@@ -104,13 +105,15 @@ Private Function InList(ByVal value As String, ByVal choices As String) As Boole
     If value <> "" And InStr(value, "|") = 0 Then InList = InStr(1, choices, "|" & value & "|", vbBinaryCompare) > 0
 End Function
 
-Private Function Properties(ByVal kind As String) As String
+Private Function Properties(ByVal kind As String, ByVal schema As String) As String
     Select Case kind
         Case "Field", "Column": Properties = "|DataType|"
         Case "Locator": Properties = "|Strategy|Sheet|Address|DefinedName|Label|RowOffset|ColumnOffset|"
         Case "Source": Properties = "|Adapter|FileName|Sheet|"
         Case "Expression": Properties = "|ReturnType|Deferred|"
-        Case "Action": Properties = "|Trigger|Audience|Channel|"
+        Case "Action"
+            Properties = "|Trigger|Audience|Channel|"
+            If schema = "3.0.0" Then Properties = Properties & "OnOutcome|Message|FillColor|AddNote|"
         Case Else: Properties = "|"
     End Select
 End Function

@@ -88,7 +88,7 @@ Public Function AtPlanActions(ByVal workbook As Object, ByVal intents As Collect
             End If
             If Not entry Is Nothing Then
                 If entry("State") <> "ROLLED_BACK" Then
-                    If Not AtWEqual(snapshot, AtWUnpack(entry("Expected"))) Then status = "CONFLICT": code = "TARGET_CHANGED": GoTo Done
+                    If Not AtWOwnedEqual(snapshot, AtWUnpack(entry("Expected"))) Then status = "CONFLICT": code = "TARGET_CHANGED": GoTo Done
                 Else
                     Set entry = Nothing
                 End If
@@ -98,8 +98,8 @@ Public Function AtPlanActions(ByVal workbook As Object, ByVal intents As Collect
             End If
             Set row = AtDictionary()
             row.Add "Target", target: row.Add "Sheet", area.Parent.Name: row.Add "Address", area.Address
-            row.Add "Observed", AtWPack(snapshot): row.Add "Before", AtWPack(snapshot)
-            If Not entry Is Nothing Then row("Before") = entry("Before")
+            row.Add "Observed", AtWPack(snapshot): row.Add "Before", AtWPack(AtWAnnotationState(snapshot))
+            If Not entry Is Nothing Then row("Before") = AtWPack(AtWAnnotationState(AtWUnpack(entry("Before"))))
             row.Add "Keys", "": row.Add "RunId", runId: row.Add "Messages", "AccessTools"
             row.Add "Fill", "0": row.Add "Note", "0": row.Add "Priority", "0": row.Add "Color", "0": row.Add "Clear", "0"
             index.Add target, row: actions.Add row
@@ -120,9 +120,10 @@ Public Function AtPlanActions(ByVal workbook As Object, ByVal intents As Collect
         If entry("State") <> "ROLLED_BACK" And Not index.Exists(entry("Target")) Then
             Set area = AreaFor(workbook, entry("Sheet"), entry("Address"))
             Set snapshot = AtWCapture(area, code)
-            If Not AtWEqual(snapshot, AtWUnpack(entry("Expected"))) Then status = "CONFLICT": code = "TARGET_CHANGED": GoTo Done
+            If Not AtWOwnedEqual(snapshot, AtWUnpack(entry("Expected"))) Then status = "CONFLICT": code = "TARGET_CHANGED": GoTo Done
             Set row = AtRecordCopy(entry)
             row("Observed") = AtWPack(snapshot): row("Clear") = "1": row("RunId") = runId
+            row("Before") = AtWPack(AtWAnnotationState(AtWUnpack(entry("Before"))))
             actions.Add row
         End If
     Next entry

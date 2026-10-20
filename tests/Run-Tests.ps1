@@ -81,6 +81,10 @@ try {
     $completionResult | Set-Content (Join-Path $RunDirectory 'completion-result.txt')
     Write-Output $completionResult
     if (-not $completionResult.StartsWith('PASS|')) { throw $completionResult }
+    $r5Result = [string]$excel.Run("'"+$book.Name+"'!AtRunR5Tests", $repo, $RunDirectory)
+    $r5Result | Set-Content (Join-Path $RunDirectory 'r5-result.txt')
+    Write-Output $r5Result
+    if (-not $r5Result.StartsWith('PASS|')) { throw $r5Result }
 } finally {
     if ($book) { $book.Close($false); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($book) }
     if ($excel) { $excel.Quit(); [void][Runtime.InteropServices.Marshal]::FinalReleaseComObject($excel) }

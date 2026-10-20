@@ -106,7 +106,7 @@ Private Sub TestLayout(ByVal scratch As String)
     For Each size In sizes
         AtUiLayout AtAdminMain, CDbl(size(0)), CDbl(size(1))
         Check Fits(AtAdminMain) And AtAdminMain.Zoom = 100, "main bounds readable zoom " & size(0)
-        Check AtAdminMain.pnlBody.ScrollHeight > AtAdminMain.pnlBody.Height And AtAdminMain.pnlBody.ScrollWidth >= 860, "main scroll reach " & size(0)
+        Check ScrollReach(AtAdminMain.pnlBody) And AtAdminMain.pnlBody.ScrollBars <> 3, "main scroll reach " & size(0)
         Check AtAdminMain.cmdClose.Top >= AtAdminMain.pnlBody.Top + AtAdminMain.pnlBody.Height, "fixed actions " & size(0)
     Next size
     Check AtAdminMain.txtExpected.Font.Size >= 10 And AtAdminMain.cmdTest.Font.Size >= 10, "fonts not shrunk"
@@ -122,7 +122,7 @@ Private Sub TestLayout(ByVal scratch As String)
         Check Fits(AtAdminResults) And AtAdminResults.Zoom = 100, "compact result bounds " & size(0)
     Next size
     AtUiToggleDiagnostics AtAdminResults
-    Check AtAdminResults.txtDiagnostic.Visible And AtAdminResults.pnlBody.ScrollHeight = 458, "diagnostics expand with scroll reach"
+    Check AtAdminResults.txtDiagnostic.Visible And ScrollReach(AtAdminResults.pnlBody), "diagnostics expand with scroll reach"
     Check ScrollReach(AtAdminResults.pnlBody), "expanded diagnostics entirely reachable"
     AtUiToggleDiagnostics AtAdminResults
     Check Not AtAdminResults.txtDiagnostic.Visible, "diagnostics collapse"

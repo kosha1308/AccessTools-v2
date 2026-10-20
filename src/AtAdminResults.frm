@@ -10,6 +10,12 @@ End Sub
 Private Sub cmdCopy_Click()
     AtUiCopyRemark
 End Sub
+Private Sub cmdPageUp_Click()
+    AtUiScroll Me, -1
+End Sub
+Private Sub cmdPageDown_Click()
+    AtUiScroll Me, 1
+End Sub
 Private Sub cmdClose_Click()
     Me.Hide
 End Sub

@@ -10,10 +10,10 @@
           "Width": 860,
           "Height": 448,
           "Caption": "",
-          "ScrollBars": 3,
-          "KeepScrollBarsVisible": 3,
-          "ScrollWidth": 872,
-          "ScrollHeight": 526,
+          "ScrollBars": 0,
+          "KeepScrollBarsVisible": 0,
+          "ScrollWidth": 0,
+          "ScrollHeight": 0,
           "SpecialEffect": 0,
           "BorderStyle": 0,
           "BackColor": 16578805
@@ -571,13 +571,13 @@
           "ForeColor": 16777215
         },
         {
-          "Width": 150,
+          "Width": 210,
           "Type": "CommandButton",
           "Top": 526,
           "Height": 30,
           "Left": 410,
-          "Caption": "Нанести отметки",
-          "Name": "cmdApply",
+          "Caption": "Предпросмотр без изменений",
+          "Name": "cmdPreview",
           "BackColor": 16249323,
           "ForeColor": 4797730
         },
@@ -602,6 +602,40 @@
           "Name": "cmdClose",
           "BackColor": 16249323,
           "ForeColor": 4797730
+        },
+        {
+          "Name": "cmdPageUp",
+          "Type": "CommandButton",
+          "Left": 780,
+          "Top": 10,
+          "Width": 32,
+          "Height": 25,
+          "Caption": "↑",
+          "Visible": false,
+          "ControlTipText": "Прокрутить содержимое вверх"
+        },
+        {
+          "Name": "cmdPageDown",
+          "Type": "CommandButton",
+          "Left": 820,
+          "Top": 10,
+          "Width": 32,
+          "Height": 25,
+          "Caption": "↓",
+          "Visible": false,
+          "ControlTipText": "Прокрутить содержимое вниз"
+        },
+        {
+          "Name": "cmdPickName",
+          "Type": "CommandButton",
+          "Parent": "pnlBody",
+          "Left": 700,
+          "Top": 198,
+          "Width": 145,
+          "Height": 26,
+          "Caption": "Выбрать из Excel",
+          "BackColor": 15987699,
+          "ForeColor": 4928032
         }
       ],
       "Height": 638,
@@ -619,10 +653,10 @@
           "Width": 686,
           "Height": 448,
           "Caption": "",
-          "ScrollBars": 3,
-          "KeepScrollBarsVisible": 3,
-          "ScrollWidth": 700,
-          "ScrollHeight": 458,
+          "ScrollBars": 0,
+          "KeepScrollBarsVisible": 0,
+          "ScrollWidth": 0,
+          "ScrollHeight": 0,
           "SpecialEffect": 0,
           "BorderStyle": 0,
           "BackColor": 16578805
@@ -828,6 +862,28 @@
           "Caption": "Технические подробности",
           "BackColor": 16249323,
           "ForeColor": 4797730
+        },
+        {
+          "Name": "cmdPageUp",
+          "Type": "CommandButton",
+          "Left": 780,
+          "Top": 10,
+          "Width": 32,
+          "Height": 25,
+          "Caption": "↑",
+          "Visible": false,
+          "ControlTipText": "Прокрутить содержимое вверх"
+        },
+        {
+          "Name": "cmdPageDown",
+          "Type": "CommandButton",
+          "Left": 820,
+          "Top": 10,
+          "Width": 32,
+          "Height": 25,
+          "Caption": "↓",
+          "Visible": false,
+          "ControlTipText": "Прокрутить содержимое вниз"
         }
       ],
       "Height": 610,

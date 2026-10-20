@@ -57,15 +57,27 @@ End Sub
 Private Sub cmdSave_Click()
     AtUiCommand Me, "SAVE"
 End Sub
-Private Sub cmdApply_Click()
-    AtUiCommand Me, "APPLY"
+Private Sub cmdPreview_Click()
+    AtUiCommand Me, "PREVIEW"
+End Sub
+Private Sub cmdPickName_Click()
+    AtUiCommand Me, "PICK_NAME"
+End Sub
+Private Sub cmdPageUp_Click()
+    AtUiScroll Me, -1
+End Sub
+Private Sub cmdPageDown_Click()
+    AtUiScroll Me, 1
 End Sub
 Private Sub cmdClear_Click()
     AtUiCommand Me, "CLEAR"
 End Sub
 Private Sub cmdClose_Click()
-    Me.Hide
+    AtUiHideMain
 End Sub
 Private Sub UserForm_QueryClose(Cancel As Integer, CloseMode As Integer)
-    If CloseMode = 0 Then Cancel = True: Me.Hide
+    If CloseMode = 0 Then Cancel = True: AtUiHideMain
+End Sub
+Private Sub UserForm_Terminate()
+    AtUiStopWatching
 End Sub

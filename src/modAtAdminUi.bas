@@ -35,19 +35,26 @@ End Function
 
 Public Sub AtAdminOpen()
     On Error GoTo Failed
+    Dim instance As Object, alreadyLoaded As Boolean
+    For Each instance In VBA.UserForms
+        If TypeName(instance) = "AtAdminMain" Then alreadyLoaded = True
+    Next instance
     If editor Is Nothing Then Set editor = AtNewAdminEditor()
     Load AtAdminMain
-    AtUiFill AtAdminMain
-    AtUiRefreshBooks AtAdminMain
+    If Not alreadyLoaded Then
+        AtUiFill AtAdminMain
+        AtUiRefreshBooks AtAdminMain
+    End If
     AtUiFit AtAdminMain
     AtAdminMain.Show 0
+    AtUiWatchWindows
     Exit Sub
 Failed:
     MsgBox "Не удалось открыть конструктор: " & Err.Description, vbExclamation, "AccessTools"
 End Sub
 
 Public Sub AtUiFit(ByVal form As Object)
-    AtUiLayout form, Application.UsableWidth * 0.94, Application.UsableHeight * 0.9
+    AtUiLayout form, Application.Width - 24, Application.Height - 36
     form.StartUpPosition = 0
     form.Left = Application.Left + 12: form.Top = Application.Top + 12
 End Sub
@@ -136,7 +143,9 @@ Public Sub AtUiBookChanged(ByVal f As Object)
     For i = 0 To f.cboSheet.ListCount - 1
         If f.cboSheet.List(i) = editor.SheetName Then f.cboSheet.ListIndex = i
     Next i
-    painting = False: AtUiChanged f: Exit Sub
+    painting = False: AtUiChanged f
+    f.lblStatus.Caption = "Выбрана книга: " & book.Name & ". «Протестировать» обновляет отметки; предпросмотр — без изменений."
+    Exit Sub
 Failed:
     painting = False: f.lblStatus.Caption = Err.Description
 End Sub
@@ -154,17 +163,18 @@ Public Sub AtUiChanged(ByVal f As Object)
     If f.cboColor.ListIndex >= 0 And f.cboColor.ListIndex < 6 Then editor.Color = AtUiColor(f.cboColor.ListIndex)
     f.lblColorSample.BackColor = editor.Color
     f.lblWhen.Caption = "По кнопке «Протестировать» для выбранной книги."
-    f.lblWhat.Caption = editor.FieldName & " • " & editor.SheetName & "!" & editor.Address & vbLf & "Текст равен: «" & Left$(editor.ExpectedText, 100) & "»"
+    f.lblWhat.Caption = editor.FieldName & " • " & editor.SheetName & "!" & editor.Address & vbLf & "Текст равен: «" & editor.ExpectedText & "»"
     f.lblExceptions.Caption = "Не настроены. Редактор исключений пока недоступен."
-    f.lblAction.Caption = Left$(editor.Message, 150) & IIf(Len(editor.Message) > 150, "…", "") & vbLf & "Заливка" & IIf(editor.AddNote, " и внутреннее примечание", "; без примечания")
+    f.lblAction.Caption = editor.Message & vbLf & "Заливка" & IIf(editor.AddNote, " и внутреннее примечание", "; без примечания")
     f.lblDetails.Visible = f.cboMode.ListIndex = 1
     f.lblDetails.Caption = "Подробности: одно поле типа «Текст» → точное сравнение с учётом регистра → отметка при ошибке. Пустое/неверное/недоступное значение не считается успехом. Вложенные условия и исключения пока недоступны."
     f.lblSaved.Caption = "Изменения в памяти. Для новой редакции выберите новое имя файла."
+    AtUiRelayout f
 End Sub
 
 Public Sub AtUiCommand(ByVal f As Object, ByVal command As String)
     On Error GoTo Failed
-    Dim path As Variant, book As Object, selected As Object, pickError As Long
+    Dim path As Variant, book As Object, selected As Object, pickError As Long, prompt As String
     Dim candidate As CAtAdminPreview
     AtUiChanged f
     Select Case command
@@ -176,35 +186,39 @@ Public Sub AtUiCommand(ByVal f As Object, ByVal command As String)
             path = Application.GetOpenFilename("Конфигурация (*.xml),*.xml")
             If VarType(path) = vbBoolean Then Exit Sub
             AtUiLoadFile f, CStr(path)
-        Case "PICK"
-            Set book = AtUiSelectedBook(f)
-            If f.cboSheet.ListIndex < 0 Then Err.Raise 5, , "Выберите лист."
-            If book.Worksheets(f.cboSheet.Value).Visible <> -1 Then Err.Raise 5, , "Выберите видимый лист."
-            f.Hide: book.Activate: book.Worksheets(f.cboSheet.Value).Activate
+        Case "PICK", "PICK_NAME"
+            Set book = AtUiPickerBook(f, command)
+            AtUiPicking True
+            f.Hide: book.Activate
+            If command = "PICK" Then book.Worksheets(f.cboSheet.Value).Activate
+            prompt = "Выберите одну ячейку поля на выбранном листе"
+            If command = "PICK_NAME" Then prompt = "Выберите ячейку с названием поля. Адрес проверки не изменится."
             On Error Resume Next
-            Set selected = Application.InputBox("Выберите одну ячейку поля на выбранном листе", "Выбор поля", Type:=8)
+            Set selected = Application.InputBox(prompt, "Выбор поля", Type:=8)
             pickError = Err.Number: Err.Clear
             On Error GoTo Failed
             f.Show 0
+            AtUiPicking False
             If selected Is Nothing Then
                 If pickError <> 0 And pickError <> 424 Then Err.Raise pickError
                 Exit Sub
             End If
             If Not selected.Parent.Parent Is book Then Err.Raise 5, , "Выберите ячейку в указанной книге."
-            If selected.Parent.Name <> f.cboSheet.Value Or selected.Cells.CountLarge <> 1 Then Err.Raise 5, , "Выберите одну ячейку указанного листа."
-            f.txtAddress.Text = selected.Address(False, False)
-        Case "TEST", "APPLY"
-            Set book = AtUiSelectedBook(f)
-            If command = "TEST" Then
-                Set candidate = editor.Preview(book)
+            If command = "PICK_NAME" Then
+                AtUiAcceptFieldName f, book, selected
             Else
-                Set candidate = editor.Apply(book, "")
+                If selected.Parent.Name <> f.cboSheet.Value Or selected.Cells.CountLarge <> 1 Then Err.Raise 5, , "Выберите одну ячейку указанного листа."
+                f.txtAddress.Text = selected.Address(False, False)
             End If
+        Case "TEST", "PREVIEW"
+            Set book = AtUiSelectedBook(f)
+            Set candidate = AtUiRunMode(editor, book, command)
             AtUiShowResult candidate
         Case "CLEAR": f.lblStatus.Caption = editor.Clear(AtUiSelectedBook(f))
     End Select
     Exit Sub
 Failed:
+    AtUiPicking False
     If Not f.Visible Then f.Show 0
     f.lblStatus.Caption = Err.Description
 End Sub
@@ -234,6 +248,7 @@ Public Sub AtUiFillResult(ByVal form As Object, ByVal result As CAtAdminPreview)
         .cmdCopy.Enabled = Len(result.InitiatorText) > 0
         .lblCopy.Caption = ""
     End With
+    AtUiRelayout form
 End Sub
 
 Public Function AtAdminUiSmoke() As String

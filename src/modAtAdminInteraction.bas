@@ -2,11 +2,11 @@ Attribute VB_Name = "modAtAdminInteraction"
 Option Explicit
 
 ' The UI command and its tests share this exact dispatch; no cached write plan.
-Public Function AtUiRunMode(ByVal editor As CAtAdminEditor, ByVal book As Object, ByVal mode As String) As CAtAdminPreview
+Public Function AtUiRunMode(ByVal editor As Object, ByVal book As Object, ByVal mode As String) As CAtAdminPreview
     Select Case mode
         Case "TEST"
             Set AtUiRunMode = editor.Apply(book, "")
-            If AtUiRunMode.Outcome.Status = "CANNOT_EVALUATE" Then AtUiRunMode.Output = "Вычисление не завершено. Предыдущие отметки не изменялись."
+            If AtUiRunMode.Outcome.Status = "CANNOT_EVALUATE" And AtUiRunMode.Findings Is Nothing Then AtUiRunMode.Output = "Вычисление не завершено. Предыдущие отметки не изменялись."
         Case "PREVIEW": Set AtUiRunMode = editor.Preview(book)
         Case Else: Err.Raise 5, , "Неизвестная команда проверки."
     End Select

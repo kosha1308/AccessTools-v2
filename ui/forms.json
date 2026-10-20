@@ -636,6 +636,125 @@
           "Caption": "Выбрать из Excel",
           "BackColor": 15987699,
           "ForeColor": 4928032
+        },
+        {
+          "Name": "cmdAddField",
+          "Type": "CommandButton",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 26,
+          "Caption": "Добавить поле",
+          "Visible": false,
+          "Parent": "pnlBody"
+        },
+        {
+          "Name": "cmdAddRule",
+          "Type": "CommandButton",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 26,
+          "Caption": "Добавить правило",
+          "Visible": false,
+          "Parent": "pnlBody"
+        },
+        {
+          "Name": "cmdCopyRule",
+          "Type": "CommandButton",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 26,
+          "Caption": "Копировать правило",
+          "Visible": false,
+          "Parent": "pnlBody"
+        },
+        {
+          "Name": "cmdDeleteRule",
+          "Type": "CommandButton",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 26,
+          "Caption": "Удалить правило",
+          "Visible": false,
+          "Parent": "pnlBody"
+        },
+        {
+          "Name": "cmdSelectedPreview",
+          "Type": "CommandButton",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 26,
+          "Caption": "Только выбранное",
+          "Visible": false
+        },
+        {
+          "Name": "cboFieldFilter",
+          "Type": "ComboBox",
+          "Parent": "pnlBody",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 24,
+          "Visible": false,
+          "Style": 2
+        },
+        {
+          "Name": "cboRuleField",
+          "Type": "ComboBox",
+          "Parent": "pnlBody",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 24,
+          "Visible": false,
+          "Style": 2
+        },
+        {
+          "Name": "txtRuleName",
+          "Type": "TextBox",
+          "Parent": "pnlBody",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 24,
+          "Visible": false
+        },
+        {
+          "Name": "lblRuleField",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 24,
+          "Visible": false,
+          "Caption": "Поле правила"
+        },
+        {
+          "Name": "chkRuleEnabled",
+          "Type": "CheckBox",
+          "Parent": "pnlBody",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 24,
+          "Visible": false,
+          "Caption": "Правило включено"
+        },
+        {
+          "Name": "lblRuleName",
+          "Type": "Label",
+          "Parent": "pnlBody",
+          "Left": 0,
+          "Top": 0,
+          "Width": 144,
+          "Height": 18,
+          "Caption": "Название правила",
+          "Visible": false
         }
       ],
       "Height": 638,
@@ -884,6 +1003,18 @@
           "Caption": "↓",
           "Visible": false,
           "ControlTipText": "Прокрутить содержимое вниз"
+        },
+        {
+          "Name": "lstResults",
+          "Type": "ListBox",
+          "Parent": "pnlBody",
+          "Left": 0,
+          "Top": 0,
+          "Width": 650,
+          "Height": 90,
+          "ColumnCount": 3,
+          "ColumnWidths": "210 pt;90 pt;260 pt",
+          "Visible": false
         }
       ],
       "Height": 610,
